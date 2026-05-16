@@ -1,0 +1,117 @@
+# =====================================================================
+# Lydomania — Production stack
+#   • mongo      — database (internal-only, no public port)
+#   • backend    — FastAPI + APScheduler + watchers (internal-only)
+#   • bot        — aiogram Telegram worker (drains DM outbox, handles /start)
+#   • frontend   — React build served by nginx (internal-only)
+#   • caddy      — public reverse proxy, auto-HTTPS via Let's Encrypt
+#
+# Usage:
+#   cd deployment
+#   cp .env.example .env
+#   ./scripts/rotate-secrets.sh
+#   ./scripts/generate-ton-vault.sh   # writes new mnemonic into .env
+#   nano .env                          # fill in DOMAIN, TELEGRAM_*, ADMIN_*, ACME_EMAIL
+#   docker compose up -d
+#   ./scripts/first-run-check.sh
+# =====================================================================
+name: lydomania
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: lydomania-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:?missing}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?missing}
+      MONGO_INITDB_DATABASE: ${DB_NAME:-lydomania}
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [lydomania-net]
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deployment/backend.Dockerfile
+    container_name: lydomania-backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      MONGO_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      DB_NAME: ${DB_NAME:-lydomania}
+    volumes:
+      - backend-static:/app/backend/static
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 25s
+    networks: [lydomania-net]
+
+  bot:
+    build:
+      context: ..
+      dockerfile: deployment/bot.Dockerfile
+    container_name: lydomania-bot
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      MONGO_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      DB_NAME: ${DB_NAME:-lydomania}
+      INTERNAL_BACKEND_BASE: http://backend:8000
+    networks: [lydomania-net]
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deployment/frontend.Dockerfile
+      args:
+        # Empty so the browser uses same-origin (Caddy proxies /api/* to backend)
+        REACT_APP_BACKEND_URL: ""
+    container_name: lydomania-frontend
+    restart: unless-stopped
+    networks: [lydomania-net]
+
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: lydomania-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?missing}
+      ACME_EMAIL: ${ACME_EMAIL:?missing}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - backend-static:/srv/static:ro
+    depends_on:
+      - backend
+      - frontend
+    networks: [lydomania-net]
+
+volumes:
+  mongo-data:
+  caddy-data:
+  caddy-config:
+  backend-static:
+
+networks:
+  lydomania-net:
+    driver: bridge

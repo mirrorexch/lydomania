@@ -1,0 +1,65 @@
+# =====================================================================
+# Lydomania — repo .gitignore
+# =====================================================================
+
+# --- Secrets / env ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+.coverage
+htmlcov/
+
+# --- Node / React ---
+node_modules/
+build/
+dist/
+.cache/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# --- IDE ---
+.idea/
+.vscode/
+*.iml
+
+# --- Lydomania runtime ---
+backups/
+deployment/backups/
+deployment/caddy-data/
+deployment/caddy-config/
+deployment/mongo-data/
+backend/static/cases/share/   # ephemeral share cards
+backend/static/portals_cache/ # ephemeral marketplace thumbnails
+test_reports/
+.test_artifacts/
+
+# --- Local-only docs ---
+TODO.local.md
+notes.local.md
+
+# --- Archives we sometimes produce here ---
+*.tar.gz
+*.zip
