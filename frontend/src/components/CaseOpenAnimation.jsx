@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { ItemTile } from "@/components/ItemTile";
 import { rarityRank } from "@/lib/rarity";
 import { sfx } from "@/lib/sound";
@@ -35,6 +36,7 @@ function pickRandomFromBasket(basket, n, exclude) {
  *   onSettled : called once when the strip stops on the winner
  */
 export const CaseOpenAnimation = ({ basket, winner, onSettled }) => {
+    const { t } = useTranslation();
     const controls = useAnimation();
     const [phase, setPhase] = useState("idle"); // idle | spinning | settled
     const stripRef = useRef(null);
@@ -176,7 +178,7 @@ export const CaseOpenAnimation = ({ basket, winner, onSettled }) => {
 
             {/* Bottom hint */}
             <div className="absolute bottom-1.5 left-2 text-[9px] uppercase tracking-[0.2em] font-bold text-white/30 z-30">
-                roll · {phase}
+                {t("case_detail.roll_label", { phase: t(`case_open_anim.phase_${phase}`) })}
             </div>
         </div>
     );

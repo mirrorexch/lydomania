@@ -2,21 +2,22 @@ import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { Diamond, X, Wallet, ArrowRight } from "lucide-react";
+import { useTranslation, Trans } from "react-i18next";
 import { resolveImage } from "@/lib/api";
-import { RARITY_HEX, RARITY_LABEL, formatTON } from "@/lib/rarity";
+import { RARITY_HEX, formatTON } from "@/lib/rarity";
 
 export const BatchWinSummary = ({
     open,
-    batch,           // /api/cases/{id}/open-batch response
+    batch,
     casePrice,
     onSellAll,
     onKeepAll,
     onClose,
     busy = false,
 }) => {
+    const { t } = useTranslation();
     useEffect(() => {
         if (!open || !batch) return;
-        // single big burst if net positive
         if (batch.net_pnl_ton > 0) {
             confetti({
                 particleCount: 100,
@@ -66,7 +67,7 @@ export const BatchWinSummary = ({
 
                         <div className="text-center mb-3">
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-cyber-cyan">
-                                ×{batch.rolls.length} batch open
+                                {t("batch_summary.header", { n: batch.rolls.length })}
                             </span>
                             <h2 className="font-display text-2xl font-black tracking-tight mt-1">
                                 {positive ? "+" : ""}
@@ -75,12 +76,17 @@ export const BatchWinSummary = ({
                                 </span>
                             </h2>
                             <div className="text-[11px] text-white/50 mt-1">
-                                paid <b className="text-white/70">{formatTON(batch.total_paid_ton)}</b> · won{" "}
-                                <b className="text-white/70">{formatTON(batch.total_won_ton)}</b>
+                                <Trans
+                                    i18nKey="batch_summary.paid"
+                                    values={{
+                                        paid: formatTON(batch.total_paid_ton),
+                                        won: formatTON(batch.total_won_ton),
+                                    }}
+                                    components={{ strong: <b className="text-white/70" /> }}
+                                />
                             </div>
                         </div>
 
-                        {/* Grid of wins */}
                         <div className="grid grid-cols-5 gap-1.5 mb-4 max-h-[280px] overflow-y-auto pr-1">
                             {sortedRolls.map((r, i) => {
                                 const c = RARITY_HEX[r.winning_item.rarity] || RARITY_HEX.common;
@@ -110,7 +116,6 @@ export const BatchWinSummary = ({
                             })}
                         </div>
 
-                        {/* CTA */}
                         <div className="flex gap-2">
                             <button
                                 data-testid="batch-sell-all-btn"
@@ -118,7 +123,7 @@ export const BatchWinSummary = ({
                                 disabled={busy}
                                 className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyber-cyan to-cyber-purple text-cyber-bg font-display font-black text-sm rounded-xl px-4 py-3 uppercase tracking-wide disabled:opacity-50"
                             >
-                                <Wallet className="w-4 h-4" /> Sell all · {formatTON(batch.total_won_ton)} TON
+                                <Wallet className="w-4 h-4" /> {t("batch_summary.sell_all", { amount: formatTON(batch.total_won_ton) })}
                             </button>
                             <button
                                 data-testid="batch-keep-all-btn"
@@ -126,12 +131,15 @@ export const BatchWinSummary = ({
                                 disabled={busy}
                                 className="flex-1 inline-flex items-center justify-center gap-2 bg-white/5 border border-white/15 hover:bg-white/10 transition text-white font-display font-bold text-sm rounded-xl px-4 py-3 uppercase tracking-wide disabled:opacity-50"
                             >
-                                Keep all <ArrowRight className="w-4 h-4" />
+                                {t("batch_summary.keep_all")} <ArrowRight className="w-4 h-4" />
                             </button>
                         </div>
 
                         <p className="mt-3 text-[10px] text-white/40 text-center font-mono">
-                            Each roll has its own provably-fair nonce {batch.rolls[0]?.nonce}..{batch.rolls.at(-1)?.nonce}
+                            {t("batch_summary.nonce_footer", {
+                                from: batch.rolls[0]?.nonce,
+                                to: batch.rolls.at(-1)?.nonce,
+                            })}
                         </p>
                     </motion.div>
                 </motion.div>

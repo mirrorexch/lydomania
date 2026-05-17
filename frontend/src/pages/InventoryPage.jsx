@@ -3,33 +3,35 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import {
-    Diamond, Loader2, Wallet, Send, RefreshCcw, X, Trophy, History, ChevronRight,
+    Diamond, Loader2, Wallet, RefreshCcw, Trophy, History, ChevronRight,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
     fetchInventory, fetchCases,
     sellInventoryItem, resolveImage,
 } from "@/lib/api";
 import {
-    RARITY_HEX, RARITY_LABEL, RARITY_ORDER, formatTON,
+    RARITY_HEX, RARITY_ORDER, formatTON,
 } from "@/lib/rarity";
 import { WithdrawModal } from "@/components/WithdrawModal";
 
-const STATUS_TABS = [
-    { value: "all", label: "All" },
-    { value: "in_inventory", label: "Owned" },
-    { value: "sold", label: "Sold" },
-    { value: "withdraw_pending", label: "Pending" },
-    { value: "withdrawn", label: "Delivered" },
-];
-
-const SORT_OPTIONS = [
-    { value: "date_desc", label: "Newest" },
-    { value: "date_asc", label: "Oldest" },
-    { value: "value_desc", label: "Value ↓" },
-    { value: "value_asc", label: "Value ↑" },
-];
-
 export const InventoryPage = ({ refreshBalance }) => {
+    const { t } = useTranslation();
+
+    const STATUS_TABS = [
+        { value: "all", label: t("collection.all") },
+        { value: "in_inventory", label: t("collection.owned") },
+        { value: "sold", label: t("collection.sold") },
+        { value: "withdraw_pending", label: t("collection.pending") },
+        { value: "withdrawn", label: t("collection.delivered") },
+    ];
+    const SORT_OPTIONS = [
+        { value: "date_desc", label: t("collection.sort_newest") },
+        { value: "date_asc", label: t("collection.sort_oldest") },
+        { value: "value_desc", label: t("collection.sort_value_desc") },
+        { value: "value_asc", label: t("collection.sort_value_asc") },
+    ];
+
     const [status, setStatus] = useState("in_inventory");
     const [rarity, setRarity] = useState("all");
     const [caseId, setCaseId] = useState("all");
@@ -52,7 +54,7 @@ export const InventoryPage = ({ refreshBalance }) => {
             setItems(r.items);
             setTotals(r.totals);
         } catch (e) {
-            toast.error("Failed to load collection", { description: e?.message });
+            toast.error(t("collection.load_failed"), { description: e?.message });
         } finally {
             setLoading(false);
         }
@@ -64,11 +66,11 @@ export const InventoryPage = ({ refreshBalance }) => {
         setBusy(item.id);
         try {
             const newBal = await sellInventoryItem(item.id);
-            toast.success(`Sold ${item.item_name} · +${formatTON(item.payout_ton)} TON`);
+            toast.success(t("win_modal.sold_one", { name: item.item_name, amount: formatTON(item.payout_ton) }));
             refreshBalance?.(newBal);
             await reload();
         } catch (e) {
-            toast.error("Sell failed", { description: e?.response?.data?.detail || e?.message });
+            toast.error(t("win_modal.sell_failed"), { description: e?.response?.data?.detail || e?.message });
         } finally {
             setBusy(null);
         }
@@ -83,18 +85,22 @@ export const InventoryPage = ({ refreshBalance }) => {
         if (busy) return;
         const sellable = items.filter(i => i.status === "in_inventory");
         if (sellable.length === 0) return;
-        if (!window.confirm(`Sell all ${sellable.length} visible items for ${formatTON(sellable.reduce((s,i)=>s+i.payout_ton,0))} TON?`)) return;
+        const totalTon = sellable.reduce((s, i) => s + i.payout_ton, 0);
+        if (!window.confirm(t("collection.confirm_sell_all", {
+            count: sellable.length, amount: formatTON(totalTon),
+        }))) return;
         setBusy("all");
         let success = 0, failed = 0;
         let lastBal = null;
         for (const it of sellable) {
-            try {
-                lastBal = await sellInventoryItem(it.id);
-                success++;
-            } catch { failed++; }
+            try { lastBal = await sellInventoryItem(it.id); success++; } catch { failed++; }
         }
         if (lastBal !== null) refreshBalance?.(lastBal);
-        toast.success(`Sold ${success}${failed?` · ${failed} failed`:""}`);
+        toast.success(
+            failed
+                ? t("win_modal.sold_count_with_failed", { count: success, failed })
+                : t("win_modal.sold_count", { count: success, amount: formatTON(totalTon) })
+        );
         await reload();
         setBusy(null);
     };
@@ -106,28 +112,26 @@ export const InventoryPage = ({ refreshBalance }) => {
 
     return (
         <main className="max-w-[430px] mx-auto px-4 pt-3 pb-24" data-testid="inventory-page">
-            {/* Title row */}
             <div className="flex items-baseline justify-between mb-3">
-                <h1 className="font-display text-2xl font-black tracking-tight">Collection</h1>
+                <h1 className="font-display text-2xl font-black tracking-tight">{t("collection.title")}</h1>
                 <div className="flex items-center gap-2">
                     <Link
                         to="/withdrawals"
                         data-testid="inv-withdrawals-link"
                         className="text-[10px] font-bold uppercase tracking-wider text-cyber-cyan hover:text-cyber-purple inline-flex items-center gap-1"
                     >
-                        Withdrawals <ChevronRight className="w-3 h-3" />
+                        {t("collection.withdrawals_link")} <ChevronRight className="w-3 h-3" />
                     </Link>
-                    <button onClick={reload} className="text-white/40 hover:text-cyber-cyan transition p-1" data-testid="inv-refresh-btn" aria-label="Refresh">
+                    <button onClick={reload} className="text-white/40 hover:text-cyber-cyan transition p-1" data-testid="inv-refresh-btn" aria-label={t("collection.refresh_aria")}>
                         <RefreshCcw className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
-            {/* Totals header */}
             <div className="grid grid-cols-2 gap-2 mb-4" data-testid="inv-totals">
                 <div className="rounded-xl border border-cyber-cyan/30 bg-gradient-to-br from-cyber-cyan/10 to-cyber-purple/10 p-3">
                     <div className="text-[9px] uppercase font-bold tracking-[0.2em] text-cyber-cyan inline-flex items-center gap-1">
-                        <Trophy className="w-3 h-3" /> Owned value
+                        <Trophy className="w-3 h-3" /> {t("collection.owned_value")}
                     </div>
                     <div className="font-display text-xl font-black mt-0.5 tabular-nums">
                         <span className="text-white">{formatTON(totals?.total_value_unsold_ton)}</span>
@@ -136,7 +140,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                 </div>
                 <div className="rounded-xl border border-white/10 bg-cyber-surface/60 p-3">
                     <div className="text-[9px] uppercase font-bold tracking-[0.2em] text-white/50 inline-flex items-center gap-1">
-                        <History className="w-3 h-3" /> All-time won
+                        <History className="w-3 h-3" /> {t("collection.all_time_won")}
                     </div>
                     <div className="font-display text-xl font-black mt-0.5 tabular-nums">
                         <span className="text-white">{formatTON(totals?.total_value_all_time_ton)}</span>
@@ -145,24 +149,23 @@ export const InventoryPage = ({ refreshBalance }) => {
                 </div>
             </div>
 
-            {/* Status tabs */}
             <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
-                {STATUS_TABS.map((t) => {
-                    const n = totals?.count_by_status?.[t.value] ?? (t.value === "all" ? totals?.total_count : 0);
+                {STATUS_TABS.map((tab) => {
+                    const n = totals?.count_by_status?.[tab.value] ?? (tab.value === "all" ? totals?.total_count : 0);
                     return (
                         <button
-                            key={t.value}
-                            data-testid={`inv-tab-${t.value}`}
-                            onClick={() => setStatus(t.value)}
+                            key={tab.value}
+                            data-testid={`inv-tab-${tab.value}`}
+                            onClick={() => setStatus(tab.value)}
                             className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border whitespace-nowrap transition inline-flex items-center gap-1 ${
-                                status === t.value
+                                status === tab.value
                                     ? "bg-cyber-cyan/15 border-cyber-cyan/50 text-cyber-cyan"
                                     : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
                             }`}
                         >
-                            {t.label}
+                            {tab.label}
                             {totals && n > 0 && (
-                                <span className={status === t.value ? "text-cyber-cyan/80" : "text-white/40"}>
+                                <span className={status === tab.value ? "text-cyber-cyan/80" : "text-white/40"}>
                                     {n}
                                 </span>
                             )}
@@ -171,7 +174,6 @@ export const InventoryPage = ({ refreshBalance }) => {
                 })}
             </div>
 
-            {/* Rarity + Case + Sort row */}
             <div className="flex flex-wrap gap-1.5 items-center mb-4 text-xs">
                 <select
                     data-testid="inv-rarity-select"
@@ -179,10 +181,10 @@ export const InventoryPage = ({ refreshBalance }) => {
                     onChange={(e) => setRarity(e.target.value)}
                     className="bg-cyber-surface border border-white/10 rounded-md px-2 py-1 text-white/80 focus:border-cyber-cyan outline-none"
                 >
-                    <option value="all">All rarities</option>
+                    <option value="all">{t("collection.all_rarities")}</option>
                     {rarityChips.map((r) => (
                         <option key={r} value={r} style={{ color: RARITY_HEX[r] }}>
-                            {RARITY_LABEL[r]} · {totals?.count_by_rarity?.[r] || 0}
+                            {t(`rarity.${r}`)} · {totals?.count_by_rarity?.[r] || 0}
                         </option>
                     ))}
                 </select>
@@ -192,7 +194,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                     onChange={(e) => setCaseId(e.target.value)}
                     className="bg-cyber-surface border border-white/10 rounded-md px-2 py-1 text-white/80 focus:border-cyber-cyan outline-none"
                 >
-                    <option value="all">All cases</option>
+                    <option value="all">{t("collection.all_cases")}</option>
                     {cases.map((c) => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -209,7 +211,6 @@ export const InventoryPage = ({ refreshBalance }) => {
                 </select>
             </div>
 
-            {/* Sell-all visible button (only when on Owned tab w/ items) */}
             {status === "in_inventory" && items.length > 0 && (
                 <button
                     data-testid="inv-sell-all-btn"
@@ -217,23 +218,21 @@ export const InventoryPage = ({ refreshBalance }) => {
                     disabled={busy === "all"}
                     className="w-full text-[11px] font-bold uppercase tracking-wider bg-gradient-to-r from-cyber-cyan/20 to-cyber-purple/20 border border-cyber-cyan/40 hover:border-cyber-cyan/70 text-cyber-cyan rounded-lg py-2 mb-3 transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
                 >
-                    <Wallet className="w-3 h-3" /> Sell all visible ({items.length})
+                    <Wallet className="w-3 h-3" /> {t("collection.sell_all_visible", { count: items.length })}
                 </button>
             )}
 
-            {/* Body */}
             {loading ? (
                 <div className="py-10 text-center text-white/40 text-sm inline-flex items-center justify-center gap-2 w-full">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+                    <Loader2 className="w-4 h-4 animate-spin" /> {t("collection.loading")}
                 </div>
             ) : items.length === 0 ? (
                 <div className="py-16 text-center" data-testid="inv-empty">
-                    <div className="text-2xl mb-2">📭</div>
-                    <div className="text-sm text-white/50">Nothing here yet.</div>
+                    <div className="text-sm text-white/50">{t("collection.empty_title")}</div>
                     <div className="text-xs text-white/35 mt-1">
                         {status === "in_inventory"
-                            ? "Open a case — your wins land here."
-                            : "Try a different filter."}
+                            ? t("collection.empty_owned")
+                            : t("collection.empty_other")}
                     </div>
                 </div>
             ) : (
@@ -250,7 +249,6 @@ export const InventoryPage = ({ refreshBalance }) => {
                                 className="flex flex-col bg-cyber-surface rounded-xl overflow-hidden relative"
                                 style={{ border: `1px solid ${color}33` }}
                             >
-                                {/* image */}
                                 <div className="relative aspect-square bg-cyber-bg flex items-center justify-center" style={{ boxShadow: `inset 0 0 14px ${color}22` }}>
                                     <img
                                         src={resolveImage(it.image_url)}
@@ -259,21 +257,20 @@ export const InventoryPage = ({ refreshBalance }) => {
                                         style={{ filter: `drop-shadow(0 0 14px ${color}77)` }}
                                         draggable={false}
                                     />
-                                    {/* rarity chip */}
                                     <span
                                         className="absolute top-1.5 left-1.5 text-[8px] font-black uppercase tracking-[0.15em] px-1.5 py-0.5 rounded"
                                         style={{ color, background: `${color}22`, border: `1px solid ${color}66` }}
                                     >
-                                        {RARITY_LABEL[it.rarity]}
+                                        {t(`rarity.${it.rarity}`)}
                                     </span>
-                                    {/* status chip */}
                                     {it.status !== "in_inventory" && (
                                         <span className="absolute top-1.5 right-1.5 text-[8px] font-black uppercase tracking-[0.1em] px-1.5 py-0.5 rounded bg-black/70 text-white/70 border border-white/15">
-                                            {it.status === "withdraw_pending" ? "pending" : it.status}
+                                            {it.status === "withdraw_pending"
+                                                ? t("collection.status_pending")
+                                                : it.status}
                                         </span>
                                     )}
                                 </div>
-                                {/* body */}
                                 <div className="p-2.5">
                                     <div className="text-xs font-bold text-white truncate" title={it.item_name}>
                                         {it.item_name}
@@ -287,7 +284,6 @@ export const InventoryPage = ({ refreshBalance }) => {
                                             {it.case_name || it.case_id}
                                         </span>
                                     </div>
-                                    {/* actions */}
                                     {it.status === "in_inventory" && (
                                         <div className="flex gap-1 mt-2">
                                             <button
@@ -296,7 +292,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                                                 onClick={() => handleSell(it)}
                                                 className="flex-1 text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-cyber-cyan to-cyber-purple text-cyber-bg rounded-md py-1.5 disabled:opacity-50"
                                             >
-                                                Sell
+                                                {t("collection.sell")}
                                             </button>
                                             <button
                                                 data-testid={`inv-withdraw-${it.id}`}
@@ -304,7 +300,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                                                 onClick={() => handleWithdraw(it)}
                                                 className="flex-1 text-[9px] font-black uppercase tracking-wider bg-white/5 border border-white/15 hover:bg-white/10 transition text-white rounded-md py-1.5 disabled:opacity-50"
                                             >
-                                                Withdraw
+                                                {t("collection.withdraw")}
                                             </button>
                                         </div>
                                     )}

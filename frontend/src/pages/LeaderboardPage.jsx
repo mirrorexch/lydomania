@@ -1,20 +1,8 @@
-/**
- * Phase 4b — Leaderboard page (Wagered · Top Win · Referrers × Week · All-time).
- */
 import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Trophy, TrendingUp, Sparkles, Users as UsersIcon, Loader2, Crown } from "lucide-react";
+import { Trophy, TrendingUp, Sparkles, Users as UsersIcon, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { adminLeaderboard } from "@/lib/api";
-
-const VIEWS = [
-    { key: "wagered", label: "Wagered", icon: TrendingUp, unit: "TON" },
-    { key: "won_single", label: "Top Win", icon: Sparkles, unit: "TON" },
-    { key: "referrers", label: "Referrers", icon: UsersIcon, unit: "TON" },
-];
-const PERIODS = [
-    { key: "week", label: "This Week" },
-    { key: "all", label: "All-Time" },
-];
 
 const RANK_GLOW = {
     1: "shadow-[0_0_22px_rgba(250,204,21,0.55)] border-amber-400/60 bg-amber-400/8",
@@ -50,6 +38,7 @@ function Tabs({ items, value, onChange, testidPrefix }) {
 }
 
 function Row({ row, unit }) {
+    const { t } = useTranslation();
     const ringClass = RANK_GLOW[row.rank] || "border-white/8 bg-cyber-bg/45";
     const ribbon = RANK_LABEL[row.rank] || `#${row.rank}`;
     const display = (row.username || row.first_name || `user_${(row.telegram_id ?? "x").toString().slice(-4)}`).toString();
@@ -74,13 +63,13 @@ function Row({ row, unit }) {
             <div className="flex-1 min-w-0">
                 <div className="text-[12px] font-bold text-white/90 truncate">
                     {display}
-                    {row.is_self && <span className="ml-1.5 text-[9px] text-emerald-300 font-mono uppercase">you</span>}
+                    {row.is_self && <span className="ml-1.5 text-[9px] text-emerald-300 font-mono uppercase">{t("leaderboard.you")}</span>}
                 </div>
                 {row.extra && Object.keys(row.extra).length > 0 && (
                     <div className="text-[9.5px] text-white/40 truncate">
-                        {row.extra.opens != null && <>{row.extra.opens} opens</>}
-                        {row.extra.case_id && <>· {row.extra.case_id} · {row.extra.item_slug}</>}
-                        {row.extra.credits != null && <>· {row.extra.credits} credits</>}
+                        {row.extra.opens != null && <>{t("leaderboard.extra_opens", { n: row.extra.opens })}</>}
+                        {row.extra.case_id && <>{" · "}{row.extra.case_id} · {row.extra.item_slug}</>}
+                        {row.extra.credits != null && <>{" · "}{t("leaderboard.extra_credits", { n: row.extra.credits })}</>}
                     </div>
                 )}
             </div>
@@ -95,11 +84,22 @@ function Row({ row, unit }) {
 }
 
 export const LeaderboardPage = () => {
+    const { t } = useTranslation();
     const [view, setView] = useState("wagered");
     const [period, setPeriod] = useState("week");
     const [data, setData] = useState(null);
     const [err, setErr] = useState(null);
     const [busy, setBusy] = useState(false);
+
+    const VIEWS = [
+        { key: "wagered", label: t("leaderboard.view_wagered"), icon: TrendingUp, unit: "TON" },
+        { key: "won_single", label: t("leaderboard.view_top_win"), icon: Sparkles, unit: "TON" },
+        { key: "referrers", label: t("leaderboard.view_referrers"), icon: UsersIcon, unit: "TON" },
+    ];
+    const PERIODS = [
+        { key: "week", label: t("leaderboard.period_week") },
+        { key: "all", label: t("leaderboard.period_all") },
+    ];
 
     const load = useCallback(async () => {
         setBusy(true); setErr(null);
@@ -107,23 +107,23 @@ export const LeaderboardPage = () => {
             const r = await adminLeaderboard(view, period, 100);
             setData(r);
         } catch (e) {
-            setErr(e?.response?.data?.detail || e?.message || "load failed");
+            setErr(e?.response?.data?.detail || e?.message || t("admin.digest.load_failed"));
             setData(null);
         } finally {
             setBusy(false);
         }
-    }, [view, period]);
+    }, [view, period, t]);
 
     useEffect(() => { load(); }, [load]);
 
     const viewMeta = VIEWS.find((v) => v.key === view) || VIEWS[0];
 
     return (
-        <div data-testid="leaderboard-page" className="pb-24">
+        <div data-testid="leaderboard-page" className="pb-24 max-w-[430px] mx-auto px-4 pt-3">
             <div className="flex items-center gap-2 mb-3">
                 <Trophy className="w-5 h-5 text-amber-300" />
                 <h1 className="text-2xl font-black uppercase tracking-tight bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 bg-clip-text text-transparent">
-                    Leaderboard
+                    {t("leaderboard.title")}
                 </h1>
             </div>
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -134,13 +134,13 @@ export const LeaderboardPage = () => {
 
             {data?.me && data.me.rank > 100 && (
                 <div className="mb-2.5 text-[10.5px] uppercase tracking-wider font-bold text-emerald-300/85">
-                    Your rank · #{data.me.rank}
+                    {t("leaderboard.your_rank", { rank: data.me.rank })}
                 </div>
             )}
             {data?.me && data.me.rank > 100 && <Row row={data.me} unit={viewMeta.unit} />}
             {data?.me_rank == null && period === "week" && (
                 <div className="text-[10.5px] text-white/40 mb-2">
-                    No wagering activity this week — open a case to climb the board.
+                    {t("leaderboard.no_activity_week")}
                 </div>
             )}
 
@@ -151,7 +151,10 @@ export const LeaderboardPage = () => {
 
             {data && data.rows.length === 0 && !err && (
                 <div className="text-center py-12 text-white/40 text-[12px]">
-                    No data yet for {viewMeta.label} · {period === "week" ? "this week" : "all-time"}.
+                    {t("leaderboard.empty", {
+                        view: viewMeta.label,
+                        period: period === "week" ? t("leaderboard.this_week_short") : t("leaderboard.all_time_short"),
+                    })}
                 </div>
             )}
 
@@ -162,7 +165,7 @@ export const LeaderboardPage = () => {
             )}
             {data?.generated_at && (
                 <div className="text-[9px] text-white/25 uppercase tracking-wider text-center mt-4">
-                    updated {new Date(data.generated_at).toLocaleString()}
+                    {t("leaderboard.updated", { when: new Date(data.generated_at).toLocaleString() })}
                 </div>
             )}
         </div>

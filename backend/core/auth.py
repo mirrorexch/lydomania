@@ -81,6 +81,7 @@ async def upsert_user_from_tg(
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
     photo_url: Optional[str] = None,
+    language_code: Optional[str] = None,
 ) -> dict:
     user_id = secrets.token_hex(12)
     ref_code = gen_ref_code()
@@ -99,6 +100,7 @@ async def upsert_user_from_tg(
         "first_name": first_name,
         "last_name": last_name,
         "photo_url": photo_url,
+        "language_code": language_code,
     }.items():
         if v is not None:
             update_set[k] = v

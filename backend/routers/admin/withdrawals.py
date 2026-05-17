@@ -14,7 +14,9 @@ from core.models import (
 from core.time_utils import iso, now
 from routers.admin import admin
 from routers.withdrawals import withdrawal_doc_to_out
-from services.notifications import enqueue_notification
+from services.notifications import enqueue_t
+from services.i18n import bot_text, user_lang_code
+from core.db import users_col as _users_col
 
 
 async def _attach_user(d: dict) -> AdminWithdrawalOut:
@@ -80,10 +82,11 @@ async def admin_start_withdrawal(wid: str, user: dict = Depends(get_admin_user))
     if not d:
         raise HTTPException(status_code=409, detail="withdrawal not in 'pending' state")
     await inventory_col.update_one({"id": d["inventory_id"]}, {"$set": {"status": "withdraw_processing"}})
-    await enqueue_notification(
+    await enqueue_t(
         int(d["telegram_id"]),
-        f"⏳ Your withdrawal for <b>{d['item_name']}</b> is now being processed by our team.",
+        "withdraw_processing",
         kind="withdraw_processing",
+        item=d["item_name"],
     )
     return await _attach_user(d)
 
@@ -106,13 +109,25 @@ async def admin_fulfill_withdrawal(wid: str, payload: AdminFulfillIn, user: dict
         raise HTTPException(status_code=409, detail="withdrawal not in 'pending'/'processing'")
     await inventory_col.update_one({"id": d["inventory_id"]}, {"$set": {"status": "withdrawn"}})
     tx_url = f"https://tonviewer.com/transaction/{payload.tx_hash.strip()}"
-    variant_line = (f"Variant: <i>{payload.purchased_variant_info}</i>\n" if payload.purchased_variant_info else "Variant: <i>cheapest available (floor)</i>\n")
-    await enqueue_notification(
+    # Pre-render the localized "Variant: …" line for this user's language.
+    target = await _users_col.find_one(
+        {"telegram_id": int(d["telegram_id"])},
+        projection={"_id": 0, "language_code": 1},
+    )
+    lang = user_lang_code(target)
+    variant_line = (
+        bot_text(lang, "withdraw_fulfilled_variant_line_with", info=payload.purchased_variant_info)
+        if payload.purchased_variant_info
+        else bot_text(lang, "withdraw_fulfilled_variant_line_floor")
+    )
+    await enqueue_t(
         int(d["telegram_id"]),
-        (f"✅ <b>{d['item_name']} delivered!</b>\n{variant_line}"
-         f"Sent to: <code>{d['destination_address'][:6]}…{d['destination_address'][-6:]}</code>\n"
-         f"<a href=\"{tx_url}\">View transaction on TonViewer</a>"),
+        "withdraw_fulfilled",
         kind="withdraw_fulfilled",
+        item=d["item_name"],
+        variant_line=variant_line,
+        addr_short=f"{d['destination_address'][:6]}…{d['destination_address'][-6:]}",
+        tx_url=tx_url,
     )
     return await _attach_user(d)
 
@@ -134,12 +149,12 @@ async def admin_reject_withdrawal(wid: str, payload: AdminRejectIn, user: dict =
         {"id": d["inventory_id"]},
         {"$set": {"status": "in_inventory"}, "$unset": {"withdraw_requested_at": ""}},
     )
-    await enqueue_notification(
+    await enqueue_t(
         int(d["telegram_id"]),
-        (f"❌ Withdrawal for <b>{d['item_name']}</b> was rejected.\n"
-         f"Reason: <i>{payload.rejection_reason.strip()}</i>\n\n"
-         f"The item is back in your collection — you can keep it, sell it, or try again."),
+        "withdraw_rejected",
         kind="withdraw_rejected",
+        item=d["item_name"],
+        reason=payload.rejection_reason.strip(),
     )
     return await _attach_user(d)
 

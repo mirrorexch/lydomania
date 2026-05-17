@@ -7,6 +7,7 @@ import os
 from aiogram import F, Router
 from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.types import (
+    CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
@@ -14,6 +15,7 @@ from aiogram.types import (
 )
 
 from bot import internal_client
+from services.i18n import bot_text, pick_lang
 
 router = Router(name="lydomania")
 
@@ -28,12 +30,23 @@ def _mini_app_url(extra_query: str = "") -> str:
     return url
 
 
-def play_keyboard(deep_link: str = "") -> InlineKeyboardMarkup:
+def _lang_from_message(message: Message) -> str:
+    """
+    Pick the best language for a bot reply. Order:
+      1. Persisted users.language_code (if we have an account)
+      2. Telegram client's language_code
+      3. en fallback
+    """
+    return pick_lang(getattr(message.from_user, "language_code", None))
+
+
+def play_keyboard(deep_link: str = "", lang: str = "en") -> InlineKeyboardMarkup:
+    label = "🎰 Открыть Lydomania" if lang == "ru" else "🎰 Open Lydomania"
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🎰 Open Lydomania",
+                    text=label,
                     web_app=WebAppInfo(url=_mini_app_url(deep_link)),
                 )
             ]
@@ -41,12 +54,13 @@ def play_keyboard(deep_link: str = "") -> InlineKeyboardMarkup:
     )
 
 
-def deposit_keyboard() -> InlineKeyboardMarkup:
+def deposit_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    label = "📥 Пополнить" if lang == "ru" else "📥 Deposit"
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="📥 Deposit",
+                    text=label,
                     web_app=WebAppInfo(url=_mini_app_url("screen=deposit")),
                 )
             ]
@@ -71,44 +85,32 @@ def cases_keyboard(cases: list[dict]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-WELCOME_TEXT = (
-    "🎰 <b>Добро пожаловать в Lydomania!</b>\n"
-    "Открывай кейсы на TON — выигрывай Telegram-подарки 🎁\n"
-    "\n"
-    "🎰 <b>Welcome to Lydomania!</b>\n"
-    "Open TON cases — win Telegram NFT gifts 🎁\n"
-    "\n"
-    "Tap the button below to play 👇"
-)
+def lang_picker_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[
+            InlineKeyboardButton(text="🇷🇺 Русский", callback_data="set_lang:ru"),
+            InlineKeyboardButton(text="🇬🇧 English", callback_data="set_lang:en"),
+        ]]
+    )
 
 
-REF_WELCOME_SUFFIX = (
-    "\n\n🎁 You were invited by a friend. Your wager rewards are connected — "
-    "they earn a small share when you play."
-)
-
-
-HELP_TEXT = (
-    "🎮 <b>Lydomania · TON Casino</b>\n"
-    "\n"
-    "• 5 кейсов от 10 до 250 TON\n"
-    "• Provably fair (commit-reveal)\n"
-    "• Выигрыши — Telegram NFT-подарки\n"
-    "• Сеть: TON Mainnet\n"
-    "\n"
-    "Команды:\n"
-    "/start — open Mini App\n"
-    "/balance — your TON balance\n"
-    "/deposit — get a deposit memo\n"
-    "/cases — pick a case\n"
-    "/help — this message\n"
-)
+async def _persist_lang(tg_user) -> None:
+    """Best-effort sync of the user's Telegram language_code to DB."""
+    if not tg_user or not getattr(tg_user, "id", None):
+        return
+    code = pick_lang(getattr(tg_user, "language_code", None))
+    try:
+        await internal_client.set_user_language(tg_user.id, code)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, command: CommandObject) -> None:
     """Handle /start, including ref deep-link payloads /start ref_CODE."""
-    text = WELCOME_TEXT
+    await _persist_lang(message.from_user)
+    lang = _lang_from_message(message)
+    text = bot_text(lang, "welcome")
     if command and command.args:
         arg = command.args.strip()
         if arg.startswith("ref_"):
@@ -117,103 +119,131 @@ async def cmd_start(message: Message, command: CommandObject) -> None:
                 await internal_client.tag_referral(message.from_user.id, code)
             except Exception:  # noqa: BLE001
                 pass
-            text = WELCOME_TEXT + REF_WELCOME_SUFFIX
+            text = text + bot_text(lang, "welcome_ref_suffix")
 
     await message.answer(
         text,
         parse_mode="HTML",
-        reply_markup=play_keyboard(),
+        reply_markup=play_keyboard(lang=lang),
         disable_web_page_preview=True,
     )
 
 
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
+    await _persist_lang(message.from_user)
+    lang = _lang_from_message(message)
     await message.answer(
-        HELP_TEXT,
+        bot_text(lang, "help"),
         parse_mode="HTML",
-        reply_markup=play_keyboard(),
+        reply_markup=play_keyboard(lang=lang),
         disable_web_page_preview=True,
     )
 
 
 @router.message(Command("balance"))
 async def cmd_balance(message: Message) -> None:
+    await _persist_lang(message.from_user)
+    lang = _lang_from_message(message)
     try:
         info = await internal_client.get_balance(message.from_user.id)
-    except Exception as e:  # noqa: BLE001
+    except Exception:  # noqa: BLE001
         await message.answer(
-            "⚠️ Couldn't fetch balance right now. Try again in a moment.",
-            reply_markup=play_keyboard(),
+            bot_text(lang, "balance_fetch_error"),
+            reply_markup=play_keyboard(lang=lang),
         )
         return
     if not info.get("exists"):
         await message.answer(
-            "👋 You don't have an account yet. Open the Mini App below to play.",
-            reply_markup=play_keyboard(),
+            bot_text(lang, "balance_no_account"),
+            reply_markup=play_keyboard(lang=lang),
         )
         return
     bal = float(info.get("balance_ton", 0))
     ref = float(info.get("referral_balance_ton", 0))
-    text = (
-        f"💰 <b>Balance:</b> {bal:.2f} TON\n"
-        f"🎁 <b>Referral pot:</b> {ref:.2f} TON"
+    await message.answer(
+        bot_text(lang, "balance_text", bal=bal, ref=ref),
+        parse_mode="HTML",
+        reply_markup=deposit_keyboard(lang=lang),
     )
-    await message.answer(text, parse_mode="HTML", reply_markup=deposit_keyboard())
 
 
 @router.message(Command("deposit"))
 async def cmd_deposit(message: Message) -> None:
+    await _persist_lang(message.from_user)
+    lang = _lang_from_message(message)
     try:
         intent = await internal_client.deposit_intent(message.from_user.id)
     except Exception:  # noqa: BLE001
         await message.answer(
-            "⚠️ Couldn't generate a deposit memo. Open the Mini App for instructions.",
-            reply_markup=play_keyboard(),
+            bot_text(lang, "deposit_intent_fail"),
+            reply_markup=play_keyboard(lang=lang),
         )
         return
-    address = intent["address"]
-    memo = intent["memo"]
-    text = (
-        "📥 <b>Deposit TON</b>\n\n"
-        f"<b>Vault address:</b>\n<code>{address}</code>\n\n"
-        f"<b>Memo (comment, required):</b>\n<code>{memo}</code>\n\n"
-        "⚠️ Send any TON to that address with this exact memo. "
-        "Auto-credited within ~30 seconds of confirmation."
-    )
     await message.answer(
-        text,
+        bot_text(lang, "deposit_text", address=intent["address"], memo=intent["memo"]),
         parse_mode="HTML",
-        reply_markup=play_keyboard("screen=deposit"),
+        reply_markup=play_keyboard("screen=deposit", lang=lang),
         disable_web_page_preview=True,
     )
 
 
 @router.message(Command("cases"))
 async def cmd_cases(message: Message) -> None:
+    await _persist_lang(message.from_user)
+    lang = _lang_from_message(message)
     try:
         cases = await internal_client.list_cases()
     except Exception:  # noqa: BLE001
         await message.answer(
-            "⚠️ Couldn't fetch cases. Open the Mini App.",
-            reply_markup=play_keyboard(),
+            bot_text(lang, "cases_fetch_fail"),
+            reply_markup=play_keyboard(lang=lang),
         )
         return
     if not cases:
-        await message.answer("No cases enabled yet.", reply_markup=play_keyboard())
+        await message.answer(bot_text(lang, "cases_none"), reply_markup=play_keyboard(lang=lang))
         return
     await message.answer(
-        "🎰 <b>Cases</b> — pick a tier:",
+        bot_text(lang, "cases_pick"),
         parse_mode="HTML",
         reply_markup=cases_keyboard(cases),
     )
 
 
+@router.message(Command("lang"))
+async def cmd_lang(message: Message) -> None:
+    lang = _lang_from_message(message)
+    await message.answer(
+        bot_text(lang, "lang_picker_title"),
+        reply_markup=lang_picker_keyboard(),
+    )
+
+
+@router.callback_query(F.data.startswith("set_lang:"))
+async def cb_set_lang(cb: CallbackQuery) -> None:
+    chosen = pick_lang(cb.data.split(":", 1)[1])
+    try:
+        await internal_client.set_user_language(cb.from_user.id, chosen)
+    except Exception:  # noqa: BLE001
+        pass
+    await cb.message.answer(
+        bot_text(chosen, "lang_updated"),
+        parse_mode="HTML",
+        reply_markup=play_keyboard(lang=chosen),
+    )
+    try:
+        await cb.answer()
+    except Exception:  # noqa: BLE001
+        pass
+
+
 @router.message(F.text)
 async def fallback_text(message: Message) -> None:
     """Any other text message — gently nudge user to the WebApp."""
+    await _persist_lang(message.from_user)
+    lang = _lang_from_message(message)
     await message.answer(
-        "🎰 Открой Lydomania кнопкой ниже / Tap to play 👇",
-        reply_markup=play_keyboard(),
+        bot_text(lang, "fallback_tap_to_play"),
+        reply_markup=play_keyboard(lang=lang),
         disable_web_page_preview=True,
     )

@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import "@/lib/i18n";  // must run before any t() call
+import { useTranslation } from "react-i18next";
 import "@/App.css";
 import { Toaster, toast } from "sonner";
 
@@ -15,9 +17,9 @@ import { AdminWithdrawalsPage } from "@/pages/AdminWithdrawalsPage";
 import { AdminCasesPage } from "@/pages/AdminCasesPage";
 import { AdminItemsPage } from "@/pages/AdminItemsPage";
 import { AdminSettingsPage } from "@/pages/AdminSettingsPage";
-import { AdminPromosPage } from "@/pages/AdminPromosPage";          // Phase 4b
-import { AdminDigestPage } from "@/pages/AdminDigestPage";          // Phase 4b
-import { LeaderboardPage } from "@/pages/LeaderboardPage";          // Phase 4b
+import { AdminPromosPage } from "@/pages/AdminPromosPage";
+import { AdminDigestPage } from "@/pages/AdminDigestPage";
+import { LeaderboardPage } from "@/pages/LeaderboardPage";
 import { AdminLayout } from "@/components/AdminSubnav";
 import { DevCreditFab } from "@/components/DevCreditFab";
 import {
@@ -35,6 +37,7 @@ import {
 } from "@/lib/telegram";
 
 function App() {
+    const { t } = useTranslation();
     const [bootState, setBootState] = useState("loading");
     const [user, setUser] = useState(null);
     const [balance, setBalance] = useState(0);
@@ -64,7 +67,7 @@ function App() {
                 setBootState("ready");
                 return;
             } catch (e) {
-                toast.error("Telegram auth failed", {
+                toast.error(t("auth.telegram_failed"), {
                     description: e?.response?.data?.detail || e?.message,
                 });
             }
@@ -79,12 +82,12 @@ function App() {
                 setBootState("ready");
                 return;
             } catch (e) {
-                toast.error("Dev login failed", { description: e?.message });
+                toast.error(t("auth.dev_failed"), { description: e?.message });
             }
         }
 
         setBootState("out");
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         boot();
@@ -116,7 +119,9 @@ function App() {
             <div data-testid="boot-loading" className="min-h-screen flex items-center justify-center cyber-grid-bg">
                 <div className="flex items-center gap-3 text-white/60">
                     <div className="w-3 h-3 rounded-full bg-cyber-cyan animate-shimmer" />
-                    <span className="font-display font-bold tracking-[0.2em] text-sm uppercase">Connecting…</span>
+                    <span className="font-display font-bold tracking-[0.2em] text-sm uppercase">
+                        {t("boot.connecting")}
+                    </span>
                 </div>
             </div>
         );

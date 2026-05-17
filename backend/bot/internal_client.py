@@ -9,7 +9,6 @@ import httpx
 
 
 def _base() -> str:
-    # Backend is reachable locally via supervisor on :8001
     return os.environ.get("BACKEND_INTERNAL_URL", "http://127.0.0.1:8001")
 
 
@@ -51,6 +50,19 @@ async def tag_referral(telegram_id: int, ref_code: str) -> Optional[dict[str, An
                 f"{_base()}/api/internal/referrals/tag",
                 headers={**_headers(), "Content-Type": "application/json"},
                 json={"telegram_id": telegram_id, "ref_code": ref_code},
+            )
+            return r.json() if r.status_code == 200 else None
+    except httpx.HTTPError:
+        return None
+
+
+async def set_user_language(telegram_id: int, language_code: str) -> Optional[dict[str, Any]]:
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as c:
+            r = await c.post(
+                f"{_base()}/api/internal/user/{telegram_id}/language",
+                headers={**_headers(), "Content-Type": "application/json"},
+                json={"language_code": language_code},
             )
             return r.json() if r.status_code == 200 else None
     except httpx.HTTPError:

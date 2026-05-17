@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useTonConnectUI, useTonAddress } from "@tonconnect/ui-react";
 import { beginCell, toNano, Address } from "@ton/core";
 import { Copy, X, Diamond, ArrowDownToLine, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { fetchDepositAddress, fetchBalance } from "@/lib/api";
 
 const PRESETS = [10, 25, 50, 100, 250];
@@ -14,11 +15,12 @@ function shorten(addr) {
 }
 
 export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
+    const { t } = useTranslation();
     const [tonConnectUI] = useTonConnectUI();
     const walletAddress = useTonAddress();
 
     const [loadingIntent, setLoadingIntent] = useState(false);
-    const [intent, setIntent] = useState(null); // { address, memo, expires_at }
+    const [intent, setIntent] = useState(null);
     const [amount, setAmount] = useState(10);
     const [sending, setSending] = useState(false);
     const [polling, setPolling] = useState(false);
@@ -32,29 +34,29 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                 const d = await fetchDepositAddress();
                 if (!cancelled) setIntent(d);
             } catch (e) {
-                toast.error("Failed to load deposit address", {
-                    description: e?.message || "Try again in a moment",
+                toast.error(t("deposit_modal.address_load_failed"), {
+                    description: e?.message || t("deposit_modal.try_again"),
                 });
             } finally {
                 if (!cancelled) setLoadingIntent(false);
             }
         })();
         return () => { cancelled = true; };
-    }, [open]);
+    }, [open, t]);
 
     const expiresLabel = useMemo(() => {
         if (!intent?.expires_at) return "";
         const exp = new Date(intent.expires_at).getTime();
         const mins = Math.max(0, Math.floor((exp - Date.now()) / 60000));
-        return `${mins} min`;
-    }, [intent]);
+        return t("deposit_modal.minutes_short", { n: mins });
+    }, [intent, t]);
 
-    const copy = async (text, label = "copied") => {
+    const copy = async (text, label) => {
         try {
             await navigator.clipboard.writeText(text);
-            toast.success(`${label}`, { duration: 1500 });
+            toast.success(label, { duration: 1500 });
         } catch {
-            toast.error("Couldn't copy");
+            toast.error(t("common.copy_failed"));
         }
     };
 
@@ -66,13 +68,12 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
         }
         const amt = Number(amount);
         if (!amt || amt <= 0) {
-            toast.error("Enter a valid amount");
+            toast.error(t("deposit_modal.amount_invalid"));
             return;
         }
 
         setSending(true);
         try {
-            // Build a text-comment payload: op=0 (uint32) + utf-8 bytes
             const payload = beginCell()
                 .storeUint(0, 32)
                 .storeStringTail(intent.memo)
@@ -80,28 +81,18 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                 .toBoc()
                 .toString("base64");
 
-            // Normalize address (UQ form -> raw or EQ both fine for ton-connect)
             const dest = Address.parse(intent.address).toString({
-                bounceable: false,
-                urlSafe: true,
-                testOnly: false,
+                bounceable: false, urlSafe: true, testOnly: false,
             });
 
             await tonConnectUI.sendTransaction({
                 validUntil: Math.floor(Date.now() / 1000) + 360,
-                messages: [
-                    {
-                        address: dest,
-                        amount: toNano(amt.toString()).toString(),
-                        payload,
-                    },
-                ],
+                messages: [{ address: dest, amount: toNano(amt.toString()).toString(), payload }],
             });
 
-            toast.success("Transaction sent · waiting for confirmation", {
-                description: `Polling vault for ${amt} TON…`,
+            toast.success(t("deposit_modal.tx_sent_title"), {
+                description: t("deposit_modal.tx_sent_subtitle", { amount: amt }),
             });
-            // Poll backend balance for 2 min
             setPolling(true);
             const startedAt = Date.now();
             const initialBal = Number(currentBalance || 0);
@@ -111,25 +102,23 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                     if (b > initialBal + amt * 0.999) {
                         clearInterval(interval);
                         setPolling(false);
-                        toast.success("Deposit credited", {
-                            description: `+${amt} TON`,
+                        toast.success(t("deposit_modal.credited_title"), {
+                            description: t("deposit_modal.credited_subtitle", { amount: amt }),
                         });
                         onCredited?.(b);
                         onClose?.();
                     } else if (Date.now() - startedAt > 120000) {
                         clearInterval(interval);
                         setPolling(false);
-                        toast.message("Still waiting…", {
-                            description: "Network might be slow. Check back soon.",
+                        toast.message(t("deposit_modal.still_waiting"), {
+                            description: t("deposit_modal.still_waiting_sub"),
                         });
                     }
-                } catch {
-                    /* ignore transient errors */
-                }
+                } catch { /* ignore */ }
             }, 5000);
         } catch (e) {
-            const msg = e?.message || "Transaction cancelled or failed";
-            toast.error("Payment failed", { description: msg });
+            const msg = e?.message || t("deposit_modal.tx_failed_default");
+            toast.error(t("deposit_modal.tx_failed"), { description: msg });
         } finally {
             setSending(false);
         }
@@ -141,17 +130,13 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                 <motion.div
                     data-testid="deposit-modal-overlay"
                     className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     onClick={onClose}
                 >
                     <motion.div
                         data-testid="deposit-modal"
                         className="relative w-full sm:max-w-md bg-cyber-surface border border-cyber-purple/30 rounded-t-3xl sm:rounded-3xl p-6 shadow-[0_-10px_60px_rgba(138,43,226,0.25)]"
-                        initial={{ y: "100%" }}
-                        animate={{ y: 0 }}
-                        exit={{ y: "100%" }}
+                        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                         transition={{ type: "spring", damping: 28, stiffness: 280 }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -169,10 +154,10 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                             </div>
                             <div>
                                 <h2 className="font-display text-xl font-bold leading-none">
-                                    Deposit TON
+                                    {t("deposit_modal.title")}
                                 </h2>
                                 <p className="text-xs text-white/50 mt-1">
-                                    Send TON to vault · auto-credited
+                                    {t("deposit_modal.subtitle")}
                                 </p>
                             </div>
                         </div>
@@ -180,18 +165,17 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                         {loadingIntent || !intent ? (
                             <div className="py-12 flex items-center justify-center text-white/50">
                                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                Preparing deposit…
+                                {t("deposit_modal.preparing")}
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {/* Address */}
                                 <div>
                                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-1.5">
-                                        Vault address
+                                        {t("deposit_modal.vault_address")}
                                     </div>
                                     <div
                                         data-testid="vault-address-box"
-                                        onClick={() => copy(intent.address, "Address copied")}
+                                        onClick={() => copy(intent.address, t("deposit_modal.address_copied"))}
                                         className="flex items-center justify-between gap-2 bg-cyber-bg border border-white/10 rounded-xl p-3 cursor-pointer hover:border-cyber-cyan/40 transition"
                                     >
                                         <span className="font-mono text-xs text-white truncate">
@@ -201,14 +185,13 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                                     </div>
                                 </div>
 
-                                {/* Memo */}
                                 <div>
                                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-1.5">
-                                        Memo (comment) · required · expires in {expiresLabel}
+                                        {t("deposit_modal.memo_label", { ttl: expiresLabel })}
                                     </div>
                                     <div
                                         data-testid="memo-box"
-                                        onClick={() => copy(intent.memo, "Memo copied")}
+                                        onClick={() => copy(intent.memo, t("deposit_modal.memo_copied"))}
                                         className="flex items-center justify-between gap-2 bg-cyber-bg border border-cyber-cyan/30 rounded-xl p-3 cursor-pointer hover:border-cyber-cyan/60 transition"
                                     >
                                         <span className="font-mono text-xs text-cyber-cyan truncate">
@@ -218,10 +201,9 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                                     </div>
                                 </div>
 
-                                {/* Amount */}
                                 <div>
                                     <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-1.5">
-                                        Amount (TON)
+                                        {t("deposit_modal.amount_label")}
                                     </div>
                                     <div className="relative">
                                         <input
@@ -253,7 +235,6 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                                     </div>
                                 </div>
 
-                                {/* CTA */}
                                 <button
                                     data-testid="pay-with-tonconnect-btn"
                                     onClick={handlePay}
@@ -261,19 +242,15 @@ export const DepositModal = ({ open, onClose, onCredited, currentBalance }) => {
                                     className="w-full bg-gradient-to-r from-cyber-purple to-cyber-cyan text-white font-display font-bold text-base rounded-xl px-6 py-4 shadow-neon-purple hover:shadow-neon-cyan transition-all uppercase tracking-wide disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {sending ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" /> Opening wallet…
-                                        </>
+                                        <><Loader2 className="w-4 h-4 animate-spin" /> {t("deposit_modal.opening_wallet")}</>
                                     ) : polling ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" /> Waiting for confirmation…
-                                        </>
+                                        <><Loader2 className="w-4 h-4 animate-spin" /> {t("deposit_modal.waiting_confirm")}</>
                                     ) : (
-                                        <>Pay with TON Connect</>
+                                        <>{t("deposit_modal.pay_btn")}</>
                                     )}
                                 </button>
                                 <p className="text-[10px] text-white/40 text-center -mt-1">
-                                    The memo is auto-attached as a comment. Don't edit it in your wallet.
+                                    {t("deposit_modal.memo_warn")}
                                 </p>
                             </div>
                         )}

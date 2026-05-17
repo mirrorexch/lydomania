@@ -13,7 +13,7 @@ from core.db import inventory_col, withdrawals_col
 from core.models import WithdrawalOut, WithdrawRequestIn
 from core.time_utils import iso, now
 from core.ton import static_url
-from services.notifications import enqueue_notification
+from services.notifications import enqueue_t
 
 router = APIRouter(prefix="/api")
 
@@ -88,12 +88,13 @@ async def withdraw_inventory(
         "rejected_at": None, "cancelled_at": None, "admin_user_id": None,
         "created_at": now_iso,
     })
-    await enqueue_notification(
+    await enqueue_t(
         int(user["telegram_id"]),
-        (f"📤 <b>Withdrawal queued</b>\nItem: <b>{item['item_name']}</b>\n"
-         f"Value: {float(item['payout_ton']):.2f} TON\nTo: <code>{addr[:6]}…{addr[-6:]}</code>\n\n"
-         f"We'll deliver the NFT gift within 24 hours."),
+        "withdraw_queued",
         kind="withdraw_queued",
+        item=item["item_name"],
+        value=float(item["payout_ton"]),
+        addr_short=f"{addr[:6]}…{addr[-6:]}",
     )
     return {"id": req_id, "status": "pending", "inventory_id": inv_id, "destination_address": addr}
 
@@ -125,9 +126,10 @@ async def cancel_withdrawal(wid: str, user: dict = Depends(get_current_user)) ->
         {"id": w["inventory_id"], "user_id": user["id"]},
         {"$set": {"status": "in_inventory"}, "$unset": {"withdraw_requested_at": ""}},
     )
-    await enqueue_notification(
+    await enqueue_t(
         int(user["telegram_id"]),
-        f"↩️ Withdrawal cancelled for <b>{w['item_name']}</b>. The item is back in your collection.",
+        "withdraw_cancelled",
         kind="withdraw_cancelled",
+        item=w["item_name"],
     )
     return withdrawal_doc_to_out(w)

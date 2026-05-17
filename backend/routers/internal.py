@@ -63,6 +63,15 @@ async def internal_cases() -> list[InternalCaseTile]:
     return out
 
 
+@router.post("/user/{telegram_id}/language", dependencies=[Depends(verify_internal_secret)])
+async def internal_set_user_language(telegram_id: int, payload: dict) -> dict:
+    """Persist user's chosen bot language (en/ru). Upserts the user if missing."""
+    raw = (payload or {}).get("language_code", "en")
+    lang = "ru" if str(raw).lower().startswith("ru") else "en"
+    user = await upsert_user_from_tg(telegram_id=telegram_id, language_code=lang)
+    return {"ok": True, "user_id": user["id"], "language_code": lang}
+
+
 @router.get("/mini-app-url", dependencies=[Depends(verify_internal_secret)])
 async def internal_mini_app_url() -> dict:
     return {"url": MINI_APP_URL}

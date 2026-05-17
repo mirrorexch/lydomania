@@ -33,6 +33,7 @@ async def auth_telegram(payload: TelegramAuthIn) -> AuthOut:
         first_name=user_payload.get("first_name"),
         last_name=user_payload.get("last_name"),
         photo_url=user_payload.get("photo_url"),
+        language_code=user_payload.get("language_code"),
     )
     token = issue_jwt(user["id"], telegram_id)
     logger.info("AUTH telegram_id=%s user_id=%s", telegram_id, user["id"])

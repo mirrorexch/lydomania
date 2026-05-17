@@ -19,7 +19,7 @@ from core.models import (
 from core.time_utils import iso, now
 from core.ton import static_url
 from routers.fair import get_or_create_fair_state, rotate_fair_state
-from services.notifications import enqueue_notification
+from services.notifications import enqueue_t
 from services.referral_ladder import tier_pct_for_user_count
 
 router = APIRouter(prefix="/api")
@@ -62,16 +62,17 @@ async def _maybe_enqueue_big_win_dm(
     if not tg:
         return
     name = item_meta.get("name") or "your gift"
-    rarity = (item_meta.get("rarity") or "common").upper()
     case_name = case.get("name") or case.get("id")
-    text = (
-        f"🔥 <b>HUGE WIN</b> · ×{mult:.2f}\n"
-        f"You just hit <b>{name}</b> [{rarity}] in <b>{case_name}</b>\n"
-        f"Payout: <b>{payout_ton:,.2f} TON</b>\n\n"
-        f"<i>Share the moment with your friends — they're missing out.</i>"
-    )
     try:
-        await enqueue_notification(int(tg), text, kind="big_win")
+        await enqueue_t(
+            int(tg),
+            "big_win",
+            kind="big_win",
+            item=name,
+            payout=payout_ton,
+            mult=mult,
+            case=case_name,
+        )
     except Exception as e:
         logger.warning("big_win DM enqueue failed (user=%s, roll=%s): %s", user.get("id"), roll_id, e)
 

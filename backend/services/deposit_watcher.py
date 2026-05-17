@@ -14,7 +14,7 @@ from core.config import (
 from core.db import deposits_col, intents_col, meta_col, users_col
 from core.time_utils import iso, now
 from core.ton import VAULT_ADDR_NB
-from services.notifications import enqueue_notification
+from services.notifications import enqueue_t
 
 
 async def _fetch_transactions(address: str, limit: int = 50) -> list[dict]:
@@ -105,12 +105,13 @@ async def _process_tx(tx: dict) -> None:
         u = await users_col.find_one({"id": user_id}, {"_id": 0})
         if u:
             tonscan = f"https://tonviewer.com/transaction/{tx_hash}"
-            await enqueue_notification(
+            await enqueue_t(
                 int(u["telegram_id"]),
-                (f"✅ <b>Deposit confirmed</b>\n<b>+{amount_ton:.4f} TON</b>\n"
-                 f"New balance: <b>{float(u.get('balance_ton', 0)) + amount_ton:.4f} TON</b>\n"
-                 f"<a href=\"{tonscan}\">View transaction</a>"),
+                "deposit_confirmed",
                 kind="deposit_confirmed",
+                amount=amount_ton,
+                new_balance=float(u.get("balance_ton", 0)) + amount_ton,
+                tonscan=tonscan,
             )
     else:
         logger.info("DEPOSIT seen (uncredited: bad/no memo) amount=%.9f tx=%s comment=%r", amount_ton, tx_hash, comment)

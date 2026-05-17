@@ -9,7 +9,7 @@ Telegram Mini App TON Casino — FastAPI + React + MongoDB, deployed via Docker 
 
 ```
 backend/       FastAPI app, watchers, scheduler, aiogram bot worker
-frontend/      React (CRA + craco) Telegram Mini App
+frontend/      React (CRA + craco) Telegram Mini App with RU/EN i18n
 deployment/    docker-compose stack, Caddyfile, Dockerfiles, ops scripts
 DEPLOY.md      11-part install guide for first-time operators
 SECURITY.md    Hardening checklist

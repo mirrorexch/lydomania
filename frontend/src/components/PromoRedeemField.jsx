@@ -4,9 +4,11 @@
 import React, { useState } from "react";
 import { Ticket, Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { promoRedeem } from "@/lib/api";
 
 export const PromoRedeemField = ({ onRedeemed, className = "" }) => {
+    const { t } = useTranslation();
     const [code, setCode] = useState("");
     const [busy, setBusy] = useState(false);
 
@@ -19,14 +21,17 @@ export const PromoRedeemField = ({ onRedeemed, className = "" }) => {
             const r = await promoRedeem(c);
             const applied = r.applied || {};
             const desc = applied.type === "ton_bonus"
-                ? `+${applied.credited_ton} TON credited (balance ${applied.new_balance_ton})`
-                : `+${applied.tokens_added} free-spin token(s) · total ${applied.free_spin_tokens}`;
-            toast.success(`Promo ${r.code} applied`, { description: desc, icon: <Check className="w-4 h-4" /> });
+                ? t("promo.applied_ton", { ton: applied.credited_ton, balance: applied.new_balance_ton })
+                : t("promo.applied_tokens", { tokens: applied.tokens_added, total: applied.free_spin_tokens });
+            toast.success(t("promo.applied_title", { code: r.code }), {
+                description: desc,
+                icon: <Check className="w-4 h-4" />,
+            });
             setCode("");
             onRedeemed?.(r);
         } catch (err) {
-            const detail = err?.response?.data?.detail || err?.message || "redeem failed";
-            toast.error("Promo failed", { description: detail, icon: <X className="w-4 h-4" /> });
+            const detail = err?.response?.data?.detail || err?.message || t("promo.failed_default");
+            toast.error(t("promo.failed_title"), { description: detail, icon: <X className="w-4 h-4" /> });
         } finally {
             setBusy(false);
         }
@@ -40,7 +45,7 @@ export const PromoRedeemField = ({ onRedeemed, className = "" }) => {
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
-                    placeholder="Promo code"
+                    placeholder={t("promo.placeholder")}
                     autoCapitalize="characters"
                     autoComplete="off"
                     spellCheck="false"
@@ -56,7 +61,7 @@ export const PromoRedeemField = ({ onRedeemed, className = "" }) => {
                 className="inline-flex items-center gap-1 text-[10.5px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/25 disabled:opacity-40 transition"
             >
                 {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                Redeem
+                {t("promo.redeem")}
             </button>
         </form>
     );

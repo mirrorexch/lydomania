@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Diamond, Sparkles, ShieldCheck, ArrowRight } from "lucide-react";
+import { useTranslation, Trans } from "react-i18next";
 import { fetchCases, resolveImage } from "@/lib/api";
 import { formatTON } from "@/lib/rarity";
 import { DailyFreeCaseTile } from "@/components/DailyFreeCaseTile";
 
-const TIER_BADGE = {
-    stickers_box: { label: "Tier 01 · Starter", glow: "from-cyber-cyan/30 to-cyber-purple/20" },
-    premium_pack: { label: "Tier 02 · Premium", glow: "from-cyber-purple/30 to-cyber-cyan/20" },
-    royal_chest: { label: "Tier 03 · Royal", glow: "from-cyber-purple/40 to-cyber-magenta/30" },
-    diamond_vault: { label: "Tier 04 · Diamond", glow: "from-cyber-cyan/40 to-cyber-magenta/30" },
-    mythic_crown: { label: "Tier 05 · Mythic", glow: "from-cyber-magenta/50 to-cyber-purple/40" },
+const TIER_KEYS = {
+    stickers_box: { glow: "from-cyber-cyan/30 to-cyber-purple/20" },
+    premium_pack: { glow: "from-cyber-purple/30 to-cyber-cyan/20" },
+    royal_chest: { glow: "from-cyber-purple/40 to-cyber-magenta/30" },
+    diamond_vault: { glow: "from-cyber-cyan/40 to-cyber-magenta/30" },
+    mythic_crown: { glow: "from-cyber-magenta/50 to-cyber-purple/40" },
 };
 
 export const CasesListPage = ({ balance }) => {
+    const { t } = useTranslation();
     const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -43,17 +45,19 @@ export const CasesListPage = ({ balance }) => {
                 <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-cyber-magenta/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative">
                     <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyber-cyan">
-                        Phase 1 · Live
+                        {t("cases_list.phase_chip")}
                     </span>
                     <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tighter mt-1 mb-2">
                         <span className="bg-gradient-to-r from-cyber-cyan to-cyber-purple bg-clip-text text-transparent">
-                            Pick your tier.
+                            {t("cases_list.tagline_top")}
                         </span>
-                        <br />Open. Win.
+                        <br />{t("cases_list.tagline_bot")}
                     </h1>
                     <p className="text-xs text-white/55 leading-relaxed">
-                        Each case is calibrated to <span className="text-cyber-cyan font-bold">90% RTP</span>.
-                        Every roll is HMAC-SHA256 provably fair. Sell or keep your gifts.
+                        <Trans
+                            i18nKey="cases_list.intro"
+                            components={{ strong: <span className="text-cyber-cyan font-bold" /> }}
+                        />
                     </p>
                 </div>
             </motion.section>
@@ -61,11 +65,14 @@ export const CasesListPage = ({ balance }) => {
             {/* Cases column */}
             <section data-testid="cases-list">
                 {loading ? (
-                    <div className="py-10 text-center text-white/40 text-sm">Loading cases…</div>
+                    <div className="py-10 text-center text-white/40 text-sm">{t("cases_list.loading")}</div>
                 ) : (
                     <div className="space-y-3">
                         {cases.map((c, i) => {
-                            const tier = TIER_BADGE[c.id] || { label: c.name, glow: "from-cyber-purple/30 to-cyber-cyan/20" };
+                            const tier = TIER_KEYS[c.id] || { glow: "from-cyber-purple/30 to-cyber-cyan/20" };
+                            const tierLabel = t(`case_tiers.${c.id}`, {
+                                defaultValue: c.name,
+                            });
                             const affordable = balance >= c.price_ton;
                             return (
                                 <motion.div
@@ -89,7 +96,7 @@ export const CasesListPage = ({ balance }) => {
                                             />
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/50">
-                                                    {tier.label}
+                                                    {tierLabel}
                                                 </div>
                                                 <h3 className="font-display text-lg font-bold text-white truncate">
                                                     {c.name}
@@ -103,12 +110,17 @@ export const CasesListPage = ({ balance }) => {
                                                         <span className="text-[9px] text-white/60 font-bold">TON</span>
                                                     </div>
                                                     <span className="text-[9px] uppercase font-bold tracking-wider text-white/40">
-                                                        {c.item_count} items · {c.actual_ev_pct.toFixed(0)}% RTP
+                                                        {t("cases_list.items_and_rtp", {
+                                                            count: c.item_count,
+                                                            rtp: c.actual_ev_pct.toFixed(0),
+                                                        })}
                                                     </span>
                                                 </div>
                                                 {!affordable && (
                                                     <div className="text-[9px] text-cyber-magenta font-bold mt-1">
-                                                        ▲ Need {formatTON(c.price_ton - balance)} more TON
+                                                        {t("cases_list.need_more_ton", {
+                                                            amount: formatTON(c.price_ton - balance),
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>
@@ -123,9 +135,9 @@ export const CasesListPage = ({ balance }) => {
             </section>
 
             <div className="pt-2 grid grid-cols-3 gap-2">
-                <Trust icon={ShieldCheck} label="Provably Fair" />
-                <Trust icon={Sparkles} label="Instant Roll" />
-                <Trust icon={Diamond} label="TON Mainnet" />
+                <Trust icon={ShieldCheck} label={t("cases_list.trust_provably_fair")} />
+                <Trust icon={Sparkles} label={t("cases_list.trust_instant_roll")} />
+                <Trust icon={Diamond} label={t("cases_list.trust_mainnet")} />
             </div>
         </main>
     );

@@ -1,14 +1,11 @@
 /**
  * Phase 4b — Daily Free Case tile (home + cases list).
- *
- * Shows availability + countdown + spin button. Reuses CaseOpenAnimation +
- * WinModal on the cases list page (we just navigate to /cases/free_case once
- * opened — same UX as paid cases).
  */
 import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Gift, Sparkles, Timer, Lock, Loader2 } from "lucide-react";
+import { Gift, Sparkles, Timer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { freeCaseCooldown } from "@/lib/api";
 
 function fmtCountdown(seconds) {
@@ -20,6 +17,7 @@ function fmtCountdown(seconds) {
 }
 
 export const DailyFreeCaseTile = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [status, setStatus] = useState(null);
     const [remaining, setRemaining] = useState(0);
@@ -32,7 +30,6 @@ export const DailyFreeCaseTile = () => {
             setStatus(r);
             setRemaining(Math.max(0, Number(r.seconds_remaining || 0)));
         } catch (e) {
-            // 404 means free case isn't configured — silently hide tile
             if (e?.response?.status === 404) { setStatus({ hidden: true }); return; }
             setErr(e?.response?.data?.detail || e?.message);
         }
@@ -42,8 +39,8 @@ export const DailyFreeCaseTile = () => {
 
     useEffect(() => {
         if (remaining <= 0) return;
-        const t = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
-        return () => clearInterval(t);
+        const tt = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
+        return () => clearInterval(tt);
     }, [remaining]);
 
     if (!status || status.hidden) return null;
@@ -67,13 +64,17 @@ export const DailyFreeCaseTile = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                        <h3 className="text-[13px] font-black uppercase tracking-wider text-emerald-100">Daily Free Spin</h3>
+                        <h3 className="text-[13px] font-black uppercase tracking-wider text-emerald-100">
+                            {t("free_case.title")}
+                        </h3>
                         <Sparkles className="w-3 h-3 text-emerald-300/70" />
                     </div>
                     <div className="text-[10.5px] text-emerald-200/70 leading-snug">
                         {isAvailable
-                            ? (usingToken ? `Use a free-spin token (${tokens} left) — bypass cooldown` : "Free reward available — spin once every 24h")
-                            : `Next spin in ${fmtCountdown(remaining)}`}
+                            ? (usingToken
+                                ? t("free_case.use_token", { tokens })
+                                : t("free_case.available"))
+                            : t("free_case.next_in", { time: fmtCountdown(remaining) })}
                     </div>
                 </div>
                 <button
@@ -87,8 +88,8 @@ export const DailyFreeCaseTile = () => {
                             : "bg-white/5 text-white/35 border border-white/10 cursor-not-allowed"}`}
                 >
                     {isAvailable
-                        ? <><Sparkles className="w-3.5 h-3.5" /> Spin</>
-                        : <><Timer className="w-3.5 h-3.5" /> Locked</>
+                        ? <><Sparkles className="w-3.5 h-3.5" /> {t("free_case.spin")}</>
+                        : <><Timer className="w-3.5 h-3.5" /> {t("free_case.locked")}</>
                     }
                 </button>
             </div>

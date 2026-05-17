@@ -1,18 +1,16 @@
 import React from "react";
 import { Diamond } from "lucide-react";
-import { RARITY_HEX, RARITY_GLOW, RARITY_LABEL, formatTON } from "@/lib/rarity";
+import { useTranslation } from "react-i18next";
+import { RARITY_HEX, RARITY_GLOW, formatTON } from "@/lib/rarity";
 import { resolveImage } from "@/lib/api";
 
-/**
- * A single item tile. `size` controls visual scale.
- * Used on the case detail "what's inside" grid, the roll strip, and inventory grid.
- */
 export const ItemTile = ({
-    item,           // { name|item_name, rarity, image_url|image_path, payout_ton, probability? }
-    size = "md",    // "sm" | "md" | "lg"
+    item,
+    size = "md",
     highlight = false,
     "data-testid": testId,
 }) => {
+    const { t } = useTranslation();
     const name = item.name || item.item_name || item.slug;
     const rarity = item.rarity || "common";
     const url = item.image_url || (item.image_path ? `/static/${item.image_path}` : "");
@@ -28,9 +26,6 @@ export const ItemTile = ({
 
     const ringColor = RARITY_HEX[rarity] || RARITY_HEX.common;
     const glow = RARITY_GLOW[rarity] || RARITY_GLOW.common;
-    const borderStyle = isJackpot
-        ? "linear-gradient(135deg,#00F0FF,#8A2BE2,#FF003C,#FFB800,#FF00E5) border-box"
-        : ringColor;
 
     return (
         <div
@@ -48,7 +43,6 @@ export const ItemTile = ({
                     : {}),
             }}
         >
-            {/* rarity tag */}
             <span
                 className={`absolute top-1.5 left-1.5 text-[8px] font-black uppercase tracking-[0.18em] px-1.5 py-0.5 rounded`}
                 style={{
@@ -57,10 +51,9 @@ export const ItemTile = ({
                     border: `1px solid ${ringColor}55`,
                 }}
             >
-                {RARITY_LABEL[rarity] || rarity}
+                {t(`rarity.${rarity}`, { defaultValue: rarity })}
             </span>
 
-            {/* item image */}
             <img
                 src={resolveImage(url)}
                 alt={name}
@@ -68,7 +61,6 @@ export const ItemTile = ({
                 draggable={false}
             />
 
-            {/* name + payout */}
             <div className="flex flex-col items-center w-full mt-2">
                 <div className={`${dims.title} font-semibold text-white text-center truncate w-full`}>
                     {name}
