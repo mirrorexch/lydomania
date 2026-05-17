@@ -45,7 +45,7 @@ export const BatchWinSummary = ({
                 >
                     <motion.div
                         data-testid="batch-summary"
-                        className="relative w-full max-w-sm bg-cyber-surface rounded-3xl p-5 border border-white/10"
+                        className="relative w-full max-w-sm sm:max-w-md bg-cyber-surface rounded-3xl p-5 border border-white/10"
                         initial={{ y: 30, scale: 0.95, opacity: 0 }}
                         animate={{ y: 0, scale: 1, opacity: 1 }}
                         exit={{ y: 30, scale: 0.95, opacity: 0 }}

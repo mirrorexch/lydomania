@@ -19,12 +19,12 @@ export const Header = ({ user, balance, onLogout, onOpenDeposit }) => {
             data-testid="app-header"
             className="sticky top-0 z-40 w-full backdrop-blur-xl bg-cyber-bg/75 border-b border-white/5 px-3 py-3"
         >
-            <div className="max-w-[430px] mx-auto flex items-center justify-between gap-1.5">
-                {/* Profile pill */}
+            <div className="max-w-[430px] lg:max-w-none mx-auto flex items-center justify-between gap-1.5 lg:gap-3 lg:px-2">
+                {/* Profile pill — hidden at lg+ since brand lives in SideNav */}
                 <Link
                     to="/"
                     data-testid="profile-pill"
-                    className="flex items-center gap-1.5 bg-white/5 rounded-full pr-2 p-1 border border-white/10 max-w-[34%] hover:border-white/20 transition flex-shrink"
+                    className="lg:hidden flex items-center gap-1.5 bg-white/5 rounded-full pr-2 p-1 border border-white/10 max-w-[34%] hover:border-white/20 transition flex-shrink"
                 >
                     {user?.photo_url ? (
                         <img
@@ -52,7 +52,7 @@ export const Header = ({ user, balance, onLogout, onOpenDeposit }) => {
                 </Link>
 
                 {/* Right cluster: language + sound + balance + tonconnect */}
-                <div className="flex items-center gap-1 min-w-0">
+                <div className="flex items-center gap-1 lg:gap-2 min-w-0 lg:ml-auto">
                     <LanguageToggle className="flex-shrink-0" />
                     <SoundToggle compact className="flex-shrink-0" />
                     <button

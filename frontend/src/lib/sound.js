@@ -1,5 +1,5 @@
 /**
- * Phase 4a — Sound system.
+ * Phase 4a (+6a extensions) — Sound system.
  *
  * Plays the CC0 procedurally-generated SFX pack in `/sfx/*.wav`.
  * State (mute + volume) persisted to localStorage, mirrored to a tiny
@@ -8,7 +8,10 @@
  * Usage:
  *   import { sfx, audioPrefs, useAudioPrefs } from "@/lib/sound";
  *   sfx.play("scroll_tick");
- *   sfx.playWin("legendary");          // chooses correct chime + adds confetti for legendary/mythic
+ *   sfx.playWin("legendary");            // chooses correct chime + adds burst for legendary+
+ *   sfx.playBatchWin("epic", true);      // 6a — used by ×10 settle (rarity chime + jackpot burst)
+ *   sfx.play("promo_redeem");            // 6a — promo success ping
+ *   sfx.play("free_case_ready");         // 6a — daily cooldown unlocked
  *   const [prefs, setPrefs] = useAudioPrefs();
  */
 import { useEffect, useState } from "react";
@@ -29,6 +32,8 @@ const ALL_SFX = [
     "scroll_tick", "coin_drop",
     "win_common", "win_rare", "win_epic", "win_legendary", "win_mythic",
     "confetti_burst",
+    // Phase 6a additions
+    "promo_redeem", "battle_start", "free_case_ready",
 ];
 
 function loadPrefs() {
@@ -74,7 +79,6 @@ export const audioPrefs = {
     get: () => ({ ..._state }),
     set: (patch) => {
         _state = { ..._state, ...patch };
-        // clamp
         _state.volume = Math.max(0, Math.min(1, _state.volume));
         savePrefs(_state);
         emit();
@@ -93,7 +97,6 @@ export const sfx = {
         if (!ALL_SFX.includes(name)) return;
         try {
             const el = getEl(name);
-            // Clone the underlying buffer so rapid repeats overlap (e.g. scroll ticks)
             const node = el.cloneNode(true);
             node.volume = Math.max(0, Math.min(1, _state.volume * (opts.volume ?? 1)));
             const p = node.play();
@@ -105,8 +108,19 @@ export const sfx = {
         sfx.play(key);
         const showConfetti = confetti ?? (rarity === "legendary" || rarity === "mythic" || rarity === "jackpot");
         if (showConfetti) {
-            // Slight delay so the chime opens, then the burst overlays
             setTimeout(() => sfx.play("confetti_burst", { volume: 0.7 }), 120);
+        }
+    },
+    /**
+     * Phase 6a — ×10 batch settle sound.
+     * Fires a single rarity chime for the highest rarity in the batch, plus a
+     * confetti burst if any roll is jackpot (≥5× the case price).
+     * Call ONCE after BatchOpenAnimation completes — not per-roll.
+     */
+    playBatchWin: (highestRarity = "common", hasJackpot = false) => {
+        sfx.playWin(highestRarity, { confetti: hasJackpot });
+        if (hasJackpot) {
+            setTimeout(() => sfx.play("coin_drop", { volume: 0.6 }), 350);
         }
     },
     preload: () => {

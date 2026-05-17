@@ -216,6 +216,59 @@ def confetti_burst() -> list[float]:
     return out
 
 
+def promo_redeem() -> list[float]:
+    """Bright two-step rising chime — promo code success ping."""
+    n_step = int(0.18 * SR)
+    env = _adsr(n_step, 0.02, 0.25, 0.4, 0.6)
+    # G5 → C6, both with overtone for brightness
+    g5 = _mix(_apply(env, _sine(783.99, n_step)),
+              _apply(env, _sine(1567.98, n_step)))  # 2nd harmonic
+    c6 = _mix(_apply(env, _sine(1046.50, n_step)),
+              _apply(env, _sine(2093.00, n_step)))
+    out = g5 + c6
+    return out
+
+
+def battle_start() -> list[float]:
+    """Placeholder for 6d — bold horn-like 2-note fanfare (C3 → G3)."""
+    total = int(0.9 * SR)
+    n_each = int(0.42 * SR)
+    env1 = _adsr(n_each, 0.04, 0.25, 0.5, 0.55)
+    env2 = _adsr(n_each, 0.04, 0.20, 0.55, 0.6)
+    # Stacked saws for brass-like timbre
+    note1 = _mix(
+        _apply(env1, _saw(130.81, n_each)),    # C3
+        _apply(env1, _saw(196.00, n_each)),    # G3 (fifth)
+    )
+    note2 = _mix(
+        _apply(env2, _saw(196.00, n_each)),    # G3
+        _apply(env2, _saw(261.63, n_each)),    # C4
+        _apply(env2, _saw(392.00, n_each)),    # G4
+    )
+    out = [0.0] * total
+    for i, v in enumerate(note1):
+        if i < total: out[i] += v * 0.6
+    offset = int(0.4 * SR)
+    for i, v in enumerate(note2):
+        if i + offset < total: out[i + offset] += v * 0.75
+    return out
+
+
+def free_case_ready() -> list[float]:
+    """Soft notification ping — two short bells, descending then resolving."""
+    n = int(0.55 * SR)
+    # E5 short pluck → C5 sustain → confirm
+    pluck = _apply(_exp_decay(int(0.15 * SR), 0.08), _sine(659.25, int(0.15 * SR)))
+    resolve = _bell(523.25, int(0.45 * SR), amps=(0.8, 0.4, 0.18, 0.08))
+    out = [0.0] * n
+    for i, v in enumerate(pluck):
+        if i < n: out[i] += v * 0.7
+    offset = int(0.13 * SR)
+    for i, v in enumerate(resolve):
+        if i + offset < n: out[i + offset] += v * 0.65
+    return out
+
+
 GENERATORS = {
     "scroll_tick.wav": scroll_tick,
     "coin_drop.wav": coin_drop,
@@ -225,6 +278,9 @@ GENERATORS = {
     "win_legendary.wav": win_legendary,
     "win_mythic.wav": win_mythic,
     "confetti_burst.wav": confetti_burst,
+    "promo_redeem.wav": promo_redeem,
+    "battle_start.wav": battle_start,
+    "free_case_ready.wav": free_case_ready,
 }
 
 

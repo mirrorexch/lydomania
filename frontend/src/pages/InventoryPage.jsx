@@ -13,6 +13,7 @@ import {
 import {
     RARITY_HEX, RARITY_ORDER, formatTON,
 } from "@/lib/rarity";
+import { sfx } from "@/lib/sound";
 import { WithdrawModal } from "@/components/WithdrawModal";
 
 export const InventoryPage = ({ refreshBalance }) => {
@@ -66,6 +67,7 @@ export const InventoryPage = ({ refreshBalance }) => {
         setBusy(item.id);
         try {
             const newBal = await sellInventoryItem(item.id);
+            sfx.play("coin_drop", { volume: 0.65 });
             toast.success(t("win_modal.sold_one", { name: item.item_name, amount: formatTON(item.payout_ton) }));
             refreshBalance?.(newBal);
             await reload();
@@ -95,6 +97,7 @@ export const InventoryPage = ({ refreshBalance }) => {
         for (const it of sellable) {
             try { lastBal = await sellInventoryItem(it.id); success++; } catch { failed++; }
         }
+        if (success > 0) sfx.play("coin_drop", { volume: 0.75 });
         if (lastBal !== null) refreshBalance?.(lastBal);
         toast.success(
             failed
@@ -111,7 +114,8 @@ export const InventoryPage = ({ refreshBalance }) => {
     }, [totals]);
 
     return (
-        <main className="max-w-[430px] mx-auto px-4 pt-3 pb-24" data-testid="inventory-page">
+        <main className="mx-auto px-4 sm:px-6 pt-3 pb-24 lg:pb-6
+            max-w-[430px] sm:max-w-[640px] lg:max-w-[860px]" data-testid="inventory-page">
             <div className="flex items-baseline justify-between mb-3">
                 <h1 className="font-display text-2xl font-black tracking-tight">{t("collection.title")}</h1>
                 <div className="flex items-center gap-2">
@@ -236,7 +240,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 gap-2" data-testid="inv-grid">
+                <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" data-testid="inv-grid">
                     {items.map((it, i) => {
                         const color = RARITY_HEX[it.rarity] || RARITY_HEX.common;
                         return (

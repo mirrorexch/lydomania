@@ -119,7 +119,8 @@ export const LeaderboardPage = () => {
     const viewMeta = VIEWS.find((v) => v.key === view) || VIEWS[0];
 
     return (
-        <div data-testid="leaderboard-page" className="pb-24 max-w-[430px] mx-auto px-4 pt-3">
+        <div data-testid="leaderboard-page" className="mx-auto px-4 sm:px-6 pt-3 pb-24 lg:pb-6
+            max-w-[430px] sm:max-w-[640px] lg:max-w-[760px]">
             <div className="flex items-center gap-2 mb-3">
                 <Trophy className="w-5 h-5 text-amber-300" />
                 <h1 className="text-2xl font-black uppercase tracking-tight bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 bg-clip-text text-transparent">

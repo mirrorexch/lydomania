@@ -75,7 +75,8 @@ export const FriendsPage = ({ refreshBalance }) => {
     const pct = Math.round((data.referral_pct || 0.05) * 100);
 
     return (
-        <main data-testid="friends-page" className="max-w-[430px] mx-auto px-4 pt-3 pb-24 space-y-5">
+        <main data-testid="friends-page" className="mx-auto px-4 sm:px-6 pt-3 pb-24 lg:pb-6
+            space-y-5 max-w-[430px] sm:max-w-[640px] lg:max-w-[860px]">
             <div>
                 <h1 className="font-display text-2xl font-black tracking-tight">{t("friends.title")}</h1>
                 <p className="text-xs text-white/50 mt-1">

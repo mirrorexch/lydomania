@@ -24,7 +24,8 @@ const Tab = ({ to, icon: Icon, label, testid, end }) => (
 export const AdminLayout = () => {
     const { t } = useTranslation();
     return (
-        <main className="max-w-[430px] mx-auto px-4 pt-3 pb-24" data-testid="admin-layout">
+        <main className="mx-auto px-4 sm:px-6 pt-3 pb-24 lg:pb-6
+            max-w-[430px] sm:max-w-[640px] lg:max-w-[860px]" data-testid="admin-layout">
             <div className="flex items-baseline justify-between mb-2">
                 <h1 className="font-display text-2xl font-black tracking-tight inline-flex items-center gap-2">
                     <Shield className="w-5 h-5 text-cyber-cyan" />

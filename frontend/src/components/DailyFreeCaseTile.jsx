@@ -7,6 +7,7 @@ import { Gift, Sparkles, Timer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { freeCaseCooldown } from "@/lib/api";
+import { sfx } from "@/lib/sound";
 
 function fmtCountdown(seconds) {
     if (seconds <= 0) return "0:00:00";
@@ -39,7 +40,14 @@ export const DailyFreeCaseTile = () => {
 
     useEffect(() => {
         if (remaining <= 0) return;
-        const tt = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
+        const tt = setInterval(() => setRemaining((r) => {
+            const next = Math.max(0, r - 1);
+            if (next === 0 && r > 0) {
+                // Cooldown just elapsed — ping the user (subtle, respects mute).
+                sfx.play("free_case_ready", { volume: 0.55 });
+            }
+            return next;
+        }), 1000);
         return () => clearInterval(tt);
     }, [remaining]);
 

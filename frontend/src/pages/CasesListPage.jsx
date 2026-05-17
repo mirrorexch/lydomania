@@ -32,7 +32,8 @@ export const CasesListPage = ({ balance }) => {
     }, []);
 
     return (
-        <main className="max-w-[430px] mx-auto px-4 pt-6 pb-24 space-y-6" data-testid="cases-list-page">
+        <main className="mx-auto px-4 sm:px-6 pt-6 pb-24 lg:pb-6 space-y-6
+            max-w-[430px] sm:max-w-[640px] lg:max-w-[860px]" data-testid="cases-list-page">
             <DailyFreeCaseTile />
             {/* Hero */}
             <motion.section
@@ -67,7 +68,7 @@ export const CasesListPage = ({ balance }) => {
                 {loading ? (
                     <div className="py-10 text-center text-white/40 text-sm">{t("cases_list.loading")}</div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
                         {cases.map((c, i) => {
                             const tier = TIER_KEYS[c.id] || { glow: "from-cyber-purple/30 to-cyber-cyan/20" };
                             const tierLabel = t(`case_tiers.${c.id}`, {

@@ -6,6 +6,7 @@ import { Ticket, Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { promoRedeem } from "@/lib/api";
+import { sfx } from "@/lib/sound";
 
 export const PromoRedeemField = ({ onRedeemed, className = "" }) => {
     const { t } = useTranslation();
@@ -19,6 +20,7 @@ export const PromoRedeemField = ({ onRedeemed, className = "" }) => {
         setBusy(true);
         try {
             const r = await promoRedeem(c);
+            sfx.play("promo_redeem", { volume: 0.7 });
             const applied = r.applied || {};
             const desc = applied.type === "ton_bonus"
                 ? t("promo.applied_ton", { ton: applied.credited_ton, balance: applied.new_balance_ton })

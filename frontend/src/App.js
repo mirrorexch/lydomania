@@ -6,6 +6,7 @@ import "@/App.css";
 import { Toaster, toast } from "sonner";
 
 import { Header, BottomNav } from "@/components/Header";
+import { AppShell } from "@/components/AppShell";
 import { DepositModal } from "@/components/DepositModal";
 import { OutOfTelegram } from "@/components/OutOfTelegram";
 import { CasesListPage } from "@/pages/CasesListPage";
@@ -134,52 +135,57 @@ function App() {
     return (
         <BrowserRouter>
             <div data-testid="app-root" className="min-h-screen cyber-grid-bg">
-                <Header
+                <AppShell
                     user={user}
-                    balance={balance}
-                    onLogout={handleLogout}
-                    onOpenDeposit={() => setDepositOpen(true)}
-                />
+                    mobileHeader={
+                        <Header
+                            user={user}
+                            balance={balance}
+                            onLogout={handleLogout}
+                            onOpenDeposit={() => setDepositOpen(true)}
+                        />
+                    }
+                    mobileNav={<BottomNav isAdmin={!!user?.is_admin} />}
+                >
+                    <Routes>
+                        <Route path="/" element={<CasesListPage balance={balance} />} />
+                        <Route
+                            path="/case/:id"
+                            element={<CaseDetailPage balance={balance} refreshBalance={refreshBalance} />}
+                        />
+                        <Route
+                            path="/cases/:id"
+                            element={<CaseDetailPage balance={balance} refreshBalance={refreshBalance} />}
+                        />
+                        <Route
+                            path="/inventory"
+                            element={<InventoryPage refreshBalance={refreshBalance} />}
+                        />
+                        <Route
+                            path="/friends"
+                            element={<FriendsPage refreshBalance={refreshBalance} />}
+                        />
+                        <Route
+                            path="/withdrawals"
+                            element={<WithdrawalsPage />}
+                        />
+                        <Route
+                            path="/leaderboard"
+                            element={<LeaderboardPage />}
+                        />
+                        {user?.is_admin && (
+                            <Route path="/admin" element={<AdminLayout />}>
+                                <Route index element={<AdminWithdrawalsPage />} />
+                                <Route path="cases" element={<AdminCasesPage />} />
+                                <Route path="items" element={<AdminItemsPage />} />
+                                <Route path="settings" element={<AdminSettingsPage />} />
+                                <Route path="promos" element={<AdminPromosPage />} />
+                                <Route path="digest" element={<AdminDigestPage />} />
+                            </Route>
+                        )}
+                    </Routes>
+                </AppShell>
 
-                <Routes>
-                    <Route path="/" element={<CasesListPage balance={balance} />} />
-                    <Route
-                        path="/case/:id"
-                        element={<CaseDetailPage balance={balance} refreshBalance={refreshBalance} />}
-                    />
-                    <Route
-                        path="/cases/:id"
-                        element={<CaseDetailPage balance={balance} refreshBalance={refreshBalance} />}
-                    />
-                    <Route
-                        path="/inventory"
-                        element={<InventoryPage refreshBalance={refreshBalance} />}
-                    />
-                    <Route
-                        path="/friends"
-                        element={<FriendsPage refreshBalance={refreshBalance} />}
-                    />
-                    <Route
-                        path="/withdrawals"
-                        element={<WithdrawalsPage />}
-                    />
-                    <Route
-                        path="/leaderboard"
-                        element={<LeaderboardPage />}
-                    />
-                    {user?.is_admin && (
-                        <Route path="/admin" element={<AdminLayout />}>
-                            <Route index element={<AdminWithdrawalsPage />} />
-                            <Route path="cases" element={<AdminCasesPage />} />
-                            <Route path="items" element={<AdminItemsPage />} />
-                            <Route path="settings" element={<AdminSettingsPage />} />
-                            <Route path="promos" element={<AdminPromosPage />} />
-                            <Route path="digest" element={<AdminDigestPage />} />
-                        </Route>
-                    )}
-                </Routes>
-
-                <BottomNav isAdmin={!!user?.is_admin} />
                 <DevCreditFab onCredited={(b) => setBalance(b)} />
 
                 <DepositModal

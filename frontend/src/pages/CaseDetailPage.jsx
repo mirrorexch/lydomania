@@ -8,6 +8,7 @@ import {
 import { useTranslation, Trans } from "react-i18next";
 import { fetchCase, openCase, openCaseBatch, sellInventoryItem, fetchFairCurrent, resolveImage } from "@/lib/api";
 import { formatTON, rarityRank } from "@/lib/rarity";
+import { sfx } from "@/lib/sound";
 import { ItemTile } from "@/components/ItemTile";
 import { CaseOpenAnimation } from "@/components/CaseOpenAnimation";
 import { BatchOpenAnimation } from "@/components/BatchOpenAnimation";
@@ -173,7 +174,8 @@ export const CaseDetailPage = ({ balance, refreshBalance }) => {
     }
 
     return (
-        <main data-testid="case-detail-page" className="max-w-[430px] mx-auto px-4 pt-3 pb-32 space-y-5">
+        <main data-testid="case-detail-page" className="mx-auto px-4 sm:px-6 pt-3 pb-32 lg:pb-8
+        space-y-5 max-w-[430px] sm:max-w-[640px] lg:max-w-[860px]">
             <button
                 data-testid="back-to-cases"
                 onClick={() => nav(-1)}
@@ -224,7 +226,18 @@ export const CaseDetailPage = ({ balance, refreshBalance }) => {
                 <BatchOpenAnimation
                     basket={data.basket}
                     rolls={batch.rolls}
-                    onAllSettled={() => setBatchSettled(true)}
+                    onAllSettled={() => {
+                        // Phase 6a — fire ONE rarity chime for the highest rarity in the batch
+                        // (plus confetti burst if any roll is jackpot, defined as ≥5× the case price).
+                        const ranks = batch.rolls.map(r => rarityRank(r.winning_item.rarity));
+                        const highestIdx = ranks.indexOf(Math.max(...ranks));
+                        const highest = batch.rolls[highestIdx]?.winning_item?.rarity || "common";
+                        const hasJackpot = batch.rolls.some(r =>
+                            r.payout_ton >= data.price_ton * 5 || r.winning_item.rarity === "jackpot"
+                        );
+                        sfx.playBatchWin(highest, hasJackpot);
+                        setBatchSettled(true);
+                    }}
                 />
             )}
 

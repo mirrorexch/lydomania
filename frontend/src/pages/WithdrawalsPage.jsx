@@ -187,7 +187,8 @@ export const WithdrawalsPage = () => {
     };
 
     return (
-        <main className="max-w-[430px] mx-auto px-4 pt-3 pb-24" data-testid="withdrawals-page">
+        <main className="mx-auto px-4 sm:px-6 pt-3 pb-24 lg:pb-6
+            max-w-[430px] sm:max-w-[640px] lg:max-w-[760px]" data-testid="withdrawals-page">
             <div className="flex items-baseline justify-between mb-3">
                 <div>
                     <h1 className="font-display text-2xl font-black tracking-tight inline-flex items-center gap-2">

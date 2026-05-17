@@ -72,7 +72,7 @@ export const WinModal = ({ open, roll, casePrice, onSell, onKeep, onClose, busy 
                 >
                     <motion.div
                         data-testid="win-modal"
-                        className="relative w-full max-w-sm bg-cyber-surface rounded-3xl p-6 overflow-hidden"
+                        className="relative w-full max-w-sm sm:max-w-md bg-cyber-surface rounded-3xl p-6 overflow-hidden"
                         initial={{ y: 30, scale: 0.92, opacity: 0 }}
                         animate={{ y: 0, scale: 1, opacity: 1 }}
                         exit={{ y: 30, scale: 0.92, opacity: 0 }}
