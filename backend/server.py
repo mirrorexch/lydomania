@@ -87,12 +87,45 @@ async def _ensure_indexes() -> None:
     await gift_floor_prices_col.create_index("slug", unique=True)
 
 
+async def _sync_static_bundle() -> None:
+    """Defense-in-depth against the docker named-volume-overlay foot-gun.
+
+    The `backend-static` named volume is mounted at /app/backend/static and
+    masks any baked-in files inside that path. We keep a pristine copy at
+    /app/backend/_static_bundle (outside the volume) and rsync any missing
+    files into the live STATIC_DIR on startup. Safe to run every boot.
+    """
+    import os as _os
+    import shutil
+    from pathlib import Path as _Path
+    bundle = STATIC_DIR.parent / "_static_bundle"
+    if not bundle.exists() or not bundle.is_dir():
+        return  # no bundle baked in (dev / sandbox) — skip silently
+    copied = 0
+    for root, _dirs, files in _os.walk(bundle):
+        rel = _Path(root).relative_to(bundle)
+        dst_dir = STATIC_DIR / rel
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        for f in files:
+            dst = dst_dir / f
+            if dst.exists() and dst.stat().st_size > 0:
+                continue
+            try:
+                shutil.copy2(_Path(root) / f, dst)
+                copied += 1
+            except Exception as e:  # noqa: BLE001
+                logger.warning("static-bundle sync failed for %s: %s", f, e)
+    if copied:
+        logger.info("static-bundle: copied %d missing files into %s", copied, STATIC_DIR)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(
         "Lydomania starting — vault=%s (UQ) / %s (EQ) network=%s",
         VAULT_ADDR_NB, VAULT_ADDR_B, TON_NETWORK,
     )
+    await _sync_static_bundle()
     await _ensure_indexes()
     # Background tasks
     _background_tasks.append(asyncio.create_task(deposit_watcher_loop()))

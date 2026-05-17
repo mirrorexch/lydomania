@@ -20,8 +20,11 @@
     }
 
     # ---- Backend-served static images (cached aggressively) ----
+    # Strip `/api` so we look up files at /srv/static/* — matching the
+    # `backend-static` volume mount (which is /srv/static:ro in Caddy).
     @backend_static path /api/static/*
     handle @backend_static {
+        uri strip_prefix /api
         root * /srv
         try_files {path} =404
         file_server

@@ -7,14 +7,20 @@ import { fetchCases, resolveImage } from "@/lib/api";
 import { formatTON } from "@/lib/rarity";
 import { DailyFreeCaseTile } from "@/components/DailyFreeCaseTile";
 
-// Phase 6b — per-case glow tints (fallback used for any unknown id).
+// Phase 6b-redesign — per-case glow tints (fallback used for any unknown id).
 const TIER_KEYS = {
-    stickers_box:  { glow: "from-emerald-500/30 to-cyber-cyan/15" },
-    premium_pack:  { glow: "from-emerald-500/30 to-cyber-cyan/20" },
-    royal_chest:   { glow: "from-cyber-purple/40 to-cyber-magenta/25" },
-    diamond_vault: { glow: "from-cyber-cyan/40 to-cyber-purple/25" },
-    mythic_crown:  { glow: "from-cyber-magenta/50 to-cyber-purple/40" },
-    whale_vault:   { glow: "from-yellow-400/50 to-amber-500/30" },
+    pocket_box:     { glow: "from-emerald-400/30 to-cyan-500/15" },
+    stickers_box:   { glow: "from-emerald-500/30 to-cyber-cyan/15" },
+    premium_pack:   { glow: "from-emerald-500/30 to-cyber-cyan/20" },
+    lucky_charm:    { glow: "from-emerald-400/35 to-yellow-500/15" },
+    royal_chest:    { glow: "from-cyber-purple/40 to-cyber-magenta/25" },
+    diamond_vault:  { glow: "from-cyber-cyan/40 to-cyber-purple/25" },
+    imperial_trove: { glow: "from-yellow-400/35 to-amber-700/20" },
+    celestial_box:  { glow: "from-cyber-purple/40 to-cyber-cyan/20" },
+    mythic_crown:   { glow: "from-cyber-magenta/50 to-cyber-purple/40" },
+    whale_vault:    { glow: "from-yellow-400/50 to-amber-500/30" },
+    olympus_cache:  { glow: "from-yellow-300/45 to-amber-600/25" },
+    legend_pack:    { glow: "from-red-500/40 to-amber-500/20" },
 };
 
 // Phase 6b — category visual hierarchy.

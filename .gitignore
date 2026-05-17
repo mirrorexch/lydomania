@@ -63,3 +63,7 @@ notes.local.md
 # --- Archives we sometimes produce here ---
 *.tar.gz
 *.zip
+
+# Built/copied at docker build time — don't track
+_static_bundle/
+backend/_static_bundle/

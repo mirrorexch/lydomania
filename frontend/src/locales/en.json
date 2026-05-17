@@ -88,12 +88,19 @@
     }
   },
   "case_tiers": {
-    "stickers_box": "Tier 01 · Starter",
-    "premium_pack": "Tier 02 · Premium",
-    "royal_chest": "Tier 03 · Royal",
-    "diamond_vault": "Tier 04 · Diamond",
-    "mythic_crown": "Tier 05 · Mythic",
-    "whale_vault": "Tier 06 · Whale"
+    "free_case": "Tier 00 · Free",
+    "pocket_box": "Tier 01 · Pocket",
+    "stickers_box": "Tier 02 · Starter",
+    "premium_pack": "Tier 03 · Premium",
+    "lucky_charm": "Tier 04 · Lucky",
+    "royal_chest": "Tier 05 · Royal",
+    "diamond_vault": "Tier 06 · Diamond",
+    "imperial_trove": "Tier 07 · Imperial",
+    "celestial_box": "Tier 08 · Celestial",
+    "mythic_crown": "Tier 09 · Mythic",
+    "whale_vault": "Tier 10 · Whale",
+    "olympus_cache": "Tier 11 · Olympus",
+    "legend_pack": "Tier 12 · Legend"
   },
   "free_case": {
     "title": "Daily Free Spin",
