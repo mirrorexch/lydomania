@@ -14,5 +14,6 @@ from . import floor_prices as _fp       # noqa: F401,E402 — Phase 3b
 from . import maintenance as _maint     # noqa: F401,E402 — Phase 3c
 from . import promos as _promos         # noqa: F401,E402 — Phase 4b
 from . import digest as _digest         # noqa: F401,E402 — Phase 4b
+from . import users as _users           # noqa: F401,E402 — Phase 6a hotfix
 
 __all__ = ["admin"]

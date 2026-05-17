@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { Shield, Inbox, Box, Layers, SlidersHorizontal, Ticket, Activity } from "lucide-react";
+import { Shield, Inbox, Box, Layers, SlidersHorizontal, Ticket, Activity, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const Tab = ({ to, icon: Icon, label, testid, end }) => (
@@ -39,6 +39,7 @@ export const AdminLayout = () => {
                 <Tab to="/admin/items" icon={Layers} label={t("admin.tab_items")} testid="admin-subnav-items" />
                 <Tab to="/admin/promos" icon={Ticket} label={t("admin.tab_promos")} testid="admin-subnav-promos" />
                 <Tab to="/admin/digest" icon={Activity} label={t("admin.tab_digest")} testid="admin-subnav-digest" />
+                <Tab to="/admin/users" icon={Users} label={t("admin.tab_users")} testid="admin-subnav-users" />
                 <Tab to="/admin/settings" icon={SlidersHorizontal} label={t("admin.tab_settings")} testid="admin-subnav-settings" />
             </div>
             <Outlet />

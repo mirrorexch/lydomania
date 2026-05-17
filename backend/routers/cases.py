@@ -112,6 +112,23 @@ def _build_basket_entries(case_doc: dict, items_meta: dict[str, dict]) -> list[C
     return out
 
 
+def _category_for(case: dict) -> str:
+    """Phase 6b — derive category from explicit field, or infer from price."""
+    cat = (case.get("category") or "").strip().lower()
+    if cat in {"free", "low", "middle", "high"}:
+        return cat
+    if case.get("is_daily_free"):
+        return "free"
+    price = float(case.get("price_ton") or 0)
+    if price <= 0:
+        return "free"
+    if price <= 25:
+        return "low"
+    if price <= 100:
+        return "middle"
+    return "high"
+
+
 async def _case_to_summary(c: dict) -> CaseSummaryOut:
     basket = c.get("basket", [])
     ev = _compute_actual_ev(basket)
@@ -123,6 +140,7 @@ async def _case_to_summary(c: dict) -> CaseSummaryOut:
         house_edge_pct=round((1 - ev / float(c["price_ton"])) * 100, 2) if c["price_ton"] else 0.0,
         enabled=bool(c.get("enabled", True)),
         item_count=len(basket),
+        category=_category_for(c),
     )
 
 

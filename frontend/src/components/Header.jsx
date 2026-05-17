@@ -68,8 +68,10 @@ export const Header = ({ user, balance, onLogout, onOpenDeposit }) => {
                         <span className="text-[9px] text-white/60 font-bold">TON</span>
                         <ArrowDownToLine className="w-3 h-3 text-cyber-cyan ml-0.5" />
                     </button>
-                    <div data-testid="tonconnect-button-wrap" className="scale-[0.7] origin-right flex-shrink-0 -mr-2">
-                        <TonConnectButton />
+                    <div data-testid="tonconnect-button-wrap" className="flex-shrink-0 h-9 w-[78px] sm:w-[110px] lg:w-[140px] relative overflow-visible">
+                        <div className="absolute top-0 left-0 origin-top-left scale-[0.7] sm:scale-90 lg:scale-100">
+                            <TonConnectButton />
+                        </div>
                     </div>
                 </div>
             </div>

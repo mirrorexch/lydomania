@@ -68,6 +68,7 @@ class CaseSummaryOut(BaseModel):
     house_edge_pct: float
     enabled: bool
     item_count: int
+    category: str = "low"  # Phase 6b — "free" | "low" | "middle" | "high"
 
 
 class CaseDetailOut(CaseSummaryOut):

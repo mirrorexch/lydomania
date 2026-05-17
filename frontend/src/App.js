@@ -20,6 +20,7 @@ import { AdminItemsPage } from "@/pages/AdminItemsPage";
 import { AdminSettingsPage } from "@/pages/AdminSettingsPage";
 import { AdminPromosPage } from "@/pages/AdminPromosPage";
 import { AdminDigestPage } from "@/pages/AdminDigestPage";
+import AdminUsersPage from "@/pages/AdminUsersPage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
 import { AdminLayout } from "@/components/AdminSubnav";
 import { DevCreditFab } from "@/components/DevCreditFab";
@@ -76,8 +77,12 @@ function App() {
 
         if (isDevMode()) {
             try {
-                const tid = 100000 + Math.floor(Math.random() * 900000);
-                const { user: u } = await authDevLogin(tid, `dev_${tid}`, "Dev");
+                // Allow operator to pass ?telegram_id=… for admin dev-testing.
+                const qpTid = new URLSearchParams(window.location.search).get("telegram_id");
+                const qpUser = new URLSearchParams(window.location.search).get("username");
+                const tid = qpTid ? parseInt(qpTid, 10) : (100000 + Math.floor(Math.random() * 900000));
+                const uname = qpUser || `dev_${tid}`;
+                const { user: u } = await authDevLogin(tid, uname, "Dev");
                 setUser(u);
                 setBalance(Number(u.balance_ton || 0));
                 setBootState("ready");
@@ -181,6 +186,7 @@ function App() {
                                 <Route path="settings" element={<AdminSettingsPage />} />
                                 <Route path="promos" element={<AdminPromosPage />} />
                                 <Route path="digest" element={<AdminDigestPage />} />
+                                <Route path="users" element={<AdminUsersPage />} />
                             </Route>
                         )}
                     </Routes>

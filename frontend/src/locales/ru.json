@@ -76,14 +76,24 @@
     "trust_provably_fair": "Доказуемо честно",
     "trust_instant_roll": "Мгновенный рол",
     "trust_mainnet": "TON Mainnet",
-    "tier_label": "Уровень {{n}}"
+    "tier_label": "Уровень {{n}}",
+    "tabs": {
+      "all": "Все"
+    },
+    "categories": {
+      "free": "Бесплатно",
+      "low": "Низкий кейс",
+      "middle": "Средний кейс",
+      "high": "Высокий кейс"
+    }
   },
   "case_tiers": {
     "stickers_box": "Уровень 01 · Стартовый",
     "premium_pack": "Уровень 02 · Премиум",
     "royal_chest": "Уровень 03 · Королевский",
     "diamond_vault": "Уровень 04 · Бриллиантовый",
-    "mythic_crown": "Уровень 05 · Мифический"
+    "mythic_crown": "Уровень 05 · Мифический",
+    "whale_vault": "Уровень 06 · Кит"
   },
   "free_case": {
     "title": "Бесплатный кейс",
@@ -303,6 +313,7 @@
     "tab_items": "Предметы",
     "tab_promos": "Промо",
     "tab_digest": "Дайджест",
+    "tab_users": "Пользователи",
     "tab_settings": "Настройки",
     "withdrawals": {
       "title": "Админ · Очередь",
