@@ -39,6 +39,8 @@
   },
   "nav": {
     "cases": "Cases",
+    "roulette": "Roulette",
+    "battles": "Battles",
     "collection": "Collection",
     "leaders": "Leaders",
     "withdraw": "Withdraw",
@@ -101,6 +103,116 @@
     "whale_vault": "Tier 10 · Whale",
     "olympus_cache": "Tier 11 · Olympus",
     "legend_pack": "Tier 12 · Legend"
+  },
+  "battles": {
+    "tag": "CASE BATTLES",
+    "lobby_title": "Case Battles",
+    "lobby_short": "Lobby",
+    "create_cta": "Create",
+    "empty": "No open battles. Be the first.",
+    "entry": "Entry",
+    "pot": "Pot",
+    "payout_each": "Payout each",
+    "join": "Join",
+    "leave": "Leave",
+    "open": "Open",
+    "you": "you",
+    "winner": "Winner",
+    "total": "Total",
+    "waiting": "Waiting…",
+    "spin_ready": "Get ready…",
+    "round_x_of_n": "Round {{x}} / {{n}}",
+    "players_word": "players",
+    "pf_short": "Verify",
+    "mode": { "high_wins": "HIGH WINS", "low_wins": "LOW WINS" },
+    "status": {
+      "open": "Open",
+      "ready": "Ready",
+      "rolling": "Rolling",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "filter": { "any": "All" },
+    "create": {
+      "title": "Create a Battle",
+      "mode": "Mode",
+      "players": "Players",
+      "picked": "Picked ({{n}})",
+      "pick_hint": "Tap cases below to add them",
+      "add_cases": "Add cases",
+      "pot_est": "Pot (est.)",
+      "confirm": "Create · pay {{ton}} TON",
+      "creating": "Creating…",
+      "need_min_cases": "Pick at least 2 cases"
+    },
+    "toast": {
+      "created": "Battle created — waiting for opponents",
+      "joined": "Joined the battle",
+      "left": "Left the battle",
+      "cancelled": "Battle was cancelled"
+    },
+    "verify": { "title": "Provably fair · Battle verifier" }
+  },
+  "roulette": {
+    "tag": "ROULETTE",
+    "provably_fair": "Provably fair",
+    "history_label": "RECENT",
+    "bet_amount": "AMOUNT",
+    "bet_tier": "Bet tier:",
+    "cta_gift": "GIFT",
+    "basket_title": "This round you could win",
+    "basket_subtitle": "{{tier}} TON · {{color}} · avg floor {{expected}} TON",
+    "bets_feed": "LIVE BETS",
+    "no_bets_yet": "No bets placed yet — be the first.",
+    "pot": "Pot: {{amount}} TON",
+    "color": { "red": "RED", "black": "BLACK", "green": "GREEN" },
+    "phase": {
+      "betting": "Betting closes in {{s}}s",
+      "locking": "Locking bets…",
+      "spinning": "Spinning…",
+      "payout": "Result: {{color}}"
+    },
+    "toast": {
+      "bet_ok": "Bet placed · {{amount}} TON on {{color}} · balance {{balance}} TON",
+      "not_betting": "Betting is closed for this round",
+      "bad_amount": "Amount must be greater than 0"
+    },
+    "reveal": {
+      "won_tag": "YOU WON",
+      "keep": "Keep",
+      "sell": "Sell at floor",
+      "sold_ok": "+{{credited}} TON · balance {{balance}}",
+      "queued_review": "Queued for admin review (high-value item)"
+    },
+    "verify": {
+      "title": "Provably fair · Round verifier",
+      "item_picks": "{{n}} winning bets checked",
+      "all_match": "All items match.",
+      "mismatch": "ITEM MISMATCH"
+    }
+  },
+  "sell_review": {
+    "title": "High-value sell reviews",
+    "empty": "No reviews in this state.",
+    "empty_title": "No pending sell-back reviews",
+    "empty_with_threshold": "They'll appear here when users sell items above the configured threshold ({{threshold}} TON). Below that threshold, sales auto-credit instantly.",
+    "tab_pending": "Pending",
+    "tab_approved": "Approved",
+    "tab_rejected": "Rejected",
+    "tab_all": "All",
+    "approve": "Approve & credit",
+    "reject": "Reject & restore",
+    "approved_toast": "Approved · {{credited}} TON credited",
+    "rejected_toast": "Rejected · item restored",
+    "config": {
+      "title": "Roulette config",
+      "description": "Items with floor ≥ this threshold route through manual review when a user sells them back. Below the threshold, sales auto-credit instantly.",
+      "threshold_label": "Sell threshold",
+      "save": "Save threshold",
+      "saved_toast": "Threshold saved",
+      "bad_value": "Threshold must be a non-negative number",
+      "updated_at": "Last updated: {{at}}"
+    }
   },
   "free_case": {
     "title": "Daily Free Spin",
@@ -314,6 +426,7 @@
   },
   "admin": {
     "title": "Admin",
+    "not_authorised": "Admin access required.",
     "phase_chip": "Phase 4b",
     "tab_queue": "Queue",
     "tab_cases": "Cases",
@@ -321,6 +434,8 @@
     "tab_promos": "Promos",
     "tab_digest": "Digest",
     "tab_users": "Users",
+    "tab_sell_reviews": "Sell Q",
+    "tab_roulette_config": "Roulette",
     "tab_settings": "Settings",
     "withdrawals": {
       "title": "Admin · Queue",
@@ -555,5 +670,32 @@
     "generic": "Something went wrong",
     "network": "Network error",
     "try_later": "Please try again later"
+  },
+  "gift_deposit": {
+    "cta_title": "Deposit a Telegram Gift",
+    "cta_subtitle": "Send a real NFT gift into your inventory",
+    "title": "Deposit a Telegram Gift",
+    "subtitle": "Transfer a real NFT gift to your inventory",
+    "preparing": "Generating your unique memo…",
+    "create_failed": "Couldn't create deposit intent",
+    "expires_in": "Memo expires in",
+    "vault_address": "Vault address",
+    "address_copied": "Address copied",
+    "memo_label": "Your unique memo — REQUIRED",
+    "memo_copied": "Memo copied",
+    "memo_warn": "Without this exact memo as the transfer comment, the gift will be held for manual review.",
+    "steps_title": "How to deposit",
+    "step_1": "Open the gift in your Telegram chat and tap Transfer.",
+    "step_2": "Paste the vault address above as the recipient.",
+    "step_3": "Paste the memo above as the comment.",
+    "step_4": "Confirm. The gift will land in your inventory automatically.",
+    "waiting": "Watching for your gift…",
+    "credited_title": "Gift credited!",
+    "credited_default": "Your gift is now in your inventory.",
+    "credited_with_item": "{{item}} added to your inventory.",
+    "expired_title": "Memo expired",
+    "rejected_title": "Deposit rejected",
+    "expired_sub": "Generate a new memo to try again.",
+    "try_again": "Generate new memo"
   }
 }

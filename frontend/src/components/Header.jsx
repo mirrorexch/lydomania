@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
 import { TonConnectButton, useTonAddress } from "@tonconnect/ui-react";
-import { Diamond, Package, Home, ArrowDownToLine, Users, Shield, ArrowUpRight, Trophy } from "lucide-react";
+import { Diamond, Package, Home, ArrowDownToLine, Users, Shield, ArrowUpRight, Trophy, Sparkles, Swords } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatTON } from "@/lib/rarity";
 import { SoundToggle } from "@/components/SoundToggle";
@@ -88,6 +88,8 @@ export const BottomNav = ({ isAdmin = false }) => {
         >
             <div className="max-w-[430px] mx-auto flex items-stretch justify-around px-2 py-2">
                 <NavTab to="/" icon={Home} label={t("nav.cases")} testid="nav-cases" end />
+                <NavTab to="/roulette" icon={Sparkles} label={t("nav.roulette")} testid="nav-roulette" />
+                <NavTab to="/battles" icon={Swords} label={t("nav.battles")} testid="nav-battles" />
                 <NavTab to="/inventory" icon={Package} label={t("nav.collection")} testid="nav-inventory" />
                 <NavTab to="/leaderboard" icon={Trophy} label={t("nav.leaders")} testid="nav-leaderboard" />
                 <NavTab to="/withdrawals" icon={ArrowUpRight} label={t("nav.withdraw")} testid="nav-withdrawals" />

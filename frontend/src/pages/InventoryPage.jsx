@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import {
-    Diamond, Loader2, Wallet, RefreshCcw, Trophy, History, ChevronRight,
+    Diamond, Loader2, Wallet, RefreshCcw, Trophy, History, ChevronRight, Gift,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/lib/rarity";
 import { sfx } from "@/lib/sound";
 import { WithdrawModal } from "@/components/WithdrawModal";
+import { GiftDepositModal } from "@/components/GiftDepositModal";
 
 export const InventoryPage = ({ refreshBalance }) => {
     const { t } = useTranslation();
@@ -43,6 +44,7 @@ export const InventoryPage = ({ refreshBalance }) => {
     const [busy, setBusy] = useState(null);
     const [cases, setCases] = useState([]);
     const [withdrawTarget, setWithdrawTarget] = useState(null);
+    const [giftDepositOpen, setGiftDepositOpen] = useState(false);
 
     useEffect(() => {
         fetchCases().then(setCases).catch(() => {});
@@ -66,10 +68,14 @@ export const InventoryPage = ({ refreshBalance }) => {
         if (busy) return;
         setBusy(item.id);
         try {
-            const newBal = await sellInventoryItem(item.id);
+            const r = await sellInventoryItem(item.id);
             sfx.play("coin_drop", { volume: 0.65 });
-            toast.success(t("win_modal.sold_one", { name: item.item_name, amount: formatTON(item.payout_ton) }));
-            refreshBalance?.(newBal);
+            if (r.instant_credit) {
+                toast.success(t("win_modal.sold_one", { name: item.item_name, amount: formatTON(item.payout_ton) }));
+            } else {
+                toast.success(t("roulette.reveal.queued_review"));
+            }
+            refreshBalance?.(r.balance_ton);
             await reload();
         } catch (e) {
             toast.error(t("win_modal.sell_failed"), { description: e?.response?.data?.detail || e?.message });
@@ -93,12 +99,16 @@ export const InventoryPage = ({ refreshBalance }) => {
         }))) return;
         setBusy("all");
         let success = 0, failed = 0;
-        let lastBal = null;
+        let lastBalNum = null;
         for (const it of sellable) {
-            try { lastBal = await sellInventoryItem(it.id); success++; } catch { failed++; }
+            try {
+                const r = await sellInventoryItem(it.id);
+                lastBalNum = r.balance_ton;
+                success++;
+            } catch { failed++; }
         }
         if (success > 0) sfx.play("coin_drop", { volume: 0.75 });
-        if (lastBal !== null) refreshBalance?.(lastBal);
+        if (lastBalNum !== null) refreshBalance?.(lastBalNum);
         toast.success(
             failed
                 ? t("win_modal.sold_count_with_failed", { count: success, failed })
@@ -131,6 +141,26 @@ export const InventoryPage = ({ refreshBalance }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Phase 6e — Telegram Gift Deposit CTA */}
+            <button
+                data-testid="gift-deposit-cta"
+                onClick={() => setGiftDepositOpen(true)}
+                className="group w-full mb-4 rounded-xl bg-gradient-to-r from-cyber-purple/25 via-cyber-purple/15 to-cyber-cyan/25 border border-cyber-purple/45 hover:border-cyber-purple/80 hover:from-cyber-purple/35 hover:to-cyber-cyan/35 transition-all px-4 py-3 flex items-center gap-3"
+            >
+                <div className="p-2 rounded-lg bg-cyber-purple/25 border border-cyber-purple/45 group-hover:bg-cyber-purple/40 transition">
+                    <Gift className="w-5 h-5 text-cyber-purple group-hover:text-white transition" />
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                    <div className="font-display text-sm font-black tracking-tight text-white">
+                        {t("gift_deposit.cta_title")}
+                    </div>
+                    <div className="text-[10px] text-white/55 leading-snug">
+                        {t("gift_deposit.cta_subtitle")}
+                    </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-cyber-purple group-hover:translate-x-0.5 transition" />
+            </button>
 
             <div className="grid grid-cols-2 gap-2 mb-4" data-testid="inv-totals">
                 <div className="rounded-xl border border-cyber-cyan/30 bg-gradient-to-br from-cyber-cyan/10 to-cyber-purple/10 p-3">
@@ -284,8 +314,14 @@ export const InventoryPage = ({ refreshBalance }) => {
                                             <Diamond className="w-3 h-3 text-cyber-cyan" />
                                             {formatTON(it.payout_ton)}
                                         </span>
-                                        <span className="text-[8px] uppercase font-bold tracking-wider text-white/35 truncate ml-1" title={it.case_name || it.case_id}>
-                                            {it.case_name || it.case_id}
+                                        <span className={`text-[8px] uppercase font-bold tracking-wider truncate ml-1 ${
+                                            it.case_id === "roulette" ? "text-cyber-cyan"
+                                            : it.case_id === "gift_deposit" ? "text-cyber-purple"
+                                            : "text-white/35"
+                                        }`} title={it.case_name || it.case_id} data-testid={`inv-badge-${it.case_id}`}>
+                                            {it.case_id === "roulette" ? "Roulette"
+                                             : it.case_id === "gift_deposit" ? "Gift Deposit"
+                                             : (it.case_name || it.case_id)}
                                         </span>
                                     </div>
                                     {it.status === "in_inventory" && (
@@ -319,6 +355,11 @@ export const InventoryPage = ({ refreshBalance }) => {
                 open={!!withdrawTarget}
                 onClose={() => setWithdrawTarget(null)}
                 onConfirmed={() => { reload(); }}
+            />
+            <GiftDepositModal
+                open={giftDepositOpen}
+                onClose={() => setGiftDepositOpen(false)}
+                onFulfilled={() => { reload(); }}
             />
         </main>
     );

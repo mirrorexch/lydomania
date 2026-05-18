@@ -118,7 +118,11 @@ export const CaseDetailPage = ({ balance, refreshBalance }) => {
         let success = 0;
         let lastBal = null;
         for (const r of batch.rolls) {
-            try { lastBal = await sellInventoryItem(r.inventory_id); success++; } catch { /* ignore */ }
+            try {
+                const resp = await sellInventoryItem(r.inventory_id);
+                lastBal = resp.balance_ton;
+                success++;
+            } catch { /* ignore */ }
         }
         if (lastBal !== null) refreshBalance?.(lastBal);
         toast.success(t("win_modal.sold_count", {
@@ -142,9 +146,9 @@ export const CaseDetailPage = ({ balance, refreshBalance }) => {
     const handleSell = async (invId) => {
         setBusy(true);
         try {
-            const newBal = await sellInventoryItem(invId);
+            const resp = await sellInventoryItem(invId);
             toast.success(t("win_modal.sold_for", { amount: formatTON(roll.payout_ton) }));
-            refreshBalance?.(newBal);
+            refreshBalance?.(resp.balance_ton);
         } catch (e) {
             toast.error(t("win_modal.sell_failed"), { description: e?.response?.data?.detail || e?.message });
         } finally {

@@ -22,13 +22,23 @@
     # ---- Backend-served static images (cached aggressively) ----
     # Strip `/api` so we look up files at /srv/static/* — matching the
     # `backend-static` volume mount (which is /srv/static:ro in Caddy).
+    #
+    # 2026-05 bugfix — Cache-Control must be set ONLY on 2xx responses.
+    # Previously we headered every status, which let Telegram WebView
+    # cache 404s for 24h with `immutable` — even after the files were
+    # uploaded, the WebView refused to re-request them.
     @backend_static path /api/static/*
     handle @backend_static {
         uri strip_prefix /api
         root * /srv
         try_files {path} =404
         file_server
-        header Cache-Control "public, max-age=86400, immutable"
+
+        @static_ok status 2xx
+        header @static_ok Cache-Control "public, max-age=86400, immutable"
+
+        @static_err status 4xx 5xx
+        header @static_err Cache-Control "no-store, no-cache, must-revalidate"
     }
 
     # ---- All other /api routes → backend ----

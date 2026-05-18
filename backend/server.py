@@ -85,6 +85,12 @@ async def _ensure_indexes() -> None:
     await settings_col.create_index("id", unique=True)
     await referral_abuse_col.create_index([("created_at", -1)])
     await gift_floor_prices_col.create_index("slug", unique=True)
+    # Phase 6e — gift deposits
+    from core.db import gift_deposit_intents_col, gift_deposits_col  # local import
+    await gift_deposit_intents_col.create_index("id", unique=True)
+    await gift_deposit_intents_col.create_index([("user_id", 1), ("status", 1), ("created_at", -1)])
+    await gift_deposit_intents_col.create_index("memo")
+    await gift_deposits_col.create_index("tx_hash", unique=True)
 
 
 async def _sync_static_bundle() -> None:
@@ -131,6 +137,16 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(asyncio.create_task(deposit_watcher_loop()))
     _background_tasks.append(asyncio.create_task(floor_watcher_loop()))
     _background_tasks.append(asyncio.create_task(auto_fulfill_loop()))
+    # Phase 6e — Telegram NFT gift deposit watcher (no-op if ENABLE_GIFT_DEPOSITS=false or TONAPI_KEY unset)
+    from services.gift_deposit_watcher import gift_deposit_watcher_loop  # noqa: E402
+    _background_tasks.append(asyncio.create_task(gift_deposit_watcher_loop()))
+    # Phase 6c — roulette engine (single global loop driving the round state machine)
+    from services.roulette import engine as _roulette_engine
+    await _roulette_engine.start()
+    _background_tasks.append(_roulette_engine._loop_task)
+    # Phase 6d — clean up battles caught mid-flight by a previous restart
+    from services.battles import on_startup as _battles_on_startup
+    await _battles_on_startup()
     # Phase 4a — daily digest cron (APScheduler)
     global _scheduler
     _scheduler = AsyncIOScheduler(timezone="UTC")
@@ -200,3 +216,23 @@ app.include_router(leaderboard_router)
 app.include_router(promo_router)
 app.include_router(internal_router)
 app.include_router(admin_router)
+# Phase 6c — Roulette
+from routers.roulette import router as roulette_router  # noqa: E402
+from routers.ws_roulette import router as roulette_ws_router  # noqa: E402
+app.include_router(roulette_router)
+app.include_router(roulette_ws_router)
+# Phase 6d — Case Battles
+from routers.battles import router as battles_router  # noqa: E402
+from routers.ws_battles import router as battles_ws_router  # noqa: E402
+app.include_router(battles_router)
+app.include_router(battles_ws_router)
+# Phase 6e — Telegram NFT gift deposits
+from routers.gift_deposits import router as gift_deposits_router  # noqa: E402
+from routers.admin.gift_deposits import router as admin_gift_deposits_router  # noqa: E402
+app.include_router(gift_deposits_router)
+app.include_router(admin_gift_deposits_router)
+# Phase 6e — Roulette gift mode
+from routers.admin.sell_reviews import router as admin_sell_reviews_router  # noqa: E402
+from routers.admin.roulette_config import router as admin_roulette_config_router  # noqa: E402
+app.include_router(admin_sell_reviews_router)
+app.include_router(admin_roulette_config_router)

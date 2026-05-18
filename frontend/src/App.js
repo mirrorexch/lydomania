@@ -21,7 +21,12 @@ import { AdminSettingsPage } from "@/pages/AdminSettingsPage";
 import { AdminPromosPage } from "@/pages/AdminPromosPage";
 import { AdminDigestPage } from "@/pages/AdminDigestPage";
 import AdminUsersPage from "@/pages/AdminUsersPage";
+import { AdminSellReviewsPage } from "@/pages/AdminSellReviewsPage";
+import { AdminRouletteConfigPage } from "@/pages/AdminRouletteConfigPage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
+import RoulettePage from "@/pages/RoulettePage";
+import BattlesLobbyPage from "@/pages/BattlesLobbyPage";
+import BattleArenaPage from "@/pages/BattleArenaPage";
 import { AdminLayout } from "@/components/AdminSubnav";
 import { DevCreditFab } from "@/components/DevCreditFab";
 import {
@@ -178,17 +183,32 @@ function App() {
                             path="/leaderboard"
                             element={<LeaderboardPage />}
                         />
-                        {user?.is_admin && (
-                            <Route path="/admin" element={<AdminLayout />}>
-                                <Route index element={<AdminWithdrawalsPage />} />
-                                <Route path="cases" element={<AdminCasesPage />} />
-                                <Route path="items" element={<AdminItemsPage />} />
-                                <Route path="settings" element={<AdminSettingsPage />} />
-                                <Route path="promos" element={<AdminPromosPage />} />
-                                <Route path="digest" element={<AdminDigestPage />} />
-                                <Route path="users" element={<AdminUsersPage />} />
-                            </Route>
-                        )}
+                        <Route
+                            path="/roulette"
+                            element={<RoulettePage user={user} refreshBalance={refreshBalance} />}
+                        />
+                        <Route
+                            path="/battles"
+                            element={<BattlesLobbyPage user={user} refreshBalance={refreshBalance} />}
+                        />
+                        <Route
+                            path="/battles/:battleId"
+                            element={<BattleArenaPage user={user} refreshBalance={refreshBalance} />}
+                        />
+                        {/* Phase 6e bug-fix — admin routes registered unconditionally; AdminLayout itself
+                            gates content rendering on user.is_admin so non-admins see a clear notice
+                            instead of "No routes matched" → blank page. */}
+                        <Route path="/admin" element={<AdminLayout isAdmin={!!user?.is_admin} />}>
+                            <Route index element={<AdminWithdrawalsPage />} />
+                            <Route path="cases" element={<AdminCasesPage />} />
+                            <Route path="items" element={<AdminItemsPage />} />
+                            <Route path="settings" element={<AdminSettingsPage />} />
+                            <Route path="promos" element={<AdminPromosPage />} />
+                            <Route path="digest" element={<AdminDigestPage />} />
+                            <Route path="users" element={<AdminUsersPage />} />
+                            <Route path="sell-reviews" element={<AdminSellReviewsPage />} />
+                            <Route path="roulette-config" element={<AdminRouletteConfigPage />} />
+                        </Route>
                     </Routes>
                 </AppShell>
 

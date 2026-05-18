@@ -53,6 +53,11 @@ def issue_jwt(user_id: str, telegram_id: int) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
 
 
+def decode_jwt(token: str) -> dict:
+    """Decode + verify a JWT. Raises `jwt.PyJWTError` on bad signature/expiry."""
+    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+
+
 def verify_telegram_init_data(init_data: str, bot_token: str) -> dict[str, str]:
     pairs = parse_qsl(init_data, keep_blank_values=True, strict_parsing=False)
     data = dict(pairs)

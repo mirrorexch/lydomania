@@ -492,3 +492,25 @@ class PromoRedeemIn(BaseModel):
 class PromoRedeemOut(BaseModel):
     code: str
     applied: dict[str, Any]
+
+
+# ---------- Phase 6e: Telegram NFT gift deposits ----------
+
+class GiftDepositIntentOut(BaseModel):
+    id: str
+    address: str
+    memo: str
+    network: str
+    status: str  # pending | fulfilled | expired | rejected | unattributed
+    item_slug: Optional[str] = None
+    item_name: Optional[str] = None
+    image_url: Optional[str] = None
+    tx_hash: Optional[str] = None
+    nft_address: Optional[str] = None
+    created_at: str
+    expires_at: str
+    fulfilled_at: Optional[str] = None
+
+
+class GiftDepositListOut(BaseModel):
+    intents: list[GiftDepositIntentOut]

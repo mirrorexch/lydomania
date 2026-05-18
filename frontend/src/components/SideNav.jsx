@@ -22,7 +22,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import {
-    Home, Package, Trophy, ArrowUpRight, Users, Shield,
+    Home, Package, Trophy, ArrowUpRight, Users, Shield, Sparkles, Swords,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SoundToggle } from "@/components/SoundToggle";
@@ -73,6 +73,8 @@ export const SideNav = ({ isAdmin = false }) => {
 
             <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
                 <Item to="/" end icon={Home} label={t("nav.cases")} testid="side-nav-cases" />
+                <Item to="/roulette" icon={Sparkles} label={t("nav.roulette")} testid="side-nav-roulette" />
+                <Item to="/battles" icon={Swords} label={t("nav.battles")} testid="side-nav-battles" />
                 <Item to="/inventory" icon={Package} label={t("nav.collection")} testid="side-nav-inventory" />
                 <Item to="/leaderboard" icon={Trophy} label={t("nav.leaders")} testid="side-nav-leaderboard" />
                 <Item to="/withdrawals" icon={ArrowUpRight} label={t("nav.withdraw")} testid="side-nav-withdrawals" />

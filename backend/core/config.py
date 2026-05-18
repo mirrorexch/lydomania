@@ -48,6 +48,16 @@ ROTATE_NONCE_EVERY = 100
 REFERRAL_PCT = float(os.environ.get("REFERRAL_PCT", "0.05"))  # Bronze default
 BATCH_OPEN_MAX = 10
 
+# Phase 6e — gift deposits
+ENABLE_GIFT_DEPOSITS = os.environ.get("ENABLE_GIFT_DEPOSITS", "false").lower() == "true"
+TONAPI_BASE = os.environ.get("TONAPI_BASE", "https://tonapi.io").rstrip("/")
+TONAPI_KEY = os.environ.get("TONAPI_KEY", "").strip()
+TONAPI_POLL_S = int(os.environ.get("TONAPI_POLL_S", "6"))
+
+# Phase 6e — Roulette gift mode
+ROULETTE_PRIZE_MODE = os.environ.get("ROULETTE_PRIZE_MODE", "gifts").lower()   # "gifts" | "ton"
+ROULETTE_SELL_THRESHOLD_TON = float(os.environ.get("ROULETTE_SELL_THRESHOLD_TON", "100"))
+
 
 def _parse_admin_ids() -> set[int]:
     raw = os.environ.get("ADMIN_TELEGRAM_IDS", "").strip()

@@ -19,15 +19,26 @@ export const tokenStore = {
     },
 };
 
+// BUGFIX 2026-05 — Telegram WebView cached 404 responses with the
+// previous overly-aggressive Cache-Control header. Append a static cache
+// buster so the WebView treats the URL as fresh on first load post-deploy.
+// The buster moves on every deploy via the React build process.env injection.
+const IMG_CACHE_BUSTER =
+    process.env.REACT_APP_IMG_VERSION ||
+    process.env.REACT_APP_BUILD_ID ||
+    "v3";
+
 /**
  * Resolve a server-returned image_url:
- *   "/static/cases/..." -> "<backend>/static/cases/..."
+ *   "/static/cases/..." -> "<backend>/static/cases/...?v=<buster>"
  *   "http(s)://..."     -> unchanged
  */
 export function resolveImage(url) {
     if (!url) return "";
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    return `${ORIGIN}${url}`;
+    const full = `${ORIGIN}${url}`;
+    const sep = full.includes("?") ? "&" : "?";
+    return `${full}${sep}v=${IMG_CACHE_BUSTER}`;
 }
 
 export const http = axios.create({ baseURL: API });
@@ -118,7 +129,8 @@ export async function fetchInventory({ status, rarity, case_id, sort = "date_des
 
 export async function sellInventoryItem(invId) {
     const { data } = await http.post(`/inventory/${invId}/sell`);
-    return data.balance_ton;
+    // Phase 6e: returns full object { ok, instant_credit, status, balance_ton, ... }
+    return data;
 }
 
 export async function withdrawInventoryItem(invId, destinationAddress) {
@@ -372,5 +384,59 @@ export async function adminDigestPreview(windowHours = 24) {
 // ---- Phase 4a — Cases drift heatmap ----
 export async function adminCasesHeatmap({ windowDays = 7 } = {}) {
     const { data } = await http.get("/admin/cases/heatmap", { params: { window_days: windowDays } });
+    return data;
+}
+
+// ---- Phase 6e — Roulette gift baskets + sell reviews + config ----
+export async function fetchRouletteBaskets() {
+    const { data } = await http.get("/roulette/baskets");
+    return data;
+}
+export async function adminListSellReviews({ status = "pending", limit = 100 } = {}) {
+    const { data } = await http.get("/admin/sell-reviews", { params: { status, limit } });
+    return data;
+}
+export async function adminApproveSellReview(reviewId, note = "") {
+    const { data } = await http.post(`/admin/sell-reviews/${reviewId}/approve`, { note });
+    return data;
+}
+export async function adminRejectSellReview(reviewId, note = "") {
+    const { data } = await http.post(`/admin/sell-reviews/${reviewId}/reject`, { note });
+    return data;
+}
+export async function adminGetRouletteConfig() {
+    const { data } = await http.get("/admin/roulette/config");
+    return data;
+}
+export async function adminSetRouletteConfig(thresholdTon) {
+    const { data } = await http.patch("/admin/roulette/config", {
+        sell_threshold_ton: Number(thresholdTon),
+    });
+    return data;
+}
+export async function createGiftDepositIntent() {
+    const { data } = await http.post("/inventory/gift-deposits/intent");
+    return data;
+}
+export async function fetchGiftDepositIntent(intentId) {
+    const { data } = await http.get(`/inventory/gift-deposits/intent/${intentId}`);
+    return data;
+}
+export async function listMyGiftDeposits(limit = 25) {
+    const { data } = await http.get("/inventory/gift-deposits/list", { params: { limit } });
+    return data;
+}
+export async function adminTestCreditGiftDeposit(intentId, itemSlug) {
+    const { data } = await http.post("/admin/gift-deposits/test-credit", {
+        intent_id: intentId, item_slug: itemSlug,
+    });
+    return data;
+}
+export async function adminListGiftDeposits({ status = "all", limit = 100 } = {}) {
+    const { data } = await http.get("/admin/gift-deposits", { params: { status, limit } });
+    return data;
+}
+export async function adminCreditGiftDeposit(intentId, payload) {
+    const { data } = await http.post(`/admin/gift-deposits/${intentId}/credit`, payload);
     return data;
 }

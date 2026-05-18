@@ -39,3 +39,12 @@ auto_fulfill_log_col = db["auto_fulfill_log"]
 promo_codes_col = db["promo_codes"]
 promo_redemptions_col = db["promo_redemptions"]
 leaderboard_snapshots_col = db["leaderboard_snapshots"]
+
+# Phase 6e — Telegram NFT gift deposits
+gift_deposit_intents_col = db["gift_deposit_intents"]
+gift_deposits_col = db["gift_deposits"]
+
+# Phase 6e — Roulette gift mode
+roulette_baskets_col = db["roulette_baskets"]
+roulette_config_col = db["roulette_config"]
+sell_reviews_col = db["sell_reviews"]

@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { Shield, Inbox, Box, Layers, SlidersHorizontal, Ticket, Activity, Users } from "lucide-react";
+import { Shield, Inbox, Box, Layers, SlidersHorizontal, Ticket, Activity, Users, Diamond, Settings as Cog } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const Tab = ({ to, icon: Icon, label, testid, end }) => (
@@ -21,8 +21,21 @@ const Tab = ({ to, icon: Icon, label, testid, end }) => (
     </NavLink>
 );
 
-export const AdminLayout = () => {
+export const AdminLayout = ({ isAdmin = true }) => {
     const { t } = useTranslation();
+    if (!isAdmin) {
+        return (
+            <main className="mx-auto px-4 pt-10 pb-24 max-w-md text-center" data-testid="admin-layout-forbidden">
+                <Shield className="w-10 h-10 text-white/25 mx-auto mb-3" />
+                <h1 className="font-display text-xl font-black tracking-tight text-white/80 mb-1">
+                    {t("admin.title")}
+                </h1>
+                <p className="text-xs text-white/45">
+                    {t("admin.not_authorised") /* "Admin access required." */}
+                </p>
+            </main>
+        );
+    }
     return (
         <main className="mx-auto px-4 sm:px-6 pt-3 pb-24 lg:pb-6
             max-w-[430px] sm:max-w-[640px] lg:max-w-[860px]" data-testid="admin-layout">
@@ -40,6 +53,8 @@ export const AdminLayout = () => {
                 <Tab to="/admin/promos" icon={Ticket} label={t("admin.tab_promos")} testid="admin-subnav-promos" />
                 <Tab to="/admin/digest" icon={Activity} label={t("admin.tab_digest")} testid="admin-subnav-digest" />
                 <Tab to="/admin/users" icon={Users} label={t("admin.tab_users")} testid="admin-subnav-users" />
+                <Tab to="/admin/sell-reviews" icon={Diamond} label={t("admin.tab_sell_reviews")} testid="admin-subnav-sell-reviews" />
+                <Tab to="/admin/roulette-config" icon={Cog} label={t("admin.tab_roulette_config")} testid="admin-subnav-roulette-config" />
                 <Tab to="/admin/settings" icon={SlidersHorizontal} label={t("admin.tab_settings")} testid="admin-subnav-settings" />
             </div>
             <Outlet />
