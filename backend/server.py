@@ -100,6 +100,16 @@ async def _sync_static_bundle() -> None:
     masks any baked-in files inside that path. We keep a pristine copy at
     /app/backend/_static_bundle (outside the volume) and rsync any missing
     files into the live STATIC_DIR on startup. Safe to run every boot.
+
+    Phase 6e bug-fix: previously this only copied MISSING files, which meant
+    that when the bundled artwork changed (e.g. the 70 new Phase 6e PNGs),
+    the stale 22 KB placeholders already on the live volume were never
+    overwritten. We now compare (size, mtime) — different tuple → overwrite.
+    Identical → skip (no-op on stable images).
+
+    Files in the live volume that DON'T exist in the bundle are NEVER
+    touched (we only walk the bundle), so user-uploaded admin assets are
+    preserved.
     """
     import os as _os
     import shutil
@@ -108,21 +118,36 @@ async def _sync_static_bundle() -> None:
     if not bundle.exists() or not bundle.is_dir():
         return  # no bundle baked in (dev / sandbox) — skip silently
     copied = 0
+    skipped = 0
     for root, _dirs, files in _os.walk(bundle):
         rel = _Path(root).relative_to(bundle)
         dst_dir = STATIC_DIR / rel
         dst_dir.mkdir(parents=True, exist_ok=True)
         for f in files:
+            src = _Path(root) / f
             dst = dst_dir / f
-            if dst.exists() and dst.stat().st_size > 0:
-                continue
             try:
-                shutil.copy2(_Path(root) / f, dst)
+                src_stat = src.stat()
+            except OSError as e:
+                logger.warning("[static_sync] cannot stat bundle file %s: %s", src, e)
+                continue
+            if dst.exists():
+                dst_stat = dst.stat()
+                if (dst_stat.st_size == src_stat.st_size
+                        and int(dst_stat.st_mtime) == int(src_stat.st_mtime)):
+                    skipped += 1
+                    continue
+                logger.info(
+                    "[static_sync] OVERWRITE %s bundle=%d live=%d",
+                    str(rel / f), src_stat.st_size, dst_stat.st_size,
+                )
+            try:
+                shutil.copy2(src, dst)
                 copied += 1
             except Exception as e:  # noqa: BLE001
-                logger.warning("static-bundle sync failed for %s: %s", f, e)
-    if copied:
-        logger.info("static-bundle: copied %d missing files into %s", copied, STATIC_DIR)
+                logger.warning("[static_sync] copy failed for %s: %s", f, e)
+    if copied or skipped:
+        logger.info("[static_sync] %d copied, %d already-current", copied, skipped)
 
 
 @asynccontextmanager
