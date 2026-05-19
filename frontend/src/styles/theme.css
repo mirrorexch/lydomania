@@ -1,0 +1,57 @@
+/* Phase 11 — Lydomania premium gold-luxe design tokens.
+ *
+ * Imported once at the top of `src/index.css`. All variables exposed to
+ * Tailwind via tailwind.config.js (colors.gold.* / colors.surface.* /
+ * colors.cyber.* alias). Treat this file as the source of truth — anything
+ * that wants a brand colour should reference these tokens, not raw hex.
+ */
+:root {
+    /* ── Gold scale (warm primary brand) ───────────────────────────────── */
+    --gold-50:  #FFFAEB;
+    --gold-100: #FFF3CC;
+    --gold-200: #FFEB99;
+    --gold-300: #FFEB99;   /* same as 200 — hover-glow */
+    --gold-400: #E8C547;
+    --gold-500: #D4AF37;   /* primary */
+    --gold-600: #B8860B;   /* deep */
+    --gold-700: #8A6508;
+    --gold-800: #5C4406;
+    --gold-900: #3D2F08;
+
+    /* Bright accent — used for chips, value emphasis, jackpot text */
+    --gold-bright: #FFD700;
+
+    /* ── Surface scale (warm-tinted near-black) ────────────────────────── */
+    --surface-0: #000000;
+    --surface-1: #0A0A0A;
+    --surface-2: #13110C;
+    --surface-3: #1C1810;
+
+    /* ── Semantic ──────────────────────────────────────────────────────── */
+    --success: #10B981;
+    --danger:  #EF4444;
+    --warn:    #F59E0B;
+
+    /* ── shadcn semantic tokens re-tuned for gold-luxe ─────────────────── */
+    --background:               240 6%   2%;
+    --foreground:               0   0%   98%;
+    --card:                     30  20%  6%;
+    --card-foreground:          0   0%   98%;
+    --popover:                  30  20%  6%;
+    --popover-foreground:       0   0%   98%;
+    --primary:                  44  80%  53%;
+    --primary-foreground:       30  20%  4%;
+    --secondary:                30  10%  10%;
+    --secondary-foreground:     0   0%   98%;
+    --muted:                    30  10%  10%;
+    --muted-foreground:         44  20%  68%;
+    --accent:                   44  100% 50%;
+    --accent-foreground:        30  20%  4%;
+    --destructive:              0   84%  60%;
+    --destructive-foreground:   0   0%   98%;
+    --border:                   44  40%  14%;
+    --input:                    44  40%  14%;
+    --ring:                     44  80%  53%;
+    --radius:                   0.75rem;
+}
+

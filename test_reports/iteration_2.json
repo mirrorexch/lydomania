@@ -1,0 +1,53 @@
+{
+  "summary": "Lydomania Phase 1a backend regression: 25/25 pytest tests passed (108s). Validated cases list (5 enabled, EV 84.5-85.5%), case detail (probabilities sum to 1.0 for all 5 ids, basket sizes 21/22/23/28/27), 404 for unknown case, /api/fair/current shape + 64-hex hash, atomic balance deduction on open (find_one_and_update with $gte filter), full response shape, independent HMAC-SHA256 recomputation in test (matches roll_float bit-for-bit), nonce monotonic increment across 4 opens, inventory listing + sell + withdraw + 409 idempotency on double-sell / double-withdraw / sell-after-withdraw, cross-user isolation (user B 409s on user A items), concurrent double-spend protection (5 parallel opens with balance=15: exactly 1 succeeds, 4 return 402, final balance=5), EV math empirical sanity, Phase 0 regressions (health, deposit-address uniqueness, dev-login, openapi has all game routes), and HEAD checks on /api/static/cases/stickers_box.png + /api/static/items/crate_jackpot.png returning image/png 200.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/cases/{id}/open",
+        "issue": "EV sanity test methodology is statistically flawed at N=200. On re-run with a fresh user we observed empirical mean payout=3.486 TON vs expected 8.5 TON. Reason: the stickers_box jackpot (plush_pepe, 1850 TON) is what drags EV up to 85%; without hitting it the base EV is ~3.5 TON. P(hit jackpot in 200 spins) ~42%, so ~60% of 200-roll runs will be 50%+ below expected. The engine math itself is verified correct via (a) seed_db.py solves the jackpot weight to hit target_ev_pct=85.0 exactly, and (b) our independent HMAC-SHA256 recomputation in test_independent_fair_verify matches roll_float to 1e-12. Recommend either N>=10000 for empirical EV check or drop empirical check in favor of mathematical proof + bit-exact verification (already in place)."
+      },
+      {
+        "endpoint": "server.py",
+        "issue": "app.include_router(api) is called twice at lines 1155 and 1158 (duplicate). FastAPI tolerates this but every route is registered twice in app.routes; harmless but should be deduped."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lydomania_phase1a.py",
+    "/app/backend/tests/test_lydomania_backend.py",
+    "/app/test_reports/pytest/pytest_results_phase1a.xml"
+  ],
+  "action_items": [
+    "Dedupe app.include_router(api) — remove the second call at line 1158 of /app/backend/server.py.",
+    "Either bump EV sanity N to ~10000 or drop the empirical EV bound — 200 samples is insufficient given the jackpot variance. The mathematical correctness is already proved by seed_db.py auto-solving the jackpot weight to hit 85.000% EV.",
+    "Consider adding a server-side EV self-check at startup that asserts sum(weight * payout) / total_weight / price == target_ev_pct ± 0.01 for each case, to catch any future seed_db.py regressions early."
+  ],
+  "critical_code_review_comments": [
+    "Duplicate app.include_router(api) at /app/backend/server.py:1155 and :1158 — minor bug, dedupe.",
+    "/api/fair/verify queries by roll_id with a 12-byte secrets.token_hex (24 hex chars) — fine for now but no rate limiting; with 24 hex chars the surface is huge so brute-force is infeasible.",
+    "open_case stores server_seed in the rolls collection AFTER reveal — that is intentional and correct (audit trail), but make sure rolls is never exposed via an unauthenticated listing API. Currently only /api/fair/verify reveals by roll_id which is the intended provably-fair design.",
+    "Concurrency safety: open_case uses find_one_and_update with $gte filter for balance — atomic and correct. sell/withdraw use status filter for state-transition — atomic and correct. inventory_col.find_one_and_update will return None for both 'not yours' and 'wrong status' yielding 409 either way — semantically OK but the 409 detail could distinguish cases for better UX.",
+    "fair_col nonce $inc is atomic but happens AFTER the balance deduction. If the nonce $inc were to fail (e.g. DB error), the balance is already debited. Consider wrapping in a transaction OR refunding on nonce error. Low-probability but real.",
+    "ROTATE_NONCE_EVERY auto-rotation happens AFTER the roll is committed which is correct (the revealed seed corresponds to the rolls just used).",
+    "No upper bound on client_seed length — a 10 MB client_seed would be accepted. Add max_length validator on CaseOpenIn.client_seed (e.g. 128 chars)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lydomania_phase1a.py"
+  ],
+  "success_rate": {
+    "backend": "100% (25/25 Phase 1a tests pass; EV sanity uses loose +/-50%-200% bound documented in test)",
+    "frontend": "N/A (skipped per request)"
+  },
+  "test_credentials": "Dev-login telegram_ids 200001..200041 used (fresh range distinct from iteration_1). JWT minted via POST /api/auth/dev-login. dev-credit used to top up balances.",
+  "seed_data_creation": "Test users 200001-200041 created via dev-login, total dev-credit ~25,000 TON distributed. ~210 rolls inserted across the test suite. Safe to leave in DB; uses TEST_ prefix not enforced but distinct telegram_id range.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Phase 1a pytest suite at /app/backend/tests/test_lydomania_phase1a.py is the canonical Phase 1a regression. Run via: pytest /app/backend/tests/test_lydomania_phase1a.py -v. Uses httpx for concurrent double-spend test. Phase 0 regressions still live in test_lydomania_backend.py — run both. Use telegram_id range 300000+ for next iteration to avoid balance bleed-over from iter2 (200001-200041). All game routes confirmed in /api/openapi.json. Static assets confirmed served at /api/static/cases/*.png and /api/static/items/*.png (HEAD returns image/png 200).",
+  "rca of the issue": "No critical bugs. The EV sanity test flakiness is documented above (N=200 is too few given jackpot variance, NOT an engine bug). The duplicate include_router is a code smell, not a functional bug."
+}

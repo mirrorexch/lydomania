@@ -1,0 +1,36 @@
+{
+  "summary": "Phase 3c — Live Fragment floor sync + auto-recalibrate + solvency: ALL GREEN. 11/11 pytest pass in /app/backend/tests/test_lydomania_phase3c.py and tools/verify_solvency.py confirms ALL 5 CASES SOLVENT ✅ with EV-math = 90.000% on every case (±0.5%). Verified: admin auth gate (403 for non-admin, 401 for no-auth), max_payout_multiplier exposed in GET /api/admin/settings + roundtrip via PATCH, sync-floors-from-fragment dry-run vs apply, recalibrate-all-cases (5/5 ok, EV exactly 90.000% per case, weight_mode reported as preserved/inverse_payout, dropped list populated under tight caps), sync-all chains watch→items→cases and includes per-case report with weight_mode + dropped, DATA INTEGRITY confirmed (opened inventory item's frozen payout_ton unchanged before & after sync-all apply), game loop unaffected (case open succeeds after recalibration). Solvency simulator (5,000 iters × 5 cases) shows house P&L +254,397 TON / +11.7% — recalibration produces a casino-favourable economy with theoretical EV exactly = target.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/admin/maintenance/sync-all", "issue": "Does NOT expose `refresh_first` param (always runs watch_once, ~37s). The single-step endpoints sync-floors-from-fragment / recalibrate-all-cases each support refresh_first=false / apply=false, but sync-all is forced to refresh. Not blocking — the watcher is cheap once warm — but admins running back-to-back sync-alls hammer Fragment unnecessarily. Consider adding refresh_first: bool = Query(True) to sync_all() (services/recalibration.py + routers/admin/maintenance.py:60)."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_lydomania_phase3c.py",
+    "/app/test_reports/pytest/pytest_phase3c.xml"
+  ],
+  "action_items": [
+    "(optional, P2) Add `refresh_first: bool = Query(True)` to POST /api/admin/maintenance/sync-all so admins can skip the 37s watch_once when floors are already fresh.",
+    "(none-blocking) Per iteration_7.json: auto_fulfill_dry_run still not exposed in GET /api/admin/settings — unrelated to Phase 3c but still open."
+  ],
+  "critical_code_review_comments": [
+    "services/recalibration.py is clean: jackpot-weight solver + inverse_payout fallback is mathematically sound, target EV achievable to <0.001% drift in all 5 cases.",
+    "Data-integrity rule honoured: sync_floors_to_items() only updates items collection; recalibrate_case() only updates cases.basket. inventory_items NEVER touched — verified empirically (opened item's payout_ton frozen across sync-all apply).",
+    "Solvency cap working correctly: with multiplier=10 on stickers_box (cap=10 TON), expensive slugs are dropped from the basket (verified in TestDropBehavior).",
+    "max_payout_multiplier wired end-to-end: DEFAULTS in services/settings.py → backfilled into existing doc → exposed in SettingsOut model → returned by GET /admin/settings → settable via PATCH → consumed by all 4 maintenance endpoints with proper fallback.",
+    "tools/verify_solvency.py output is excellent: shows EV-math separately from realised RTP, flags solvency by house P&L sign (the real money-safety check), and breaks down per-item contribution.",
+    "MINOR: sync-all hard-codes refresh_first=True (no kwarg), so the 37s watch cycle runs unconditionally. Easy to expose."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lydomania_phase3c.py (NEW — 11 tests covering all 9 spec items)"
+  ],
+  "success_rate": {"backend": "11/11 = 100%", "frontend": "N/A (skipped per request)"},
+  "test_credentials": "Admin tg=100000001 (sentinel admin) via POST /api/auth/dev-login. Test user tg=760310+epoch%9000 (run-unique). All from /app/memory/test_credentials.md.",
+  "seed_data_creation": "Created one user via dev-login and credited 100 TON, opened stickers_box once → captured one inventory item (id+payout_ton) as the data-integrity snapshot anchor. No persistent mutation to seed catalogue. Settings max_payout_multiplier restored to original value after roundtrip test.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Phase 3c is fully green at the backend layer. All 4 maintenance endpoints + recalibration math + verify_solvency.py tool are correct and consistent. The only nit is that POST /api/admin/maintenance/sync-all always runs watch_once (~37s) — single-step endpoints expose refresh_first but sync-all does not. Test file /app/backend/tests/test_lydomania_phase3c.py is reusable as a regression suite (11 tests, ~78s wall-clock dominated by the unavoidable watch_once in TestSyncAll). To skip the slow test selectively: `pytest tests/test_lydomania_phase3c.py -v --deselect tests/test_lydomania_phase3c.py::TestSyncAll`. Frontend AdminSettingsPage Maintenance section was not exercised here (frontend skipped per request) — main agent should manually verify maintenance-sync-all-btn, maintenance-dryrun-toggle, settings-max-payout-mult, maintenance-sync-report, sync-report-row-{case_id} testids.",
+  "rca of the issue": "No bugs to RCA — Phase 3c shipped clean. Recalibration math: For each case, jackpot weight w_j is solved analytically given preserved non-jackpot weights using w_j = (Σ wᵢpᵢ_others - target_ev × Σ wᵢ_others) / (target_ev - p_jackpot). If that yields w_j ≤ 0 (preserved weights infeasible), the basket is rebuilt with weights ∝ 1/payout (inverse_payout mode) and resolved. With multiplier=200 and current live floors, all 5 cases land in `preserved` mode hitting target_ev = 90.0% exactly (drift < 0.001%). Solvency in 5,000-iter sim: house P&L +11.7% overall — well above the +10% target."
+}

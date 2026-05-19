@@ -1,0 +1,680 @@
+{
+  "_comment": "Lydomania case configs v1. Target EV: 85% of case price (15% house edge). Final jackpot-item weights are auto-solved at seed time by tools/seed_db.py to hit EXACTLY 85% (\u00b10.001%).",
+  "cases": [
+    {
+      "id": "stickers_box",
+      "name": "Stickers Box",
+      "slug": "stickers_box",
+      "price_ton": 10.0,
+      "image_path": "cases/stickers_box.png",
+      "target_ev_pct": 90.0,
+      "basket": [
+        {
+          "slug": "lol_pop",
+          "weight": 12,
+          "payout_ton": 1.2
+        },
+        {
+          "slug": "lunar_snake",
+          "weight": 10,
+          "payout_ton": 1.4
+        },
+        {
+          "slug": "winter_wreath",
+          "weight": 9,
+          "payout_ton": 1.5
+        },
+        {
+          "slug": "homemade_cake",
+          "weight": 8,
+          "payout_ton": 1.7
+        },
+        {
+          "slug": "snow_globe",
+          "weight": 7,
+          "payout_ton": 1.8
+        },
+        {
+          "slug": "candy_cane",
+          "weight": 6,
+          "payout_ton": 1.9
+        },
+        {
+          "slug": "spy_agaric",
+          "weight": 6,
+          "payout_ton": 2.0
+        },
+        {
+          "slug": "tama_gadget",
+          "weight": 5,
+          "payout_ton": 2.2
+        },
+        {
+          "slug": "lush_bouquet",
+          "weight": 5,
+          "payout_ton": 2.4
+        },
+        {
+          "slug": "ginger_cookie",
+          "weight": 4,
+          "payout_ton": 2.6
+        },
+        {
+          "slug": "snake_box",
+          "weight": 4,
+          "payout_ton": 2.7
+        },
+        {
+          "slug": "easter_egg",
+          "weight": 3,
+          "payout_ton": 3.1
+        },
+        {
+          "slug": "jingle_bells",
+          "weight": 3,
+          "payout_ton": 3.3
+        },
+        {
+          "slug": "vintage_cigar",
+          "weight": 3,
+          "payout_ton": 6.2
+        },
+        {
+          "slug": "heart_locket",
+          "weight": 3,
+          "payout_ton": 6.8
+        },
+        {
+          "slug": "scared_cat",
+          "weight": 2,
+          "payout_ton": 7.2
+        },
+        {
+          "slug": "loot_bag",
+          "weight": 2,
+          "payout_ton": 7.6
+        },
+        {
+          "slug": "kissed_frog",
+          "weight": 1,
+          "payout_ton": 8.4
+        },
+        {
+          "slug": "top_hat",
+          "weight": 1,
+          "payout_ton": 16.5
+        },
+        {
+          "slug": "perfume_bottle",
+          "weight": 1,
+          "payout_ton": 21.0
+        },
+        {
+          "slug": "swag_bag",
+          "weight": 1,
+          "payout_ton": 58.0
+        }
+      ],
+      "jackpot": {
+        "slug": "plush_pepe",
+        "payout_ton": 1850.0
+      }
+    },
+    {
+      "id": "premium_pack",
+      "name": "Premium Pack",
+      "slug": "premium_pack",
+      "price_ton": 25.0,
+      "image_path": "cases/premium_pack.png",
+      "target_ev_pct": 90.0,
+      "basket": [
+        {
+          "slug": "snow_mittens",
+          "weight": 11,
+          "payout_ton": 3.5
+        },
+        {
+          "slug": "party_sparkler",
+          "weight": 10,
+          "payout_ton": 3.6
+        },
+        {
+          "slug": "santa_hat",
+          "weight": 9,
+          "payout_ton": 3.7
+        },
+        {
+          "slug": "evil_eye",
+          "weight": 8,
+          "payout_ton": 3.9
+        },
+        {
+          "slug": "voodoo_doll",
+          "weight": 7,
+          "payout_ton": 4.2
+        },
+        {
+          "slug": "mad_pumpkin",
+          "weight": 6,
+          "payout_ton": 4.4
+        },
+        {
+          "slug": "trapped_heart",
+          "weight": 6,
+          "payout_ton": 4.6
+        },
+        {
+          "slug": "skull_flower",
+          "weight": 5,
+          "payout_ton": 4.8
+        },
+        {
+          "slug": "swiss_watch",
+          "weight": 5,
+          "payout_ton": 4.9
+        },
+        {
+          "slug": "magic_potion",
+          "weight": 4,
+          "payout_ton": 5.2
+        },
+        {
+          "slug": "neko_helmet",
+          "weight": 4,
+          "payout_ton": 8.9
+        },
+        {
+          "slug": "love_potion",
+          "weight": 3,
+          "payout_ton": 9.5
+        },
+        {
+          "slug": "cookie_heart",
+          "weight": 3,
+          "payout_ton": 9.8
+        },
+        {
+          "slug": "low_rider",
+          "weight": 3,
+          "payout_ton": 10.4
+        },
+        {
+          "slug": "hex_pot",
+          "weight": 2,
+          "payout_ton": 11.0
+        },
+        {
+          "slug": "jelly_bunny",
+          "weight": 2,
+          "payout_ton": 11.6
+        },
+        {
+          "slug": "diamond_ring",
+          "weight": 2,
+          "payout_ton": 13.4
+        },
+        {
+          "slug": "toy_bear",
+          "weight": 2,
+          "payout_ton": 18.4
+        },
+        {
+          "slug": "electric_skull",
+          "weight": 1,
+          "payout_ton": 24.6
+        },
+        {
+          "slug": "flying_broom",
+          "weight": 1,
+          "payout_ton": 27.2
+        },
+        {
+          "slug": "sakura_flower",
+          "weight": 1,
+          "payout_ton": 29.8
+        },
+        {
+          "slug": "heroic_helmet",
+          "weight": 1,
+          "payout_ton": 72.0
+        }
+      ],
+      "jackpot": {
+        "slug": "plush_pepe",
+        "payout_ton": 1850.0
+      }
+    },
+    {
+      "id": "royal_chest",
+      "name": "Royal Chest",
+      "slug": "royal_chest",
+      "price_ton": 50.0,
+      "image_path": "cases/royal_chest.png",
+      "target_ev_pct": 90.0,
+      "basket": [
+        {
+          "slug": "vintage_cigar",
+          "weight": 10,
+          "payout_ton": 6.2
+        },
+        {
+          "slug": "heart_locket",
+          "weight": 9,
+          "payout_ton": 6.8
+        },
+        {
+          "slug": "scared_cat",
+          "weight": 8,
+          "payout_ton": 7.2
+        },
+        {
+          "slug": "loot_bag",
+          "weight": 7,
+          "payout_ton": 7.6
+        },
+        {
+          "slug": "kissed_frog",
+          "weight": 7,
+          "payout_ton": 8.4
+        },
+        {
+          "slug": "neko_helmet",
+          "weight": 6,
+          "payout_ton": 8.9
+        },
+        {
+          "slug": "love_potion",
+          "weight": 5,
+          "payout_ton": 9.5
+        },
+        {
+          "slug": "low_rider",
+          "weight": 5,
+          "payout_ton": 10.4
+        },
+        {
+          "slug": "hex_pot",
+          "weight": 4,
+          "payout_ton": 11.0
+        },
+        {
+          "slug": "spiced_wine",
+          "weight": 4,
+          "payout_ton": 12.1
+        },
+        {
+          "slug": "crystal_ball",
+          "weight": 4,
+          "payout_ton": 12.9
+        },
+        {
+          "slug": "diamond_ring",
+          "weight": 3,
+          "payout_ton": 13.4
+        },
+        {
+          "slug": "eternal_rose",
+          "weight": 3,
+          "payout_ton": 14.2
+        },
+        {
+          "slug": "perfume_bottle",
+          "weight": 3,
+          "payout_ton": 21.0
+        },
+        {
+          "slug": "electric_skull",
+          "weight": 2,
+          "payout_ton": 24.6
+        },
+        {
+          "slug": "bow_tie",
+          "weight": 2,
+          "payout_ton": 32.6
+        },
+        {
+          "slug": "ion_gem",
+          "weight": 2,
+          "payout_ton": 36.5
+        },
+        {
+          "slug": "westside_sign",
+          "weight": 2,
+          "payout_ton": 39.0
+        },
+        {
+          "slug": "star_notepad",
+          "weight": 1,
+          "payout_ton": 46.0
+        },
+        {
+          "slug": "hanging_star",
+          "weight": 1,
+          "payout_ton": 49.0
+        },
+        {
+          "slug": "swag_bag",
+          "weight": 1,
+          "payout_ton": 58.0
+        },
+        {
+          "slug": "signet_ring",
+          "weight": 1,
+          "payout_ton": 88.0
+        },
+        {
+          "slug": "astral_shard",
+          "weight": 1,
+          "payout_ton": 105.0
+        }
+      ],
+      "jackpot": {
+        "slug": "plush_pepe",
+        "payout_ton": 1850.0
+      }
+    },
+    {
+      "id": "diamond_vault",
+      "name": "Diamond Vault",
+      "slug": "diamond_vault",
+      "price_ton": 100.0,
+      "image_path": "cases/diamond_vault.png",
+      "target_ev_pct": 90.0,
+      "basket": [
+        {
+          "slug": "kissed_frog",
+          "weight": 10,
+          "payout_ton": 8.4
+        },
+        {
+          "slug": "neko_helmet",
+          "weight": 9,
+          "payout_ton": 8.9
+        },
+        {
+          "slug": "love_potion",
+          "weight": 8,
+          "payout_ton": 9.5
+        },
+        {
+          "slug": "cookie_heart",
+          "weight": 7,
+          "payout_ton": 9.8
+        },
+        {
+          "slug": "low_rider",
+          "weight": 7,
+          "payout_ton": 10.4
+        },
+        {
+          "slug": "hex_pot",
+          "weight": 6,
+          "payout_ton": 11.0
+        },
+        {
+          "slug": "jelly_bunny",
+          "weight": 5,
+          "payout_ton": 11.6
+        },
+        {
+          "slug": "spiced_wine",
+          "weight": 5,
+          "payout_ton": 12.1
+        },
+        {
+          "slug": "crystal_ball",
+          "weight": 4,
+          "payout_ton": 12.9
+        },
+        {
+          "slug": "diamond_ring",
+          "weight": 4,
+          "payout_ton": 13.4
+        },
+        {
+          "slug": "eternal_rose",
+          "weight": 4,
+          "payout_ton": 14.2
+        },
+        {
+          "slug": "toy_bear",
+          "weight": 3,
+          "payout_ton": 18.4
+        },
+        {
+          "slug": "perfume_bottle",
+          "weight": 3,
+          "payout_ton": 21.0
+        },
+        {
+          "slug": "electric_skull",
+          "weight": 3,
+          "payout_ton": 24.6
+        },
+        {
+          "slug": "flying_broom",
+          "weight": 2,
+          "payout_ton": 27.2
+        },
+        {
+          "slug": "bow_tie",
+          "weight": 2,
+          "payout_ton": 32.6
+        },
+        {
+          "slug": "westside_sign",
+          "weight": 2,
+          "payout_ton": 39.0
+        },
+        {
+          "slug": "joyful_bundle",
+          "weight": 2,
+          "payout_ton": 42.5
+        },
+        {
+          "slug": "star_notepad",
+          "weight": 1,
+          "payout_ton": 46.0
+        },
+        {
+          "slug": "hanging_star",
+          "weight": 1,
+          "payout_ton": 49.0
+        },
+        {
+          "slug": "swag_bag",
+          "weight": 1,
+          "payout_ton": 58.0
+        },
+        {
+          "slug": "heroic_helmet",
+          "weight": 1,
+          "payout_ton": 72.0
+        },
+        {
+          "slug": "signet_ring",
+          "weight": 1,
+          "payout_ton": 88.0
+        },
+        {
+          "slug": "astral_shard",
+          "weight": 1,
+          "payout_ton": 105.0
+        },
+        {
+          "slug": "witch_hat",
+          "weight": 1,
+          "payout_ton": 128.0
+        },
+        {
+          "slug": "bonded_ring",
+          "weight": 1,
+          "payout_ton": 156.0
+        },
+        {
+          "slug": "precious_peach",
+          "weight": 1,
+          "payout_ton": 185.0
+        },
+        {
+          "slug": "durov_cap",
+          "weight": 1,
+          "payout_ton": 380.0
+        }
+      ],
+      "jackpot": {
+        "slug": "cupid_charm",
+        "payout_ton": 3200.0
+      }
+    },
+    {
+      "id": "mythic_crown",
+      "name": "Mythic Crown",
+      "slug": "mythic_crown",
+      "price_ton": 250.0,
+      "image_path": "cases/mythic_crown.png",
+      "target_ev_pct": 90.0,
+      "basket": [
+        {
+          "slug": "spiced_wine",
+          "weight": 12,
+          "payout_ton": 12.1
+        },
+        {
+          "slug": "crystal_ball",
+          "weight": 11,
+          "payout_ton": 12.9
+        },
+        {
+          "slug": "diamond_ring",
+          "weight": 10,
+          "payout_ton": 13.4
+        },
+        {
+          "slug": "eternal_rose",
+          "weight": 9,
+          "payout_ton": 14.2
+        },
+        {
+          "slug": "top_hat",
+          "weight": 8,
+          "payout_ton": 16.5
+        },
+        {
+          "slug": "toy_bear",
+          "weight": 7,
+          "payout_ton": 18.4
+        },
+        {
+          "slug": "perfume_bottle",
+          "weight": 6,
+          "payout_ton": 21.0
+        },
+        {
+          "slug": "electric_skull",
+          "weight": 5,
+          "payout_ton": 24.6
+        },
+        {
+          "slug": "flying_broom",
+          "weight": 5,
+          "payout_ton": 27.2
+        },
+        {
+          "slug": "sakura_flower",
+          "weight": 5,
+          "payout_ton": 29.8
+        },
+        {
+          "slug": "bow_tie",
+          "weight": 4,
+          "payout_ton": 32.6
+        },
+        {
+          "slug": "ion_gem",
+          "weight": 4,
+          "payout_ton": 36.5
+        },
+        {
+          "slug": "westside_sign",
+          "weight": 4,
+          "payout_ton": 39.0
+        },
+        {
+          "slug": "joyful_bundle",
+          "weight": 3,
+          "payout_ton": 42.5
+        },
+        {
+          "slug": "star_notepad",
+          "weight": 3,
+          "payout_ton": 46.0
+        },
+        {
+          "slug": "hanging_star",
+          "weight": 3,
+          "payout_ton": 49.0
+        },
+        {
+          "slug": "swag_bag",
+          "weight": 3,
+          "payout_ton": 58.0
+        },
+        {
+          "slug": "heroic_helmet",
+          "weight": 2,
+          "payout_ton": 72.0
+        },
+        {
+          "slug": "signet_ring",
+          "weight": 2,
+          "payout_ton": 88.0
+        },
+        {
+          "slug": "astral_shard",
+          "weight": 2,
+          "payout_ton": 105.0
+        },
+        {
+          "slug": "witch_hat",
+          "weight": 2,
+          "payout_ton": 128.0
+        },
+        {
+          "slug": "bonded_ring",
+          "weight": 2,
+          "payout_ton": 156.0
+        },
+        {
+          "slug": "precious_peach",
+          "weight": 1,
+          "payout_ton": 185.0
+        },
+        {
+          "slug": "genie_lamp",
+          "weight": 1,
+          "payout_ton": 220.0
+        },
+        {
+          "slug": "durov_cap",
+          "weight": 1,
+          "payout_ton": 380.0
+        },
+        {
+          "slug": "light_sword",
+          "weight": 1,
+          "payout_ton": 520.0
+        },
+        {
+          "slug": "sharp_tongue",
+          "weight": 1,
+          "payout_ton": 690.0
+        }
+      ],
+      "jackpot": {
+        "slug": "cupid_charm",
+        "payout_ton": 3200.0
+      }
+    }
+  ]
+}

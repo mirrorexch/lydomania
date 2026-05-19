@@ -1,0 +1,453 @@
+{
+  "_comment": "Lydomania item catalog v1. Floor prices are approximations of the TG NFT gift market (Portal/MRKT) as of early 2026. They will be replaced by live data once admin enables system_settings.use_live_portals_pricing in Phase 2.",
+  "items": [
+    {
+      "slug": "lol_pop",
+      "name": "Lol Pop",
+      "rarity": "common",
+      "floor_price_ton": 1.2,
+      "image_path": "items/lol_pop.png"
+    },
+    {
+      "slug": "lunar_snake",
+      "name": "Lunar Snake",
+      "rarity": "common",
+      "floor_price_ton": 1.4,
+      "image_path": "items/lunar_snake.png"
+    },
+    {
+      "slug": "winter_wreath",
+      "name": "Winter Wreath",
+      "rarity": "common",
+      "floor_price_ton": 1.5,
+      "image_path": "items/winter_wreath.png"
+    },
+    {
+      "slug": "homemade_cake",
+      "name": "Homemade Cake",
+      "rarity": "common",
+      "floor_price_ton": 1.7,
+      "image_path": "items/homemade_cake.png"
+    },
+    {
+      "slug": "snow_globe",
+      "name": "Snow Globe",
+      "rarity": "common",
+      "floor_price_ton": 1.8,
+      "image_path": "items/snow_globe.png"
+    },
+    {
+      "slug": "candy_cane",
+      "name": "Candy Cane",
+      "rarity": "common",
+      "floor_price_ton": 1.9,
+      "image_path": "items/candy_cane.png"
+    },
+    {
+      "slug": "spy_agaric",
+      "name": "Spy Agaric",
+      "rarity": "common",
+      "floor_price_ton": 2.0,
+      "image_path": "items/spy_agaric.png"
+    },
+    {
+      "slug": "tama_gadget",
+      "name": "Tama Gadget",
+      "rarity": "common",
+      "floor_price_ton": 2.2,
+      "image_path": "items/tama_gadget.png"
+    },
+    {
+      "slug": "lush_bouquet",
+      "name": "Lush Bouquet",
+      "rarity": "common",
+      "floor_price_ton": 2.4,
+      "image_path": "items/lush_bouquet.png"
+    },
+    {
+      "slug": "ginger_cookie",
+      "name": "Ginger Cookie",
+      "rarity": "common",
+      "floor_price_ton": 2.6,
+      "image_path": "items/ginger_cookie.png"
+    },
+    {
+      "slug": "snake_box",
+      "name": "Snake Box",
+      "rarity": "common",
+      "floor_price_ton": 2.7,
+      "image_path": "items/snake_box.png"
+    },
+    {
+      "slug": "berry_box",
+      "name": "Berry Box",
+      "rarity": "common",
+      "floor_price_ton": 2.9,
+      "image_path": "items/berry_box.png"
+    },
+    {
+      "slug": "easter_egg",
+      "name": "Easter Egg",
+      "rarity": "common",
+      "floor_price_ton": 3.1,
+      "image_path": "items/easter_egg.png"
+    },
+    {
+      "slug": "jingle_bells",
+      "name": "Jingle Bells",
+      "rarity": "common",
+      "floor_price_ton": 3.3,
+      "image_path": "items/jingle_bells.png"
+    },
+    {
+      "slug": "snow_mittens",
+      "name": "Snow Mittens",
+      "rarity": "common",
+      "floor_price_ton": 3.5,
+      "image_path": "items/snow_mittens.png"
+    },
+    {
+      "slug": "party_sparkler",
+      "name": "Party Sparkler",
+      "rarity": "common",
+      "floor_price_ton": 3.6,
+      "image_path": "items/party_sparkler.png"
+    },
+    {
+      "slug": "santa_hat",
+      "name": "Santa Hat",
+      "rarity": "common",
+      "floor_price_ton": 3.7,
+      "image_path": "items/santa_hat.png"
+    },
+    {
+      "slug": "evil_eye",
+      "name": "Evil Eye",
+      "rarity": "common",
+      "floor_price_ton": 3.9,
+      "image_path": "items/evil_eye.png"
+    },
+    {
+      "slug": "voodoo_doll",
+      "name": "Voodoo Doll",
+      "rarity": "common",
+      "floor_price_ton": 4.2,
+      "image_path": "items/voodoo_doll.png"
+    },
+    {
+      "slug": "mad_pumpkin",
+      "name": "Mad Pumpkin",
+      "rarity": "common",
+      "floor_price_ton": 4.4,
+      "image_path": "items/mad_pumpkin.png"
+    },
+    {
+      "slug": "trapped_heart",
+      "name": "Trapped Heart",
+      "rarity": "common",
+      "floor_price_ton": 4.6,
+      "image_path": "items/trapped_heart.png"
+    },
+    {
+      "slug": "skull_flower",
+      "name": "Skull Flower",
+      "rarity": "common",
+      "floor_price_ton": 4.8,
+      "image_path": "items/skull_flower.png"
+    },
+    {
+      "slug": "swiss_watch",
+      "name": "Swiss Watch",
+      "rarity": "common",
+      "floor_price_ton": 4.9,
+      "image_path": "items/swiss_watch.png"
+    },
+    {
+      "slug": "magic_potion",
+      "name": "Magic Potion",
+      "rarity": "common",
+      "floor_price_ton": 5.2,
+      "image_path": "items/magic_potion.png"
+    },
+    {
+      "slug": "vintage_cigar",
+      "name": "Vintage Cigar",
+      "rarity": "rare",
+      "floor_price_ton": 6.2,
+      "image_path": "items/vintage_cigar.png"
+    },
+    {
+      "slug": "heart_locket",
+      "name": "Heart Locket",
+      "rarity": "rare",
+      "floor_price_ton": 6.8,
+      "image_path": "items/heart_locket.png"
+    },
+    {
+      "slug": "scared_cat",
+      "name": "Scared Cat",
+      "rarity": "rare",
+      "floor_price_ton": 7.2,
+      "image_path": "items/scared_cat.png"
+    },
+    {
+      "slug": "loot_bag",
+      "name": "Loot Bag",
+      "rarity": "rare",
+      "floor_price_ton": 7.6,
+      "image_path": "items/loot_bag.png"
+    },
+    {
+      "slug": "kissed_frog",
+      "name": "Kissed Frog",
+      "rarity": "rare",
+      "floor_price_ton": 8.4,
+      "image_path": "items/kissed_frog.png"
+    },
+    {
+      "slug": "neko_helmet",
+      "name": "Neko Helmet",
+      "rarity": "rare",
+      "floor_price_ton": 8.9,
+      "image_path": "items/neko_helmet.png"
+    },
+    {
+      "slug": "love_potion",
+      "name": "Love Potion",
+      "rarity": "rare",
+      "floor_price_ton": 9.5,
+      "image_path": "items/love_potion.png"
+    },
+    {
+      "slug": "cookie_heart",
+      "name": "Cookie Heart",
+      "rarity": "rare",
+      "floor_price_ton": 9.8,
+      "image_path": "items/cookie_heart.png"
+    },
+    {
+      "slug": "low_rider",
+      "name": "Low Rider",
+      "rarity": "rare",
+      "floor_price_ton": 10.4,
+      "image_path": "items/low_rider.png"
+    },
+    {
+      "slug": "hex_pot",
+      "name": "Hex Pot",
+      "rarity": "rare",
+      "floor_price_ton": 11.0,
+      "image_path": "items/hex_pot.png"
+    },
+    {
+      "slug": "jelly_bunny",
+      "name": "Jelly Bunny",
+      "rarity": "rare",
+      "floor_price_ton": 11.6,
+      "image_path": "items/jelly_bunny.png"
+    },
+    {
+      "slug": "spiced_wine",
+      "name": "Spiced Wine",
+      "rarity": "rare",
+      "floor_price_ton": 12.1,
+      "image_path": "items/spiced_wine.png"
+    },
+    {
+      "slug": "crystal_ball",
+      "name": "Crystal Ball",
+      "rarity": "rare",
+      "floor_price_ton": 12.9,
+      "image_path": "items/crystal_ball.png"
+    },
+    {
+      "slug": "diamond_ring",
+      "name": "Diamond Ring",
+      "rarity": "rare",
+      "floor_price_ton": 13.4,
+      "image_path": "items/diamond_ring.png"
+    },
+    {
+      "slug": "eternal_rose",
+      "name": "Eternal Rose",
+      "rarity": "rare",
+      "floor_price_ton": 14.2,
+      "image_path": "items/eternal_rose.png"
+    },
+    {
+      "slug": "top_hat",
+      "name": "Top Hat",
+      "rarity": "epic",
+      "floor_price_ton": 16.5,
+      "image_path": "items/top_hat.png"
+    },
+    {
+      "slug": "toy_bear",
+      "name": "Toy Bear",
+      "rarity": "epic",
+      "floor_price_ton": 18.4,
+      "image_path": "items/toy_bear.png"
+    },
+    {
+      "slug": "perfume_bottle",
+      "name": "Perfume Bottle",
+      "rarity": "epic",
+      "floor_price_ton": 21.0,
+      "image_path": "items/perfume_bottle.png"
+    },
+    {
+      "slug": "electric_skull",
+      "name": "Electric Skull",
+      "rarity": "epic",
+      "floor_price_ton": 24.6,
+      "image_path": "items/electric_skull.png"
+    },
+    {
+      "slug": "flying_broom",
+      "name": "Flying Broom",
+      "rarity": "epic",
+      "floor_price_ton": 27.2,
+      "image_path": "items/flying_broom.png"
+    },
+    {
+      "slug": "sakura_flower",
+      "name": "Sakura Flower",
+      "rarity": "epic",
+      "floor_price_ton": 29.8,
+      "image_path": "items/sakura_flower.png"
+    },
+    {
+      "slug": "bow_tie",
+      "name": "Bow Tie",
+      "rarity": "epic",
+      "floor_price_ton": 32.6,
+      "image_path": "items/bow_tie.png"
+    },
+    {
+      "slug": "ion_gem",
+      "name": "Ion Gem",
+      "rarity": "epic",
+      "floor_price_ton": 36.5,
+      "image_path": "items/ion_gem.png"
+    },
+    {
+      "slug": "westside_sign",
+      "name": "Westside Sign",
+      "rarity": "epic",
+      "floor_price_ton": 39.0,
+      "image_path": "items/westside_sign.png"
+    },
+    {
+      "slug": "joyful_bundle",
+      "name": "Joyful Bundle",
+      "rarity": "epic",
+      "floor_price_ton": 42.5,
+      "image_path": "items/joyful_bundle.png"
+    },
+    {
+      "slug": "star_notepad",
+      "name": "Star Notepad",
+      "rarity": "epic",
+      "floor_price_ton": 46.0,
+      "image_path": "items/star_notepad.png"
+    },
+    {
+      "slug": "hanging_star",
+      "name": "Hanging Star",
+      "rarity": "epic",
+      "floor_price_ton": 49.0,
+      "image_path": "items/hanging_star.png"
+    },
+    {
+      "slug": "swag_bag",
+      "name": "Swag Bag",
+      "rarity": "legendary",
+      "floor_price_ton": 58.0,
+      "image_path": "items/swag_bag.png"
+    },
+    {
+      "slug": "heroic_helmet",
+      "name": "Heroic Helmet",
+      "rarity": "legendary",
+      "floor_price_ton": 72.0,
+      "image_path": "items/heroic_helmet.png"
+    },
+    {
+      "slug": "signet_ring",
+      "name": "Signet Ring",
+      "rarity": "legendary",
+      "floor_price_ton": 88.0,
+      "image_path": "items/signet_ring.png"
+    },
+    {
+      "slug": "astral_shard",
+      "name": "Astral Shard",
+      "rarity": "legendary",
+      "floor_price_ton": 105.0,
+      "image_path": "items/astral_shard.png"
+    },
+    {
+      "slug": "witch_hat",
+      "name": "Witch Hat",
+      "rarity": "legendary",
+      "floor_price_ton": 128.0,
+      "image_path": "items/witch_hat.png"
+    },
+    {
+      "slug": "bonded_ring",
+      "name": "Bonded Ring",
+      "rarity": "legendary",
+      "floor_price_ton": 156.0,
+      "image_path": "items/bonded_ring.png"
+    },
+    {
+      "slug": "precious_peach",
+      "name": "Precious Peach",
+      "rarity": "legendary",
+      "floor_price_ton": 185.0,
+      "image_path": "items/precious_peach.png"
+    },
+    {
+      "slug": "genie_lamp",
+      "name": "Genie Lamp",
+      "rarity": "legendary",
+      "floor_price_ton": 220.0,
+      "image_path": "items/genie_lamp.png"
+    },
+    {
+      "slug": "durov_cap",
+      "name": "Durov's Cap",
+      "rarity": "mythic",
+      "floor_price_ton": 380.0,
+      "image_path": "items/durov_cap.png"
+    },
+    {
+      "slug": "light_sword",
+      "name": "Light Sword",
+      "rarity": "mythic",
+      "floor_price_ton": 520.0,
+      "image_path": "items/light_sword.png"
+    },
+    {
+      "slug": "sharp_tongue",
+      "name": "Sharp Tongue",
+      "rarity": "mythic",
+      "floor_price_ton": 690.0,
+      "image_path": "items/sharp_tongue.png"
+    },
+    {
+      "slug": "plush_pepe",
+      "name": "Plush Pepe",
+      "rarity": "jackpot",
+      "floor_price_ton": 1850.0,
+      "image_path": "items/plush_pepe.png"
+    },
+    {
+      "slug": "cupid_charm",
+      "name": "Cupid Charm",
+      "rarity": "jackpot",
+      "floor_price_ton": 3200.0,
+      "image_path": "items/cupid_charm.png"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "summary": "Phase 2 image-correction + buy-floor delta validated. Backend: 12/12 pytest pass — 6 image assets (plush_pepe, snake_box, durov_cap, perfume_bottle, lol_pop, astral_shard) all return 200 image/png with PNG magic header and size 11-28KB (well above 3KB threshold), confirming freshly-regenerated base Telegram-gift stickers from Fragment CDN. Admin fulfill accepts purchased_variant_info + gift_source='fragment' and persists it; WithdrawalOut surfaces purchased_variant_info on both /api/withdrawals/me (user) and /api/admin/withdrawals (admin). Notifications outbox DM body correctly branches: with variant -> 'Variant: <i>Plush Pepe #4729 · Black Hole backdrop</i>', without variant -> 'Variant: <i>cheapest available (floor)</i>' (verified directly in Mongo). gift_source='invalid_source' -> 422. Regression: /api/health, /api/cases, /api/admin/withdrawals all 200. Frontend: WithdrawModal disclaimer contains 'cheapest available' + 'Portal/MRKT/Fragment'; CaseDetailPage (route /case/:id) has [data-testid='floor-disclaimer'] with correct text; AdminWithdrawalsPage Fulfill modal exposes fulfill-modal, fulfill-fragment-link (href starts https://fragment.com/gifts/...?sort=price_asc&filter=sale), fulfill-portal-link (href starts https://t.me/portals?startapp=gift_), fulfill-variant-input, fulfill-source-select with ['portal','mrkt','fragment','manual']; context box reads 'Purchase the cheapest <gift> from the gift market'. CasesListPage hero displays '90% RTP' (no '85%').",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lydomania_phase2_delta.py",
+    "/app/test_reports/pytest/pytest_phase2_delta.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Naming inconsistency: the SPA route is /case/:id (singular) while the API is /api/cases (plural). Minor footgun for future agents — previous review request referenced 'case detail page' and a tester easily lands on /cases/<id> which 404s into 'No routes matched location'. Consider also registering a /cases/:id alias or 301 redirect for clarity.",
+    "AdminFulfillModal context wording is 'Purchase the cheapest <gift> from the gift market' which is functionally equivalent to the request's 'Purchase cheapest <gift> from gift market' but uses definite articles. Not a bug; just calling it out so future text-match tests can't be over-strict.",
+    "server.py continues to grow — Phase 2 + delta now exceeds 2000 lines; still recommend splitting routers/admin.py, routers/withdrawals.py, services/notifications.py before Phase 3.",
+    "Pre-existing ESLint warning in src/pages/InventoryPage.jsx:60 (missing 'reload' dep in useEffect) — not a Phase 2-delta regression.",
+    "tools/fetch_base_gift_images.py is a one-shot script; consider adding it to a Makefile target or CI gate so a future asset-replacement pass cannot accidentally publish blank/oversized PNGs (all current outputs are 11-30KB which is correct)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lydomania_phase2_delta.py (NEW)"
+  ],
+  "success_rate": {
+    "backend": "100% (12/12 pytest)",
+    "frontend": "100% (3/3 deltas: WithdrawModal disclaimer, CaseDetailPage floor-disclaimer, AdminFulfillModal links+variant input+fragment source option)"
+  },
+  "test_credentials": "Admin tg=100000001; users tg=410001-410055 created via dev-login; INTERNAL_API_SECRET=lydo_internal_dev_secret_71fc28a04bdf1c9e5a3b2e6d8f0c1a4b; lydo_token localStorage key.",
+  "seed_data_creation": "Created ~6 ephemeral users (tg 410001-410055), credited 200 TON each, opened a stickers_box, requested withdrawal, started+fulfilled it. All synthetic — no cleanup. Multiple notifications_outbox docs created with kind=withdraw_fulfilled used to verify DM body templates.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Phase 2 delta is 100% green. Test file /app/backend/tests/test_lydomania_phase2_delta.py is idempotent: tg ids derived from time.time()%100000+400000 so reruns won't collide. CRITICAL ROUTE NOTE: SPA route is /case/:id (singular) NOT /cases/:id — testing the case-detail page at /cases/<slug> will silently 404 into the CasesList layout. Always navigate /case/<slug>. Admin fulfill UI requires switching to the PROCESSING tab before the FULFILLED button appears (a START click on a pending row moves it to processing). Frontend's fulfill modal includes confirm guarded by tx_hash validation.",
+  "rca of the issue": "None — implementation matches review request. Two cosmetic deviations from the spec (route plural-vs-singular and 'Purchase the cheapest' vs 'Purchase cheapest') are not bugs, just stylistic."
+}

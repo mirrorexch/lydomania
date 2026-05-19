@@ -1,0 +1,40 @@
+{
+  "summary": "Phase 0 Lydomania backend regression: 15/15 pytest tests passed. Covered health, openapi, vault-info, telegram HMAC rejection (invalid + empty initData), dev-login + JWT (sub/tid/iat/exp ~24h), /api/me (with/without token), deposit-address uniqueness + format/expiry, dev-credit happy path + balance persistence + 422 validation, portals listings (mock fallback), Mongo collection persistence + no _id leakage, deposit watcher startup log + toncenter mainnet polling (HTTP 200 every ~15s confirmed in backend.err.log).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lydomania_backend.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ADMIN_API_KEY is present but /api/admin/portals/listings does not enforce it (Phase 0 intentional, only logs). Before going to prod, hard-block with 401/403 when key mismatch.",
+    "/api/auth/telegram uses HTTPException(400) inside a try/except that re-raises but the bare 'except json.JSONDecodeError' branch lacks 'raise' chain context; minor — fine for Phase 0.",
+    "deposit_watcher_loop swallows all exceptions with logger.warning; consider Sentry or counter metric for repeated toncenter outages.",
+    "_fetch_transactions has no rate-limit backoff; toncenter free tier is 1 req/s and can 429 — add exponential backoff before scaling polling.",
+    "@app.on_event('startup'/'shutdown') is deprecated in FastAPI; migrate to lifespan handler.",
+    "JWT_SECRET in .env is committed dev value; rotate in prod (already noted in name).",
+    "_parse_comment imports base64 inside function — move to module-level imports.",
+    "No rate limit on /api/auth/dev-login (gated by ENABLE_DEV_LOGIN flag, acceptable for Phase 0 but enumerable)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lydomania_backend.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "N/A (skipped per request)"
+  },
+  "test_credentials": "Dev-login JWT tokens minted via POST /api/auth/dev-login?telegram_id={100001|100002|100003|100010|100011|100012|100020}. No password. JWT_SECRET read from /app/backend/.env.",
+  "seed_data_creation": "Test users with telegram_id 100001/100002/100003/100010/100011/100012/100020 created via dev-login. Deposit intents and deposits docs created via deposit-address/dev-credit calls. Safe to leave in DB or wipe.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Pytest suite at /app/backend/tests/test_lydomania_backend.py is the canonical regression. It loads BOTH /app/backend/.env (for JWT_SECRET, MONGO_URL, DB_NAME) and /app/frontend/.env (for REACT_APP_BACKEND_URL). Vault address UQAZdIdZ3HR84duUYpvO7s_Yenbnx7TM6MPXOaquP4PnYCCc is hard-asserted; if mnemonic changes, update EXPECTED_VAULT_* constants. Real Telegram HMAC and real on-chain TON deposit cannot be tested in CI — those paths are validated only via (a) 401 rejection of invalid hash and (b) watcher log presence + toncenter HTTP 200 observed in backend.err.log every ~15s. Use dev-credit for balance flow.",
+  "rca of the issue": "N/A — no failures. Initial test run errored on collection because os.environ['REACT_APP_BACKEND_URL'] was not in the pytest process env; fixed by adding load_dotenv('/app/frontend/.env') alongside backend env load."
+}

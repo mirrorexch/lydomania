@@ -1,0 +1,77 @@
+# =====================================================================
+# Lydomania — Caddy v2 config
+# Auto-HTTPS via Let's Encrypt. Routes /api/* to backend, everything
+# else (including /tonconnect-manifest.json) to the React/nginx frontend.
+# Static files written by the backend (item images, share cards) are
+# served directly from the shared `backend-static` volume for speed.
+# =====================================================================
+
+{
+    email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+    encode zstd gzip
+
+    # ---- Health endpoint (no logging spam) ----
+    @health path /api/health
+    handle @health {
+        reverse_proxy backend:8000
+    }
+
+    # ---- Backend-served static images (cached aggressively) ----
+    # Strip `/api` so we look up files at /srv/static/* — matching the
+    # `backend-static` volume mount (which is /srv/static:ro in Caddy).
+    #
+    # 2026-05 bugfix — Cache-Control must be set ONLY on 2xx responses.
+    # Previously we headered every status, which let Telegram WebView
+    # cache 404s for 24h with `immutable` — even after the files were
+    # uploaded, the WebView refused to re-request them.
+    # Caddy v2 has no response-status request matcher, so we branch on
+    # the `file` request matcher (existence on disk) instead.
+    @backend_static path /api/static/*
+    handle @backend_static {
+        uri strip_prefix /api
+        root * /srv
+
+        @exists file
+        handle @exists {
+            header Cache-Control "public, max-age=86400, immutable"
+            file_server
+        }
+        handle {
+            header Cache-Control "no-store, no-cache, must-revalidate"
+            respond 404
+        }
+    }
+
+    # ---- All other /api routes → backend ----
+    @api path /api/*
+    handle @api {
+        reverse_proxy backend:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # ---- TonConnect manifest at root ----
+    handle /tonconnect-manifest.json {
+        reverse_proxy frontend:80
+    }
+
+    # ---- Everything else → frontend SPA ----
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    # ---- Security headers ----
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        # Telegram embeds the Mini App in an iframe — do NOT add X-Frame-Options
+    }
+}

@@ -1,0 +1,33 @@
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/**/*.pyc
+backend/.env
+backend/static/shares/*.png
+backend/.pytest_cache/
+backend/tests/__pycache__/
+
+frontend/.env
+frontend/node_modules/
+frontend/build/
+frontend/.cache/
+frontend/yarn-error.log
+
+deployment/.env
+deployment/backups/
+deployment/caddy-data/
+deployment/caddy-config/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Pyenv
+.venv/
+venv/
+
+# Logs
+*.log
+logs/

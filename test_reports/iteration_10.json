@@ -1,0 +1,41 @@
+{
+  "summary": "Phase 4b — Money + Retention: 32/33 backend pytest pass + 6/6 frontend smoke pass. ONE backend bug surfaced: POST /api/admin/promos hardcodes enabled=True (routers/admin/promos.py:55) and silently ignores payload.enabled — admins cannot create a disabled promo on first POST (PATCH afterwards still works, so workaround exists). Otherwise everything green: admin promo CRUD (create/dup-409/invalid-type-400/list/get-by-code-with-recent_redemptions/patch/delete-soft-disable); promo redeem (WELCOME5 → +5 TON balance verified via /api/me, second redeem 400 'already redeemed', FREESPIN increments free_spin_tokens up to user_max=3 then 400, unknown code 400/404); free case (cooldown shape on brand-new user available=true sec=0 free_spin_tokens=0, first open 200 + second open 429 cooldown, FREESPIN token bypasses cooldown and decrements tokens to 0, /open-batch returns 400 'one at a time'); leaderboards (wagered/week+won_single/all+referrers with rows desc-sorted by value, invalid_view → 400/422, period=invalid → 422); /api/admin/digest/preview returns {text:str, stats:dict} for default + window_hours=6/72; sync-all maintenance still enqueues sync_all_digest DM (Phase 4a regression green); admin settings expose portals_client_mode/mock_portals_fail_rate/mock_portals_sim_delay_s, PATCH portals_client_mode='mock' persists, 'BOGUS' → 422; services.ton_sender.build_nft_transfer_body returns a Cell whose first 32 bits == 0x5fcc3d14, send_nft_transfer(dry_run=True) returns {ok:true, mode:'dry_run', tx_hash startswith 'drydry', body_boc_b64 non-empty}; services.auto_fulfill._attempt_buy_and_send dry-run with item_slug='homemade_cake' + payout=50 returns ok=true, msg contains 'DRY-RUN', diag.resolved_listing set, diag.ton_send.mode='dry_run'; services.portals_client.get_portals_client() returns MockPortalsClient when mode='mock'; services.leaderboard.snapshot_previous_week() writes a doc with id starting 'weekly-' into leaderboard_snapshots_col; backend log confirms 'weekly_leaderboard_snapshot' scheduler entry. Frontend smoke: /leaderboard renders both tabs (view-tab-wagered + period-tab-week + won_single tab clickable), /admin/promos shows WELCOME5 seed row, /admin/digest renders admin-digest-text, home/cases shows daily-free-case-tile with SPIN button, /friends shows promo-redeem-form, /admin/cases logs ZERO empty-img-src AND ZERO span-in-option warnings (carryover P3 from iteration_9 fixed).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/admin/promos", "issue": "Hardcodes 'enabled': True in doc (routers/admin/promos.py line 55); ignores payload.enabled from PromoCodeIn. Admin cannot create a promo in disabled state on first POST. Workaround: PATCH after create works correctly. Spec implication minor — admin flow still functional. Fix: replace line 55 with `\"enabled\": bool(payload.enabled) if payload.enabled is not None else True`."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lydomania_phase4b.py",
+    "/app/test_reports/pytest/pytest_phase4b.xml"
+  ],
+  "action_items": [
+    "(P3 / minor) Fix POST /api/admin/promos to honour payload.enabled — routers/admin/promos.py line 55 hardcodes True. Pydantic model PromoCodeIn already exposes enabled:bool=True so add `bool(payload.enabled) if payload.enabled is not None else True` (or simply `bool(payload.enabled)`)."
+  ],
+  "critical_code_review_comments": [
+    "routers/cases.py free-case branch correctly registers /api/cases/free_case/cooldown BEFORE /api/cases/{case_id} — verified via 200 OK on the named route; consistent with the pattern used for /heatmap in Phase 4a.",
+    "services/ton_sender.py build_nft_transfer_body uses tonsdk begin_cell + store_uint(NFT_TRANSFER_OP=0x5fcc3d14, 32) + store_uint(query_id, 64) + store_address(new_owner) + store_address(resp) + store_bit(0)/store_coins/store_bit(0). Matches TIP-62 layout. Default query_id = ms-since-epoch truncated to 64 bits, which is deterministic-enough.",
+    "services/auto_fulfill.py wires dry-run path through MockPortalsClient → ton_sender.send_nft_transfer(dry_run=True). diag dictionary captures resolved_listing + ton_send (minus body_boc_b64 to keep audit small) + body_boc_size_b64 — good observability hygiene.",
+    "services/portals_client.get_portals_client() factory cleanly switches Mock vs Real on settings.portals_client_mode; RealPortalsClient.purchase explicitly returns ok:false 'real_purchase_not_implemented' — by design per spec, not a bug.",
+    "services/leaderboard.py uses since_iso datetime guard for week period + cursor-based aggregation per VIEW; snapshot_previous_week() id format 'weekly-{date}' is idempotent (upsert-friendly).",
+    "routers/admin/promos.py admin_create_promo hardcodes enabled=True at line 55 — bug noted above (minor).",
+    "routers/promo.py correctly checks promo.enabled gate at line 44 and user_max via promo_redemptions_col count per (code,user_id); FREESPIN clamping to user_max=3 verified end-to-end.",
+    "Phase 4a carryover P3 (empty <img src=''> warnings + span-in-option hydration) — both fixed: 0 occurrences on /admin/cases page load."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lydomania_phase4b.py (NEW — 33 tests across 12 classes)"
+  ],
+  "success_rate": {"backend": "32/33 = 97% (1 minor enabled-flag bug)", "frontend": "6/6 smoke = 100%"},
+  "test_credentials": "Admin tg=100000001 via /api/auth/dev-login (still authoritative). Frontend dev-bypass: append ?dev=1 to URL (e.g. https://tonconnect-mini.preview.emergentagent.com/?dev=1) to skip Telegram WebApp init gate. Tests create fresh ad-hoc users in 770000-1670000 range to avoid promo-state collisions.",
+  "seed_data_creation": "Multiple TEST_xxxxxx promos created and soft-disabled during CRUD tests (current_redemptions=0 so safe to leave). One leaderboard snapshot doc with id starting 'weekly-' inserted by TestLeaderboardSnapshot::test_snapshot_writes_doc. Several fresh users (tg 770000+random) redeemed WELCOME5/FREESPIN — they each hold +5 TON balance and/or 0-3 free_spin_tokens; harmless.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Phase 4b backend is essentially feature-complete and green. Only outstanding item is the cosmetic 'enabled flag ignored on POST /api/admin/promos' bug — fix is a one-line change. /app/backend/tests/test_lydomania_phase4b.py is reusable as a regression suite (33 tests, ~4s wall-clock; ton_sender + auto_fulfill exercises stay in dry_run/mock mode so no on-chain spend). Frontend dev-bypass via ?dev=1 query param is mandatory for headless testing — without it the app shows 'Open in Telegram' gate. All Phase 4b data-testids are in place: leaderboard-view-tab-{wagered|won_single|referrers}, leaderboard-period-tab-{week|all}, promo-row-{CODE}, admin-digest-text, daily-free-case-tile, promo-redeem-form. Phase 4a regression (sync-all DM, heatmap, digest, big-win) all still green. Pending Phase 5 hardening only.",
+  "rca of the issue": "TestPromoRedeem::test_disabled_code_rejected failed with 200 instead of 400/404. Root cause: routers/admin/promos.py admin_create_promo (lines 46-60) builds the persisted doc with `\"enabled\": True` hardcoded at line 55, instead of using `payload.enabled` from the validated PromoCodeIn pydantic model (which DOES accept enabled:bool defaulting to True). When the test POSTs {enabled:false}, the server happily inserts enabled:true; subsequent redeem then sees an enabled promo and credits 1 TON. Mitigation: replace `\"enabled\": True,` at line 55 with `\"enabled\": bool(payload.enabled) if payload.enabled is not None else True,` or simply `\"enabled\": bool(payload.enabled),` (since PromoCodeIn already defaults to True). Reproduction: `curl -X POST $BASE/api/admin/promos -H \"Authorization: Bearer $ADMIN\" -d '{\"code\":\"DIS_TEST\",\"type\":\"ton_bonus\",\"value\":1,\"enabled\":false}'` → response includes enabled:true. Severity: minor — admins can immediately PATCH to disabled state and that path is tested green."
+}
