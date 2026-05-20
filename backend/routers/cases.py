@@ -129,13 +129,39 @@ def _category_for(case: dict) -> str:
     return "high"
 
 
+def _case_image_url(c: dict) -> str:
+    """Resolve the public image URL for a case document.
+
+    Phase 11.2.2 — removes the historical `cases/crate_common.png` hardcoded
+    fallback which was overriding any per-case artwork that lived only in the
+    `image_url` field (post-Phase-11.x migrations write a full
+    `/api/static/cases/<slug>.png` URL into `image_url` directly, leaving the
+    legacy `image_path` field unset).
+
+    Priority:
+      1. `image_url` field — used verbatim if non-empty (already absolute,
+         either `/api/static/...` or a fully-qualified http(s) URL).
+      2. `image_path` field — wrapped via static_url() for legacy docs.
+      3. Per-slug derivation `cases/<id>.png` — last-resort default that
+         still resolves to the correct artwork for every known case (no more
+         every-case-falls-back-to-crate_common.png).
+    """
+    url = (c.get("image_url") or "").strip()
+    if url:
+        return url
+    path = (c.get("image_path") or "").strip()
+    if path:
+        return static_url(path)
+    return static_url(f"cases/{c['id']}.png")
+
+
 async def _case_to_summary(c: dict) -> CaseSummaryOut:
     basket = c.get("basket", [])
     ev = _compute_actual_ev(basket)
     return CaseSummaryOut(
         id=c["id"], name=c["name"], slug=c.get("slug", c["id"]),
         price_ton=float(c["price_ton"]),
-        image_url=static_url(c.get("image_path", "cases/crate_common.png")),
+        image_url=_case_image_url(c),
         actual_ev_pct=round((ev / float(c["price_ton"])) * 100, 2) if c["price_ton"] else 0.0,
         house_edge_pct=round((1 - ev / float(c["price_ton"])) * 100, 2) if c["price_ton"] else 0.0,
         enabled=bool(c.get("enabled", True)),
