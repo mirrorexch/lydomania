@@ -286,10 +286,19 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                     <motion.div
                         animate={{ rotate: rotation }}
                         transition={{
-                            duration: PRM() ? 0 : 4.2,
+                            // Phase 11.2.3 — intentionally ignore
+                            // prefers-reduced-motion for the wheel spin.
+                            // On iOS Telegram WebView PRM is often forced on
+                            // by system "Reduce Motion" settings, which used
+                            // to set duration=0 and made the wheel
+                            // "teleport" to its result without animating.
+                            // The spin is the central game animation —
+                            // skipping it kills the feature.  Other less
+                            // critical animations still honor PRM.
+                            duration: 4.2,
                             ease: [0.18, 0.78, 0.18, 1.0],
                         }}
-                        style={{ transformOrigin: "50% 50%" }}
+                        style={{ transformOrigin: "50% 50%", willChange: "transform" }}
                     >
                         <svg viewBox={`0 0 ${VIEW} ${VIEW}`} className="w-full h-auto" aria-label={t("wheel.aria_wheel")}>
                             {segments.length === 0
