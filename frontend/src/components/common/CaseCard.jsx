@@ -84,14 +84,17 @@ export const CaseCard = ({ case: c, size = "md", headlined: forceHeadlined, onCl
                 </div>
             )}
 
-            {/* Image area with gold radial spotlight overlay */}
-            <div className="relative aspect-[4/3] bg-gradient-to-br from-gold-500/10 to-gold-900/30 flex items-center justify-center overflow-hidden">
-                <div aria-hidden className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_42%,rgba(255,215,0,0.18),transparent_60%)]" />
+            {/* Image area — Phase 11.2.3: solid bg-surface-1 (no semi-transparent
+                gold overlays) so the page-level 28px grid pattern cannot bleed
+                through any RGBA areas of the case PNG.  The PNG fills the
+                whole image-area now (no 78% padding box) so the artwork
+                reads as "just the chest" on a clean dark plate. */}
+            <div className="relative aspect-[4/3] bg-surface-1 flex items-center justify-center overflow-hidden">
                 <ImageWithFallback
                     src={resolveImage(c.image_path || c.image_url)}
                     alt={c.name || c.id}
                     objectFit="contain"
-                    className="relative w-[78%] h-[78%]"
+                    className="relative w-full h-full"
                 />
             </div>
 
