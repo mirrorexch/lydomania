@@ -80,6 +80,19 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
     const liveXRef = useRef(1.0);                     // high-precision multiplier (60 Hz)
     const multiplierDomRef = useRef(null);            // DOM node for direct textContent mutation
     const liveXThrottleRef = useRef(0);               // ms timestamp of last React setLiveX
+    // Phase 11.2.3 — mobile WebView safety nets:
+    //  - rafIdRef: lives across renders so cleanup can cancel the actual live RAF
+    //    even if useEffect re-runs for ANY reason (closure-stale variable bug
+    //    that hit Telegram iOS/Android WebView).
+    //  - phaseRef: synced from `phase` state AND from WS `case "phase"` BEFORE
+    //    setState batches, so the RAF step() can self-terminate even if React
+    //    state batch is delayed in WebView.
+    //  - roundStartRef: timestamp of the current running round, used by the
+    //    90-second watchdog that force-stops the loop if no `phase=crashed`
+    //    arrives (mobile WS occasionally drops messages).
+    const rafIdRef = useRef(null);
+    const phaseRef = useRef("loading");
+    const roundStartRef = useRef(0);
 
     // Mutates the DOM directly every frame; throttles setLiveX state to 6 Hz.
     const writeMultiplier = useCallback((x) => {
@@ -127,11 +140,18 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                 }
                 break;
             case "phase":
+                // Phase 11.2.3 — sync phaseRef BEFORE setState batches so the
+                // RAF closure can self-terminate even if React state batch is
+                // delayed in mobile WebView. Also dev log for WebView Inspector.
+                phaseRef.current = msg.phase;
+                // eslint-disable-next-line no-console
+                console.warn("[crash] WS phase →", msg.phase, "round_id=", msg.round_id || "—");
                 setState((prev) => ({ ...(prev || {}), ...msg }));
                 if (msg.phase === "betting") {
                     resetForNewRound();
                 } else if (msg.phase === "running") {
                     lastTickRef.current = { x: 1.0, t: performance.now() };
+                    roundStartRef.current = performance.now();
                     liveXRef.current = 1.0;
                     setLiveX(1.0);
                     if (multiplierDomRef.current) {
@@ -140,9 +160,17 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                     }
                     sfx.play("rising_hum", { volume: 0.45 });
                 } else if (msg.phase === "crashed") {
+                    // Force-stop RAF immediately, even before React batches.
+                    if (rafIdRef.current != null) {
+                        cancelAnimationFrame(rafIdRef.current);
+                        rafIdRef.current = null;
+                    }
                     const x = Number(msg.crash_multiplier || 1.0);
                     liveXRef.current = x;
                     setLiveX(x);   // immediate final value (the crashed screen needs it)
+                    if (multiplierDomRef.current) {
+                        multiplierDomRef.current.textContent = x.toFixed(2) + "×";
+                    }
                     sfx.play("explosion_thud", { volume: 0.85 });
                     setHistory((prev) => [{ round_id: msg.round_id, crash_multiplier: x, ended_at: new Date().toISOString() }, ...prev].slice(0, 30));
                     // If user had a placed bet that never cashed out → lost
@@ -220,26 +248,87 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Phase 11.2.1 — Client-side interpolation between server ticks.
+    // Phase 11.2.3 — keep phaseRef in sync with the React `phase` state so the
+    // RAF step() (which reads only refs, never state) sees the latest phase
+    // even when the React state batch is delayed by mobile WebView.  Also
+    // logs every phase transition for debugging via Telegram WebView
+    // Inspector / Eruda overlay.
+    useEffect(() => {
+        phaseRef.current = phase;
+        // eslint-disable-next-line no-console
+        console.warn("[crash] phase state →", phase);
+    }, [phase]);
+
+    // Phase 11.2.1 / 11.2.3 — Client-side interpolation between server ticks.
     // The RAF loop NEVER calls setState directly: it mutates the multiplier
     // DOM node via ref (writeMultiplier) so React doesn't re-render at 60 Hz.
     // setLiveX is throttled to ~6 Hz inside writeMultiplier so the cashout
     // button label still updates smoothly.
+    //
+    // Phase 11.2.3 hardening for Telegram iOS/Android WebView:
+    //   1. rafIdRef.current — cancel via ref (not local var) so cleanup
+    //      reliably kills the live loop even if useEffect re-runs.
+    //   2. phaseRef safety guard inside step() — self-terminate the loop
+    //      if phase changed under us (closure-stale-variable bug).
+    //   3. Watchdog — force-stop after 90s if no `phase=crashed` arrives
+    //      (mobile WS occasionally drops messages → multiplier grew forever).
     useEffect(() => {
-        if (phase !== "running") return undefined;
-        let raf = 0;
+        if (phase !== "running") {
+            // Idempotent cleanup if we ever land here with a live RAF
+            // (defensive — should not normally happen).
+            if (rafIdRef.current != null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+            }
+            return undefined;
+        }
+        // Reset round-start clock for the watchdog.  We also update this in
+        // the WS `phase=running` handler, but doing it here covers the case
+        // where we enter `running` through the initial /crash/state fetch.
+        if (roundStartRef.current === 0) {
+            roundStartRef.current = performance.now();
+        }
+        const MAX_ROUND_MS = 90_000;
         const step = () => {
+            // Guard 1 — phase changed under us. Kill the loop without ever
+            // calling writeMultiplier again (otherwise the crashed final value
+            // would be overwritten by the predictor).
+            if (phaseRef.current !== "running") {
+                rafIdRef.current = null;
+                return;
+            }
+            // Guard 2 — watchdog. If for any reason the server / WS never
+            // sent `phase=crashed`, force-stop the loop and flip our phase
+            // locally so the UI doesn't keep climbing forever.
+            const elapsedMs = performance.now() - roundStartRef.current;
+            if (elapsedMs > MAX_ROUND_MS) {
+                // eslint-disable-next-line no-console
+                console.warn("[crash] watchdog stopping RAF after", Math.round(elapsedMs), "ms — no phase=crashed received");
+                rafIdRef.current = null;
+                phaseRef.current = "crashed";
+                setState((prev) => ({ ...(prev || {}), phase: "crashed" }));
+                return;
+            }
             const last = lastTickRef.current;
             const dt = (performance.now() - last.t) / 1000;
             // Predict using backend curve so we don't drift.
             const baseElapsed = Math.log(last.x) / (Math.log(2) / 7);
             const predicted = multiplierAt(baseElapsed + dt);
             writeMultiplier(predicted);
-            raf = requestAnimationFrame(step);
+            rafIdRef.current = requestAnimationFrame(step);
         };
-        raf = requestAnimationFrame(step);
-        return () => cancelAnimationFrame(raf);
-    }, [phase, writeMultiplier]);
+        rafIdRef.current = requestAnimationFrame(step);
+        return () => {
+            if (rafIdRef.current != null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+            }
+        };
+        // writeMultiplier is intentionally omitted from deps — it's
+        // useCallback([]) and is stable; adding it risks effect-restart on
+        // any unrelated re-render and would re-allocate rafIdRef bookkeeping.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [phase]);
 
     // ── Actions ────────────────────────────────────────────────────────────
     const placeBet = async () => {
