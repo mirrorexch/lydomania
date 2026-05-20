@@ -259,47 +259,53 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
         console.warn("[crash] phase state →", phase);
     }, [phase]);
 
-    // Phase 11.2.1 / 11.2.3 — Client-side interpolation between server ticks.
-    // The RAF loop NEVER calls setState directly: it mutates the multiplier
-    // DOM node via ref (writeMultiplier) so React doesn't re-render at 60 Hz.
-    // setLiveX is throttled to ~6 Hz inside writeMultiplier so the cashout
-    // button label still updates smoothly.
+    // Phase 11.2.1 / 11.2.3 / 11.2.4 — Client-side interpolation between
+    // server ticks. The RAF loop NEVER calls setState directly: it mutates
+    // the multiplier DOM node via ref (writeMultiplier) so React doesn't
+    // re-render at 60 Hz.  setLiveX is throttled to ~6 Hz inside
+    // writeMultiplier so the cashout button label still updates smoothly.
     //
     // Phase 11.2.3 hardening for Telegram iOS/Android WebView:
     //   1. rafIdRef.current — cancel via ref (not local var) so cleanup
     //      reliably kills the live loop even if useEffect re-runs.
     //   2. phaseRef safety guard inside step() — self-terminate the loop
-    //      if phase changed under us (closure-stale-variable bug).
-    //   3. Watchdog — force-stop after 90s if no `phase=crashed` arrives
-    //      (mobile WS occasionally drops messages → multiplier grew forever).
+    //      if phase changed under us.
+    //   3. Watchdog — force-stop if no `phase=crashed` arrives
+    //      (mobile WS occasionally drops messages).
+    //
+    // Phase 11.2.4 additional safeguards (the previous 90-second watchdog
+    // was too lenient and let the multiplier balloon to 4900× when the WS
+    // froze in the background on iOS Telegram WebView):
+    //   4. STALE-TICK FREEZE — if no `tick` from server in >3s, freeze
+    //      writeMultiplier on the last known value (no extrapolation).
+    //   5. PREDICTED CLAMP — never extrapolate higher than 2× the last
+    //      server-acknowledged multiplier, even if the local clock thinks
+    //      we've been running for ages.
+    //   6. Watchdog tightened from 90s → 15s — real rounds rarely exceed
+    //      ~30s and never 60s in production.
     useEffect(() => {
         if (phase !== "running") {
-            // Idempotent cleanup if we ever land here with a live RAF
-            // (defensive — should not normally happen).
+            // Idempotent cleanup if we ever land here with a live RAF.
             if (rafIdRef.current != null) {
                 cancelAnimationFrame(rafIdRef.current);
                 rafIdRef.current = null;
             }
             return undefined;
         }
-        // Reset round-start clock for the watchdog.  We also update this in
-        // the WS `phase=running` handler, but doing it here covers the case
-        // where we enter `running` through the initial /crash/state fetch.
         if (roundStartRef.current === 0) {
             roundStartRef.current = performance.now();
         }
-        const MAX_ROUND_MS = 90_000;
+        const MAX_ROUND_MS = 15_000;            // Phase 11.2.4: was 90_000
+        const STALE_TICK_MS = 3_000;            // Phase 11.2.4: freeze threshold
+        const MAX_PREDICT_FACTOR = 2.0;         // Phase 11.2.4: predicted ≤ 2× last server tick
+        let lastStaleWarnAt = 0;
         const step = () => {
-            // Guard 1 — phase changed under us. Kill the loop without ever
-            // calling writeMultiplier again (otherwise the crashed final value
-            // would be overwritten by the predictor).
+            // Guard 1 — phase changed under us.
             if (phaseRef.current !== "running") {
                 rafIdRef.current = null;
                 return;
             }
-            // Guard 2 — watchdog. If for any reason the server / WS never
-            // sent `phase=crashed`, force-stop the loop and flip our phase
-            // locally so the UI doesn't keep climbing forever.
+            // Guard 2 — watchdog (15s).
             const elapsedMs = performance.now() - roundStartRef.current;
             if (elapsedMs > MAX_ROUND_MS) {
                 // eslint-disable-next-line no-console
@@ -309,11 +315,34 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                 setState((prev) => ({ ...(prev || {}), phase: "crashed" }));
                 return;
             }
+            // Guard 3 — STALE-TICK FREEZE.  If server hasn't sent a `tick`
+            // in >3 seconds, the WS is frozen (background tab / network
+            // hiccup).  Don't extrapolate; just keep painting the last
+            // known value and wait for ticks to resume.
             const last = lastTickRef.current;
-            const dt = (performance.now() - last.t) / 1000;
+            const sinceTick = performance.now() - last.t;
+            if (sinceTick > STALE_TICK_MS) {
+                if (performance.now() - lastStaleWarnAt > 1000) {
+                    // eslint-disable-next-line no-console
+                    console.warn("[crash] stale tick — freeze at", last.x.toFixed(2), "× for", Math.round(sinceTick), "ms");
+                    lastStaleWarnAt = performance.now();
+                }
+                rafIdRef.current = requestAnimationFrame(step);
+                return;
+            }
+            const dt = sinceTick / 1000;
             // Predict using backend curve so we don't drift.
             const baseElapsed = Math.log(last.x) / (Math.log(2) / 7);
-            const predicted = multiplierAt(baseElapsed + dt);
+            let predicted = multiplierAt(baseElapsed + dt);
+            // Guard 4 — PREDICTED CLAMP.  Never go beyond 2× the last
+            // server-acknowledged multiplier within a single tick window
+            // (we should get a fresh tick every 100ms; if not, see Guard 3).
+            const cap = last.x * MAX_PREDICT_FACTOR;
+            if (predicted > cap) {
+                // eslint-disable-next-line no-console
+                console.warn("[crash] predict clamp", predicted.toFixed(2), "→", cap.toFixed(2), "(last server", last.x.toFixed(2), ")");
+                predicted = cap;
+            }
             writeMultiplier(predicted);
             rafIdRef.current = requestAnimationFrame(step);
         };
@@ -324,9 +353,7 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                 rafIdRef.current = null;
             }
         };
-        // writeMultiplier is intentionally omitted from deps — it's
-        // useCallback([]) and is stable; adding it risks effect-restart on
-        // any unrelated re-render and would re-allocate rafIdRef bookkeeping.
+        // writeMultiplier intentionally omitted — useCallback([]) stable.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [phase]);
 
