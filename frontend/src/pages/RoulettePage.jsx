@@ -68,6 +68,20 @@ export default function RoulettePage({ user, refreshBalance }) {
                         totals: msg.totals || prev.totals,
                         bet_count: msg.bet_count ?? prev.bet_count,
                     } : prev);
+                } else if (msg.type === "new_bet_batch") {
+                    // Phase 11.2.1 — coalesced burst of new_bet events from rouletteWs.
+                    // Apply them all in ONE setBets/setState pair so React only
+                    // re-renders once per animation frame instead of per event.
+                    const batch = msg.bets || [];
+                    if (batch.length) {
+                        setBets((prev) => [...batch.slice().reverse(), ...prev].slice(0, 30));
+                        const last = batch[batch.length - 1];
+                        setState((prev) => prev ? {
+                            ...prev,
+                            totals: last.totals || prev.totals,
+                            bet_count: last.bet_count ?? prev.bet_count,
+                        } : prev);
+                    }
                     } else if (msg.type === "round_settled") {
                     setHistory((prev) => [msg, ...prev].slice(0, 20));
                     if (refreshBalance) refreshBalance();
@@ -109,7 +123,8 @@ export default function RoulettePage({ user, refreshBalance }) {
         })();
     }, []);
 
-    // Countdown ticker
+    // Countdown ticker — Phase 11.2.1: 200ms → 250ms (4 Hz) saves ~20% of
+    // re-renders during betting phase without visible difference.
     useEffect(() => {
         const compute = () => {
             const ends = state?.phase_ends_at;
@@ -118,7 +133,7 @@ export default function RoulettePage({ user, refreshBalance }) {
             setSecondsLeft(Math.max(0, Math.ceil(dt / 1000)));
         };
         compute();
-        tickRef.current = setInterval(compute, 200);
+        tickRef.current = setInterval(compute, 250);
         return () => clearInterval(tickRef.current);
     }, [state?.phase_ends_at]);
 
@@ -224,6 +239,22 @@ export default function RoulettePage({ user, refreshBalance }) {
         return phase;
     }, [phase, secondsLeft, state?.winning_color, t]);
 
+    // Phase 11.2.1 — memoise history pills so countdown ticks and new_bet
+    // updates DON'T recreate the button array every render.
+    const historyPills = useMemo(() => (
+        (state?.recent_results || []).map((r) => (
+            <button
+                key={r.round_id}
+                onClick={() => openVerifier(r.round_id)}
+                data-testid={`history-pill-${r.winning_color}`}
+                className={`flex-shrink-0 w-7 h-7 rounded-full ${COLOR_BG[r.winning_color]} text-[10px] font-bold flex items-center justify-center border border-white/10 hover:border-gold-bright/55 transition`}
+                title={`#${r.round_id.slice(0, 6)} · ${r.winning_color}`}
+            >
+                {r.winning_color === "green" ? "★" : r.segment_index.toString().padStart(2, "0")}
+            </button>
+        ))
+    ), [state?.recent_results, openVerifier]);
+
     return (
         <main className="mx-auto px-3 sm:px-6 pt-4 pb-24 lg:pb-6 space-y-4 max-w-[430px] sm:max-w-[640px] lg:max-w-[960px] xl:max-w-[1100px]"
               data-testid="roulette-page">
@@ -289,22 +320,18 @@ export default function RoulettePage({ user, refreshBalance }) {
             {/* Wheel */}
             <RouletteWheel phase={phase} segmentIndex={state?.segment_index} />
 
-            {/* History strip */}
-            <div data-testid="roulette-history" className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {/* History strip — Phase 11.2.1: memoised pills + GPU promotion so
+                horizontal scrolling and frequent state updates don't repaint
+                the whole strip on the main thread. */}
+            <div
+                data-testid="roulette-history"
+                className="flex items-center gap-1.5 overflow-x-auto pb-1"
+                style={{ transform: "translateZ(0)", willChange: "scroll-position", contain: "paint" }}
+            >
                 <span className="text-[10px] uppercase tracking-wider text-white/40 font-bold mr-1 flex-shrink-0">
                     {t("roulette.history_label")}
                 </span>
-                {(state?.recent_results || []).map((r) => (
-                    <button
-                        key={r.round_id}
-                        onClick={() => openVerifier(r.round_id)}
-                        data-testid={`history-pill-${r.winning_color}`}
-                        className={`flex-shrink-0 w-7 h-7 rounded-full ${COLOR_BG[r.winning_color]} text-[10px] font-bold flex items-center justify-center border border-white/10 hover:border-gold-bright/55 transition`}
-                        title={`#${r.round_id.slice(0, 6)} · ${r.winning_color}`}
-                    >
-                        {r.winning_color === "green" ? "★" : r.segment_index.toString().padStart(2, "0")}
-                    </button>
-                ))}
+                {historyPills}
             </div>
 
             {/* TIER PILLS (1 / 5 / 25) */}
@@ -414,7 +441,11 @@ export default function RoulettePage({ user, refreshBalance }) {
                     </span>
                     <span className="text-[10px] text-white/40 tabular-nums">{state?.bet_count || 0}</span>
                 </div>
-                <div data-testid="roulette-bets-feed" className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
+                <div
+                    data-testid="roulette-bets-feed"
+                    className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1"
+                    style={{ transform: "translateZ(0)", willChange: "scroll-position", contain: "paint" }}
+                >
                     {bets.length === 0 && (
                         <div className="text-center text-[11px] text-white/30 py-6">{t("roulette.no_bets_yet")}</div>
                     )}

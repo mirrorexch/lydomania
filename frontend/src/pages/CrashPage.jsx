@@ -61,7 +61,11 @@ function useCrashSocket(onMessage) {
 export const CrashPage = ({ user, balance, refreshBalance }) => {
     const { t } = useTranslation();
     const [state, setState] = useState(null);        // server snapshot
-    const [liveX, setLiveX] = useState(1.0);          // smoothed multiplier
+    // Phase 11.2.1 hot-fix: `liveX` is now THROTTLED to ~6 Hz so the cashout
+    // button label updates without forcing a global re-render every frame.
+    // The big multiplier number is mutated DIRECTLY in the DOM via ref
+    // (multiplierDomRef) at 60 Hz without going through React state.
+    const [liveX, setLiveX] = useState(1.0);
     const [history, setHistory] = useState([]);       // last 30 multipliers
     const [bets, setBets] = useState([]);             // current-round bet feed
     const [myBet, setMyBet] = useState(null);         // my placed bet (if any)
@@ -72,10 +76,38 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
     const phase = state?.phase || "loading";
     const myBetRef = useRef(myBet); myBetRef.current = myBet;
     const lastTickRef = useRef({ x: 1.0, t: 0 });     // for client interpolation
+    // Hot-fix refs
+    const liveXRef = useRef(1.0);                     // high-precision multiplier (60 Hz)
+    const multiplierDomRef = useRef(null);            // DOM node for direct textContent mutation
+    const liveXThrottleRef = useRef(0);               // ms timestamp of last React setLiveX
+
+    // Mutates the DOM directly every frame; throttles setLiveX state to 6 Hz.
+    const writeMultiplier = useCallback((x) => {
+        liveXRef.current = x;
+        const node = multiplierDomRef.current;
+        if (node) {
+            node.textContent = x.toFixed(2) + "×";
+            const tier = x < 1.5 ? "low" : x < 5 ? "mid" : x < 25 ? "hi" : "epic";
+            if (node.dataset.tier !== tier) node.dataset.tier = tier;
+        }
+        const now = performance.now();
+        if (now - liveXThrottleRef.current > 150) {
+            liveXThrottleRef.current = now;
+            setLiveX(x);
+        }
+    }, []);
 
     // Reset per-round local state on phase change
     const resetForNewRound = useCallback(() => {
-        setBets([]); setMyBet(null); setLiveX(1.0); lastTickRef.current = { x: 1.0, t: performance.now() };
+        setBets([]); setMyBet(null);
+        liveXRef.current = 1.0;
+        liveXThrottleRef.current = 0;
+        setLiveX(1.0);
+        if (multiplierDomRef.current) {
+            multiplierDomRef.current.textContent = "1.00×";
+            multiplierDomRef.current.dataset.tier = "low";
+        }
+        lastTickRef.current = { x: 1.0, t: performance.now() };
     }, []);
 
     const onMsg = useCallback((msg) => {
@@ -84,9 +116,14 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                 setState(msg);
                 setHistory(msg.recent_results || []);
                 if (msg.phase === "running") {
-                    setLiveX(msg.live_multiplier || 1.0);
+                    const x = msg.live_multiplier || 1.0;
+                    liveXRef.current = x;
+                    setLiveX(x);
+                    if (multiplierDomRef.current) {
+                        multiplierDomRef.current.textContent = x.toFixed(2) + "×";
+                    }
                 } else {
-                    setLiveX(1.0);
+                    resetForNewRound();
                 }
                 break;
             case "phase":
@@ -95,10 +132,17 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                     resetForNewRound();
                 } else if (msg.phase === "running") {
                     lastTickRef.current = { x: 1.0, t: performance.now() };
+                    liveXRef.current = 1.0;
+                    setLiveX(1.0);
+                    if (multiplierDomRef.current) {
+                        multiplierDomRef.current.textContent = "1.00×";
+                        multiplierDomRef.current.dataset.tier = "low";
+                    }
                     sfx.play("rising_hum", { volume: 0.45 });
                 } else if (msg.phase === "crashed") {
                     const x = Number(msg.crash_multiplier || 1.0);
-                    setLiveX(x);
+                    liveXRef.current = x;
+                    setLiveX(x);   // immediate final value (the crashed screen needs it)
                     sfx.play("explosion_thud", { volume: 0.85 });
                     setHistory((prev) => [{ round_id: msg.round_id, crash_multiplier: x, ended_at: new Date().toISOString() }, ...prev].slice(0, 30));
                     // If user had a placed bet that never cashed out → lost
@@ -112,7 +156,7 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                 break;
             case "tick":
                 lastTickRef.current = { x: msg.multiplier, t: performance.now() };
-                setLiveX(msg.multiplier);
+                writeMultiplier(msg.multiplier);    // throttled state + direct DOM
                 break;
             case "new_bet":
                 setBets((prev) => [{
@@ -152,7 +196,7 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
             }
             default: break;
         }
-    }, [resetForNewRound, refreshBalance, t]);
+    }, [resetForNewRound, refreshBalance, t, writeMultiplier]);
 
     useCrashSocket(onMsg);
 
@@ -176,7 +220,11 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Client-side interpolation between server ticks (smooth multiplier number).
+    // Phase 11.2.1 — Client-side interpolation between server ticks.
+    // The RAF loop NEVER calls setState directly: it mutates the multiplier
+    // DOM node via ref (writeMultiplier) so React doesn't re-render at 60 Hz.
+    // setLiveX is throttled to ~6 Hz inside writeMultiplier so the cashout
+    // button label still updates smoothly.
     useEffect(() => {
         if (phase !== "running") return undefined;
         let raf = 0;
@@ -186,12 +234,12 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
             // Predict using backend curve so we don't drift.
             const baseElapsed = Math.log(last.x) / (Math.log(2) / 7);
             const predicted = multiplierAt(baseElapsed + dt);
-            setLiveX(predicted);
+            writeMultiplier(predicted);
             raf = requestAnimationFrame(step);
         };
         raf = requestAnimationFrame(step);
         return () => cancelAnimationFrame(raf);
-    }, [phase]);
+    }, [phase, writeMultiplier]);
 
     // ── Actions ────────────────────────────────────────────────────────────
     const placeBet = async () => {
@@ -361,20 +409,24 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                         <motion.div key="running"
                             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                             className="text-center">
-                            {/* RollingNumber-style smooth multiplier (no snap on each tick).
-                                We bypass RollingNumber for the BIG figure here because we
-                                drive it via requestAnimationFrame at ~60fps; using
-                                RollingNumber on top would double-animate. The scale-pump
-                                only fires on a discrete x value change (key) and is
-                                disabled when PRM is set. */}
-                            <motion.div
-                                key={Math.floor(liveX * 100)}
-                                className={`font-display text-6xl sm:text-8xl font-black tabular-nums ${tierClass(liveX)}`}
-                                animate={PRM() ? {} : { scale: [1, 1.02, 1] }}
-                                transition={{ duration: 0.18 }}
+                            {/* Phase 11.2.1 hot-fix — the big multiplier is mutated
+                                DIRECTLY in the DOM via multiplierDomRef so React
+                                doesn't re-render at 60 Hz. tier→colour switch
+                                happens via data-attribute + Tailwind data-[]
+                                selectors (no JSX re-render on tier change). */}
+                            <div
+                                ref={multiplierDomRef}
+                                data-testid="crash-multiplier-value"
+                                data-tier="low"
+                                className="font-display text-6xl sm:text-8xl font-black tabular-nums
+                                           text-rose-400
+                                           data-[tier=mid]:text-amber-300
+                                           data-[tier=hi]:text-emerald-300
+                                           data-[tier=epic]:text-yellow-300"
+                                style={{ transform: "translateZ(0)", willChange: "transform, color", contain: "layout paint" }}
                             >
-                                {liveX.toFixed(2)}×
-                            </motion.div>
+                                1.00×
+                            </div>
                             <div className="text-[11px] uppercase tracking-[0.32em] text-white/55 font-bold mt-3">
                                 <Rocket className="inline w-3.5 h-3.5 mr-1" /> {t("crash.label.flying")}
                             </div>

@@ -49,7 +49,7 @@ const SEG_LABEL_FILL = {
 
 const VIEW = 320;       // SVG viewport (square)
 const R_OUTER = 150;
-const R_INNER = 28;
+const R_INNER = 50;     // Phase 11.2.1 — larger hub so labels live near the rim only
 const CX = VIEW / 2;
 const CY = VIEW / 2;
 const SEG_COUNT = 24;
@@ -300,28 +300,43 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                                     const start = s.segment_index * SEG_DEG;
                                     const end = start + SEG_DEG;
                                     const d = arcPath(CX, CY, R_INNER, R_OUTER, start, end);
-                                    const [lx, ly] = polarPoint(CX, CY, (R_INNER + R_OUTER) / 2, start + SEG_DEG / 2);
-                                    const labelText = s.segment_type === "ton_multi"
-                                        ? `${s.multiplier}×`
-                                        : s.segment_type === "jackpot"
-                                            ? "JACK"
-                                            : s.segment_type === "high_gift"
-                                                ? "HI"
-                                                : s.segment_type === "mid_gift"
-                                                    ? "MID"
-                                                    : "LOW";
+                                    // Phase 11.2.1 — labels live near the OUTER rim,
+                                    // not at the wedge midpoint, so they don't collide
+                                    // near the hub.
+                                    const [lx, ly] = polarPoint(CX, CY, R_OUTER - 22, start + SEG_DEG / 2);
+                                    // Loss wedges (ton_multi with multiplier < 1) get
+                                    // NO label — the dark red fill speaks for itself.
+                                    const isLoss = s.segment_type === "ton_multi" && (s.multiplier ?? 1) < 1;
+                                    const labelText = isLoss
+                                        ? ""
+                                        : s.segment_type === "ton_multi"
+                                            ? `${s.multiplier}×`
+                                            : s.segment_type === "jackpot"
+                                                ? "JACK"
+                                                : s.segment_type === "high_gift"
+                                                    ? "HI"
+                                                    : s.segment_type === "mid_gift"
+                                                        ? "MID"
+                                                        : "LOW";
                                     return (
                                         <g key={s.segment_index}>
-                                            <path d={d} fill={SEG_FILL[s.segment_type]} stroke={SEG_STROKE[s.segment_type]} strokeWidth="1" />
-                                            <text
-                                                x={lx} y={ly}
-                                                fill={SEG_LABEL_FILL[s.segment_type]}
-                                                fontSize="11" fontWeight="700"
-                                                textAnchor="middle" dominantBaseline="middle"
-                                                transform={`rotate(${start + SEG_DEG / 2}, ${lx}, ${ly})`}
-                                            >
-                                                {labelText}
-                                            </text>
+                                            <path d={d} fill={SEG_FILL[s.segment_type]} stroke={SEG_STROKE[s.segment_type]} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                                            {labelText && (
+                                                <text
+                                                    x={lx} y={ly}
+                                                    fill={SEG_LABEL_FILL[s.segment_type]}
+                                                    fontSize="10" fontWeight="800"
+                                                    textAnchor="middle" dominantBaseline="middle"
+                                                    // Tangential orientation — label reads along the arc
+                                                    // (perpendicular to the radius), so neighbour labels no
+                                                    // longer collide near the hub.
+                                                    transform={`rotate(${start + SEG_DEG / 2 + 90}, ${lx}, ${ly})`}
+                                                    style={{ filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.85))" }}
+                                                    pointerEvents="none"
+                                                >
+                                                    {labelText}
+                                                </text>
+                                            )}
                                         </g>
                                     );
                                 })}

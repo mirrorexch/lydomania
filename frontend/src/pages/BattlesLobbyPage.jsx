@@ -62,15 +62,16 @@ export default function BattlesLobbyPage({ user, refreshBalance }) {
               data-testid="battles-lobby-page">
 
             {/* Phase 6h — Hero banner: Spartan helmets + plasma swords artwork.
-                Phase 6i: fit the full subject vertically (auto 100% height,
-                anchored right) so neither helmet is clipped at any viewport. */}
+                Phase 11.2.1: new centered hero artwork — switched to cover/center
+                so the title and Create CTA sit above the composition, not in the
+                empty left strip of the old right-anchored crop. */}
             <header
                 data-testid="battles-hero"
                 className="relative overflow-hidden rounded-3xl border border-white/10 -mx-1 px-1"
                 style={{
                     backgroundImage: "url(/banners/battles.png)",
-                    backgroundSize: "auto 100%",
-                    backgroundPosition: "right center",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center center",
                     backgroundRepeat: "no-repeat",
                     backgroundColor: "#0a0a14",
                     minHeight: 180,
@@ -81,7 +82,7 @@ export default function BattlesLobbyPage({ user, refreshBalance }) {
                     className="absolute inset-0 pointer-events-none"
                     style={{
                         background:
-                            "linear-gradient(90deg, rgba(10,10,20,0.88) 0%, rgba(10,10,20,0.45) 65%, rgba(10,10,20,0.05) 100%)",
+                            "linear-gradient(180deg, rgba(10,10,20,0.10) 0%, rgba(10,10,20,0.55) 70%, rgba(10,10,20,0.78) 100%)",
                     }}
                 />
                 <div className="relative flex items-start justify-between gap-3 p-4 sm:p-5">

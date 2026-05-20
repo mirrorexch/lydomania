@@ -56,14 +56,46 @@ export function openRouletteSocket({ token, onMessage }) {
             scheduleReconnect();
             return;
         }
+        // Phase 11.2.1 — coalesce burst-y `new_bet` events into one batch per
+        // animation frame so React doesn't re-render 30× when 30 bots fire
+        // bets within the same betting window.
+        let pendingBets = [];
+        let coalesceRaf = 0;
+        const flushPending = () => {
+            coalesceRaf = 0;
+            if (pendingBets.length === 0) return;
+            const batch = pendingBets;
+            pendingBets = [];
+            // Forward as a single batch event; RoulettePage.jsx handles it.
+            onMessage?.({ type: "new_bet_batch", bets: batch });
+        };
         socket.onopen = () => { backoff = 1000; };
         socket.onmessage = (ev) => {
             try {
                 const data = JSON.parse(ev.data);
+                if (data.type === "new_bet") {
+                    pendingBets.push(data);
+                    if (!coalesceRaf) {
+                        coalesceRaf = (typeof window !== "undefined" && window.requestAnimationFrame)
+                            ? window.requestAnimationFrame(flushPending)
+                            : setTimeout(flushPending, 100);
+                    }
+                    return;
+                }
                 onMessage?.(data);
             } catch { /* ignore non-JSON */ }
         };
-        socket.onclose = () => { if (!closed) scheduleReconnect(); };
+        socket.onclose = () => {
+            if (coalesceRaf) {
+                if (typeof window !== "undefined" && window.cancelAnimationFrame) {
+                    window.cancelAnimationFrame(coalesceRaf);
+                } else {
+                    clearTimeout(coalesceRaf);
+                }
+                coalesceRaf = 0;
+            }
+            if (!closed) scheduleReconnect();
+        };
         socket.onerror = () => { try { socket?.close(); } catch {} };
     };
 
