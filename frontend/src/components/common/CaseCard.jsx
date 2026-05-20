@@ -84,12 +84,21 @@ export const CaseCard = ({ case: c, size = "md", headlined: forceHeadlined, onCl
                 </div>
             )}
 
-            {/* Image area — Phase 11.2.3: solid bg-surface-1 (no semi-transparent
+            {/* Image area — Phase 11.2.3: solid bg surface (no semi-transparent
                 gold overlays) so the page-level 28px grid pattern cannot bleed
-                through any RGBA areas of the case PNG.  The PNG fills the
-                whole image-area now (no 78% padding box) so the artwork
-                reads as "just the chest" on a clean dark plate. */}
-            <div className="relative aspect-[4/3] bg-surface-1 flex items-center justify-center overflow-hidden">
+                through.  The PNG fills the whole image-area now.
+                Phase 11.2.4: belt-and-braces — replace `bg-surface-1` with
+                a hardcoded `bg-[#0A0A0A]` (arbitrary value, no CSS-var
+                dependency) and add `isolation:isolate` + z-10 to force a
+                fresh stacking context so the parent `.cyber-grid-bg`
+                background-image cannot composite through under any
+                circumstance (some Telegram WebViews were observed to render
+                `var(--surface-1)` as the fallback "transparent" when the
+                CSS-var resolution lost the race with image painting). */}
+            <div
+                className="relative aspect-[4/3] bg-[#0A0A0A] flex items-center justify-center overflow-hidden z-10"
+                style={{ isolation: "isolate", backgroundColor: "#0A0A0A" }}
+            >
                 <ImageWithFallback
                     src={resolveImage(c.image_path || c.image_url)}
                     alt={c.name || c.id}
