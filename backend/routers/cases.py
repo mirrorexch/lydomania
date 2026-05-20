@@ -104,7 +104,7 @@ def _build_basket_entries(case_doc: dict, items_meta: dict[str, dict]) -> list[C
         m = items_meta.get(slug, {})
         out.append(CaseBasketEntryOut(
             slug=slug, name=m.get("name", slug), rarity=m.get("rarity", "common"),
-            image_url=static_url(m.get("image_path", "items/crate_common.png")),
+            image_url=_item_image_url(m),
             weight=float(b.get("weight", 0)),
             payout_ton=float(b.get("payout_ton", 0)),
             probability=float(b.get("weight", 0)) / total_w,
@@ -153,6 +153,35 @@ def _case_image_url(c: dict) -> str:
     if path:
         return static_url(path)
     return static_url(f"cases/{c['id']}.png")
+
+
+def _item_image_url(it: dict) -> str:
+    """Resolve the public image URL for an item document (same priority rules
+    as _case_image_url, but rooted at `items/<slug>.png` for the last-resort
+    derivation).
+
+    Phase 11.2.2 — drops the historical `items/crate_common.png` hardcoded
+    fallback that was overriding per-item artwork when the doc only had
+    `image_url` populated (via Phase 11.x gift-artwork migrations).
+
+    Priority:
+      1. `image_url` verbatim (absolute /api/static/... or http(s)://...).
+      2. static_url(`image_path`) for legacy docs.
+      3. static_url(f'items/{slug or id}.png') derived from slug/id — no more
+         crate_common.png blanket fallback.
+    """
+    url = (it.get("image_url") or "").strip()
+    if url:
+        return url
+    path = (it.get("image_path") or "").strip()
+    if path:
+        return static_url(path)
+    key = (it.get("slug") or it.get("id") or "").strip()
+    if key:
+        return static_url(f"items/{key}.png")
+    # No slug/id at all (shouldn't happen for valid docs) — keep last-resort
+    # behaviour stable.
+    return static_url("items/crate_common.png")
 
 
 async def _case_to_summary(c: dict) -> CaseSummaryOut:
@@ -305,7 +334,7 @@ async def open_case(case_id: str, payload: CaseOpenIn, user: dict = Depends(get_
         winning_item=WonItemOut(
             slug=winning_slug, name=item_meta.get("name", winning_slug),
             rarity=item_meta.get("rarity", "common"),
-            image_url=static_url(item_meta.get("image_path", "items/crate_common.png")),
+            image_url=_item_image_url(item_meta),
             payout_ton=payout_ton,
         ),
         payout_ton=payout_ton,
@@ -413,7 +442,7 @@ async def open_case_batch(
             winning_item=WonItemOut(
                 slug=winning_slug, name=item_meta.get("name", winning_slug),
                 rarity=item_meta.get("rarity", "common"),
-                image_url=static_url(item_meta.get("image_path", "items/crate_common.png")),
+                image_url=_item_image_url(item_meta),
                 payout_ton=payout_ton,
             ),
             payout_ton=payout_ton, nonce=nonce_used, roll_float=float(roll_float),
