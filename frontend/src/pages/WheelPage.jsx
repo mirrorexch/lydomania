@@ -155,7 +155,13 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             const next = rotation + fullTurns + ((targetMod - (rotation % 360)) + 720) % 360;
             setRotation(next);
             // Resolve result after the wheel's animation finishes.
-            const animMs = PRM() ? 50 : 4200;
+            // Phase 11.2.4 — intentionally ignore prefers-reduced-motion here:
+            // the rotation itself runs for 4200ms (we forced it in Phase
+            // 11.2.3 because iOS Telegram WebView often has Reduce Motion ON),
+            // so animMs MUST match the rotation duration. If we leave PRM()
+            // branch at 50ms, the win-modal pops up BEFORE the wheel finishes
+            // spinning — which is exactly what the user saw in production.
+            const animMs = 4200;
             setTimeout(async () => {
                 setResult(data);
                 sfx.play("case_lock_thunk", { volume: 0.7 });
@@ -532,7 +538,7 @@ const LegendCard = ({ s, t }) => {
     return (
         <div className="rounded-xl overflow-hidden bg-white/[0.03] border border-white/10">
             {isItem ? (
-                <div className="aspect-square relative">
+                <div className="aspect-square relative bg-[#0A0A0A]">
                     <img
                         src={resolveImage(s.image_path)}
                         alt={s.item_name || s.item_slug}
@@ -540,7 +546,7 @@ const LegendCard = ({ s, t }) => {
                         loading="lazy"
                     />
                     <span
-                        className="absolute top-1.5 left-1.5 text-[8px] font-extrabold tracking-widest uppercase px-1.5 py-0.5 rounded border"
+                        className="absolute top-1.5 left-1.5 z-10 pointer-events-none text-[8px] font-extrabold tracking-widest uppercase px-1.5 py-0.5 rounded border"
                         style={{
                             color: RARITY_HEX[s.item_rarity || "common"],
                             borderColor: `${RARITY_HEX[s.item_rarity || "common"]}66`,
