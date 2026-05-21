@@ -8,6 +8,7 @@ import { Toaster, toast } from "sonner";
 import { Header, BottomNav } from "@/components/Header";
 import { AppShell } from "@/components/AppShell";
 import { DepositModal } from "@/components/DepositModal";
+import { DepositChoiceModal } from "@/components/DepositChoiceModal";
 import { OutOfTelegram } from "@/components/OutOfTelegram";
 import { CasesListPage } from "@/pages/CasesListPage";
 import { CaseDetailPage } from "@/pages/CaseDetailPage";
@@ -64,6 +65,12 @@ function App() {
     const [user, setUser] = useState(null);
     const [balance, setBalance] = useState(0);
     const [depositOpen, setDepositOpen] = useState(false);
+    // Phase 11.2.6 — DepositChoiceModal is the new single entry point from
+    // the header balance widget. It then routes the user to either the
+    // existing on-chain DepositModal or the TonConnect connect/disconnect
+    // flow. Removes the previous duplicate "balance pill + yellow Connect
+    // Wallet button" cluster that users were misreading as two competing CTAs.
+    const [choiceOpen, setChoiceOpen] = useState(false);
 
     const boot = useCallback(async () => {
         tgReady();
@@ -167,7 +174,7 @@ function App() {
                             user={user}
                             balance={balance}
                             onLogout={handleLogout}
-                            onOpenDeposit={() => setDepositOpen(true)}
+                            onOpenDeposit={() => setChoiceOpen(true)}
                         />
                     }
                     mobileNav={<BottomNav isAdmin={!!user?.is_admin} />}
@@ -270,6 +277,16 @@ function App() {
                     onClose={() => setDepositOpen(false)}
                     currentBalance={balance}
                     onCredited={(b) => setBalance(b)}
+                />
+
+                {/* Phase 11.2.6 — choice modal opened from header balance widget.
+                    Routes either to TonConnect connect/disconnect (handled
+                    internally via @tonconnect/ui-react hooks) or to the
+                    on-chain DepositModal above. */}
+                <DepositChoiceModal
+                    open={choiceOpen}
+                    onClose={() => setChoiceOpen(false)}
+                    onChooseDeposit={() => setDepositOpen(true)}
                 />
 
                 <Toaster

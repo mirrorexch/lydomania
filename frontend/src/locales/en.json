@@ -53,7 +53,14 @@
   },
   "header": {
     "no_wallet": "no wallet",
-    "deposit_aria": "Deposit TON"
+    "deposit_aria": "Deposit TON",
+    "deposit_modal_title": "Top up balance",
+    "connect_wallet": "Connect wallet",
+    "disconnect_wallet": "Disconnect wallet",
+    "connected_as": "Connected: {{addr}}",
+    "deposit_onchain": "On-chain transfer",
+    "connect_wallet_desc": "Via TonConnect for instant deposits & withdrawals",
+    "deposit_onchain_desc": "Send TON to the vault address"
   },
   "boot": {
     "connecting": "Connecting…"
@@ -103,15 +110,15 @@
       "high": "High"
     }
   },
-    "home": {
-        "banner_pvp_title": "Case Battles",
-        "banner_pvp_sub": "Open in sync vs other players — winner takes the pot.",
-        "banner_roulette_title": "Roulette",
-        "banner_roulette_sub": "Bet a tier, win a real gift.",
-        "banner_whale_chip": "Headlined",
-        "banner_whale_title": "Whale Vault — 500 TON",
-        "banner_whale_sub": "Top-tier gifts with massive payouts."
-    },
+  "home": {
+    "banner_pvp_title": "Case Battles",
+    "banner_pvp_sub": "Open in sync vs other players — winner takes the pot.",
+    "banner_roulette_title": "Roulette",
+    "banner_roulette_sub": "Bet a tier, win a real gift.",
+    "banner_whale_chip": "Headlined",
+    "banner_whale_title": "Whale Vault — 500 TON",
+    "banner_whale_sub": "Top-tier gifts with massive payouts."
+  },
   "case_tiers": {
     "free_case": "Tier 00 · Free",
     "pocket_box": "Tier 01 · Pocket",
@@ -148,7 +155,10 @@
     "round_x_of_n": "Round {{x}} / {{n}}",
     "players_word": "players",
     "pf_short": "Verify",
-    "mode": { "high_wins": "HIGH WINS", "low_wins": "LOW WINS" },
+    "mode": {
+      "high_wins": "HIGH WINS",
+      "low_wins": "LOW WINS"
+    },
     "status": {
       "open": "Open",
       "ready": "Ready",
@@ -156,7 +166,9 @@
       "completed": "Completed",
       "cancelled": "Cancelled"
     },
-    "filter": { "any": "All" },
+    "filter": {
+      "any": "All"
+    },
     "create": {
       "title": "Create a Battle",
       "mode": "Mode",
@@ -175,7 +187,9 @@
       "left": "Left the battle",
       "cancelled": "Battle was cancelled"
     },
-    "verify": { "title": "Provably fair · Battle verifier" }
+    "verify": {
+      "title": "Provably fair · Battle verifier"
+    }
   },
   "roulette": {
     "tag": "ROULETTE",
@@ -191,7 +205,11 @@
     "bets_feed": "LIVE BETS",
     "no_bets_yet": "No bets placed yet — be the first.",
     "pot": "Pot: {{amount}} TON",
-    "color": { "red": "RED", "black": "BLACK", "green": "GREEN" },
+    "color": {
+      "red": "RED",
+      "black": "BLACK",
+      "green": "GREEN"
+    },
     "phase": {
       "betting": "Betting closes in {{s}}s",
       "locking": "Locking bets…",
@@ -870,24 +888,24 @@
     "seg": {
       "ton_multi": "TON",
       "ton_payout_n": "{{n}} TON",
-      "low_gift":  "LOW",
-      "mid_gift":  "MID",
+      "low_gift": "LOW",
+      "mid_gift": "MID",
       "high_gift": "HIGH",
-      "jackpot":   "JACKPOT"
+      "jackpot": "JACKPOT"
     },
     "result_tag": {
       "ton_multi": "TON payout",
-      "low_gift":  "Gift won",
-      "mid_gift":  "Big gift!",
+      "low_gift": "Gift won",
+      "mid_gift": "Big gift!",
       "high_gift": "Huge gift!",
-      "jackpot":   "JACKPOT!"
+      "jackpot": "JACKPOT!"
     },
     "result_close": "Close",
     "history": {
       "item_row": "Won gift · {{slug}}",
-      "ton_row":  "Won {{amount}} TON",
-      "free":     "FREE",
-      "verify":   "VERIFY"
+      "ton_row": "Won {{amount}} TON",
+      "free": "FREE",
+      "verify": "VERIFY"
     },
     "fair": {
       "tag": "Provably fair",
@@ -932,7 +950,7 @@
     },
     "toast": {
       "config_error": "Failed to load wheel config.",
-      "spin_error":   "Spin failed. Try again."
+      "spin_error": "Spin failed. Try again."
     }
   },
   "season": {

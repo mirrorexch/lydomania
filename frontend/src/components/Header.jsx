@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
-import { TonConnectButton, useTonAddress } from "@tonconnect/ui-react";
+import { useTonAddress } from "@tonconnect/ui-react";
 import {
     Diamond, ArrowDownToLine, Swords, Disc3, Package, Trophy, Backpack, User,
 } from "lucide-react";
@@ -58,7 +58,13 @@ export const Header = ({ user, balance, onLogout, onOpenDeposit }) => {
                     </div>
                 </Link>
 
-                {/* Right cluster: language + sound + balance + tonconnect */}
+                {/* Right cluster: language + sound + balance widget.
+                    Phase 11.2.6 — the standalone <TonConnectButton /> used to
+                    sit to the right of the balance widget and was visually
+                    competing with it (two CTAs that "look like deposit").
+                    It has been removed; the balance widget is now the single
+                    money entry point that opens DepositChoiceModal where
+                    "Connect wallet" lives as one of two choices. */}
                 <div className="flex items-center gap-1 lg:gap-2 min-w-0 lg:ml-auto">
                     <LanguageToggle className="flex-shrink-0" />
                     <SoundToggle compact className="flex-shrink-0" />
@@ -66,7 +72,7 @@ export const Header = ({ user, balance, onLogout, onOpenDeposit }) => {
                         data-testid="header-deposit-btn"
                         onClick={() => { tapMedium(); onOpenDeposit?.(); }}
                         aria-label={t("header.deposit_aria")}
-                        className="flex items-center gap-1 bg-gradient-to-br from-cyber-cyan/10 to-cyber-purple/10 border border-cyber-cyan/30 hover:border-cyber-cyan/60 rounded-xl px-2 py-1.5 transition flex-shrink-0"
+                        className="flex items-center gap-1 bg-gradient-to-br from-cyber-cyan/10 to-cyber-purple/10 border border-cyber-cyan/30 hover:border-cyber-cyan/60 rounded-xl px-2.5 py-1.5 transition flex-shrink-0"
                     >
                         <Diamond className="w-3.5 h-3.5 text-cyber-cyan" strokeWidth={2.5} />
                         <RollingNumber
@@ -78,11 +84,6 @@ export const Header = ({ user, balance, onLogout, onOpenDeposit }) => {
                         <span className="text-[9px] text-white/60 font-bold">TON</span>
                         <ArrowDownToLine className="w-3 h-3 text-cyber-cyan ml-0.5" />
                     </button>
-                    <div data-testid="tonconnect-button-wrap" className="flex-shrink-0 h-9 w-[78px] sm:w-[110px] lg:w-[140px] relative overflow-visible">
-                        <div className="absolute top-0 left-0 origin-top-left scale-[0.7] sm:scale-90 lg:scale-100">
-                            <TonConnectButton />
-                        </div>
-                    </div>
                 </div>
             </div>
             {/* Phase 7c — Battle Pass XP HUD below the top bar, with VIP tier badge anchored right */}

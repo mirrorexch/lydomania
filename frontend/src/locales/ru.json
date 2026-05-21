@@ -53,7 +53,14 @@
   },
   "header": {
     "no_wallet": "нет кошелька",
-    "deposit_aria": "Пополнить TON"
+    "deposit_aria": "Пополнить TON",
+    "deposit_modal_title": "Пополнить баланс",
+    "connect_wallet": "Привязать кошелёк",
+    "disconnect_wallet": "Отключить кошелёк",
+    "connected_as": "Подключён: {{addr}}",
+    "deposit_onchain": "Перевод on-chain",
+    "connect_wallet_desc": "Через TonConnect, для быстрых пополнений и выводов",
+    "deposit_onchain_desc": "Перевод TON на адрес vault'а"
   },
   "boot": {
     "connecting": "Подключение…"
@@ -148,7 +155,10 @@
     "round_x_of_n": "Раунд {{x}} / {{n}}",
     "players_word": "игроков",
     "pf_short": "Проверить",
-    "mode": { "high_wins": "ВЫСШИЙ ВЫИГРЫВАЕТ", "low_wins": "НИЗШИЙ ВЫИГРЫВАЕТ" },
+    "mode": {
+      "high_wins": "ВЫСШИЙ ВЫИГРЫВАЕТ",
+      "low_wins": "НИЗШИЙ ВЫИГРЫВАЕТ"
+    },
     "status": {
       "open": "Открыт",
       "ready": "Готов",
@@ -156,7 +166,9 @@
       "completed": "Завершён",
       "cancelled": "Отменён"
     },
-    "filter": { "any": "Все" },
+    "filter": {
+      "any": "Все"
+    },
     "create": {
       "title": "Создать баттл",
       "mode": "Режим",
@@ -175,7 +187,9 @@
       "left": "Вы покинули баттл",
       "cancelled": "Баттл отменён"
     },
-    "verify": { "title": "Доказуемая честность · Баттл" }
+    "verify": {
+      "title": "Доказуемая честность · Баттл"
+    }
   },
   "roulette": {
     "tag": "РУЛЕТКА",
@@ -191,7 +205,11 @@
     "bets_feed": "СТАВКИ В ЭФИРЕ",
     "no_bets_yet": "Ставок ещё нет — будьте первым.",
     "pot": "Банк: {{amount}} TON",
-    "color": { "red": "КРАСНЫЙ", "black": "ЧЁРНЫЙ", "green": "ЗЕЛЁНЫЙ" },
+    "color": {
+      "red": "КРАСНЫЙ",
+      "black": "ЧЁРНЫЙ",
+      "green": "ЗЕЛЁНЫЙ"
+    },
     "phase": {
       "betting": "Приём ставок: {{s}}с",
       "locking": "Ставки закрываются…",
@@ -870,24 +888,24 @@
     "seg": {
       "ton_multi": "TON",
       "ton_payout_n": "{{n}} TON",
-      "low_gift":  "LOW",
-      "mid_gift":  "MID",
+      "low_gift": "LOW",
+      "mid_gift": "MID",
       "high_gift": "HIGH",
-      "jackpot":   "JACKPOT"
+      "jackpot": "JACKPOT"
     },
     "result_tag": {
       "ton_multi": "Выплата в TON",
-      "low_gift":  "Подарок выигран",
-      "mid_gift":  "Крупный подарок!",
+      "low_gift": "Подарок выигран",
+      "mid_gift": "Крупный подарок!",
       "high_gift": "Огромный подарок!",
-      "jackpot":   "ДЖЕКПОТ!"
+      "jackpot": "ДЖЕКПОТ!"
     },
     "result_close": "Закрыть",
     "history": {
       "item_row": "Подарок · {{slug}}",
-      "ton_row":  "Выиграл {{amount}} TON",
-      "free":     "FREE",
-      "verify":   "ПРОВЕРИТЬ"
+      "ton_row": "Выиграл {{amount}} TON",
+      "free": "FREE",
+      "verify": "ПРОВЕРИТЬ"
     },
     "fair": {
       "tag": "Provably fair",
@@ -932,7 +950,7 @@
     },
     "toast": {
       "config_error": "Не удалось загрузить настройки колеса.",
-      "spin_error":   "Спин не прошёл. Попробуй ещё раз."
+      "spin_error": "Спин не прошёл. Попробуй ещё раз."
     }
   },
   "season": {
