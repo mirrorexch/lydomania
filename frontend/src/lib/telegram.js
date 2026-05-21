@@ -81,8 +81,40 @@ function _publishViewportHeight(tg) {
     }
 }
 
+/**
+ * Phase 11.2.7 — publish Telegram Mini App safe-area insets so the app
+ * header doesn't get overlapped by the Telegram chrome (Close / dropdown /
+ * 3-dots buttons at the top, home-indicator at the bottom).
+ *
+ * Sources, in priority order, all optional-chained for clients that ship
+ * partial Bot API support:
+ *   - tg.contentSafeAreaInset.{top,bottom,left,right}  (Bot API 8.0+)
+ *   - tg.safeAreaInset.{top,bottom,left,right}         (Bot API 8.0+)
+ *   - else 0 — and CSS layers can additionally fall back to
+ *     env(safe-area-inset-*) which our index.html already enables via
+ *     viewport-fit=cover.
+ *
+ * The Header reads `--tg-safe-top` and BottomNav reads `--tg-safe-bottom`.
+ */
+function _publishSafeAreaInsets(tg) {
+    const root = document.documentElement;
+    const csa = tg?.contentSafeAreaInset || {};
+    const sa  = tg?.safeAreaInset || {};
+    // Prefer contentSafeAreaInset (excludes Telegram's own chrome height);
+    // fall back to safeAreaInset (which includes the chrome).
+    const top    = Math.max(csa.top    ?? 0, sa.top    ?? 0, 0);
+    const bottom = Math.max(csa.bottom ?? 0, sa.bottom ?? 0, 0);
+    const left   = Math.max(csa.left   ?? 0, sa.left   ?? 0, 0);
+    const right  = Math.max(csa.right  ?? 0, sa.right  ?? 0, 0);
+    root.style.setProperty("--tg-safe-top", `${top}px`);
+    root.style.setProperty("--tg-safe-bottom", `${bottom}px`);
+    root.style.setProperty("--tg-safe-left", `${left}px`);
+    root.style.setProperty("--tg-safe-right", `${right}px`);
+}
+
 let _viewportListenerAttached = false;
 let _fullscreenListenerAttached = false;
+let _safeAreaListenerAttached = false;
 let _fullscreenAttempted = false;       // ensure we never loop
 
 export function tgReady() {
@@ -128,6 +160,17 @@ export function tgReady() {
         if (!_viewportListenerAttached) {
             tg.onEvent?.("viewportChanged", () => _publishViewportHeight(tg));
             _viewportListenerAttached = true;
+        }
+
+        // Phase 11.2.7 — push Telegram safe-area insets into CSS vars
+        // (--tg-safe-top / --tg-safe-bottom / --tg-safe-left / --tg-safe-right)
+        // and stay in sync with Telegram chrome changes (rotation, fullscreen
+        // toggle, BackButton showing up etc).
+        _publishSafeAreaInsets(tg);
+        if (!_safeAreaListenerAttached) {
+            tg.onEvent?.("safeAreaChanged",        () => _publishSafeAreaInsets(tg));
+            tg.onEvent?.("contentSafeAreaChanged", () => _publishSafeAreaInsets(tg));
+            _safeAreaListenerAttached = true;
         }
     } catch (e) {
         // ignore — older clients

@@ -25,6 +25,18 @@ export const Header = ({ user, balance, onLogout, onOpenDeposit }) => {
         <header
             data-testid="app-header"
             className="sticky top-0 z-40 w-full backdrop-blur-xl bg-cyber-bg/75 border-b border-white/5 px-3 py-3"
+            style={{
+                // Phase 11.2.7-A — push the header down by the Telegram chrome
+                // safe-area top inset (Close × dropdown ⋯ 3-dots cluster), so
+                // the app's profile pill / language toggle / sound / balance
+                // widget are never overlapped by the Mini App chrome.
+                // --tg-safe-top is set by tgReady() from
+                // window.Telegram.WebApp.contentSafeAreaInset.top (Bot API 8.0+),
+                // with env(safe-area-inset-top) as a CSS-level fallback when
+                // the var hasn't been published yet (e.g. on first paint
+                // before tgReady runs, or in a regular browser).
+                paddingTop: "max(var(--tg-safe-top, 0px), env(safe-area-inset-top, 0px))",
+            }}
         >
             <div className="max-w-[430px] lg:max-w-none mx-auto flex items-center justify-between gap-1.5 lg:gap-3 lg:px-2">
                 {/* Profile pill — hidden at lg+ since brand lives in SideNav */}
@@ -103,7 +115,14 @@ export const BottomNav = ({ isAdmin = false }) => {
         <nav
             data-testid="bottom-nav"
             className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl bg-cyber-bg/90 border-t border-white/8 lg:hidden"
-            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            style={{
+                // Phase 11.2.7-A — push bottom nav up by the Telegram chrome
+                // safe-area bottom inset (home indicator on iOS, gesture bar
+                // on Android, etc).  --tg-safe-bottom is set by tgReady()
+                // from window.Telegram.WebApp.contentSafeAreaInset.bottom
+                // and stays in sync via the contentSafeAreaChanged event.
+                paddingBottom: "max(var(--tg-safe-bottom, 0px), env(safe-area-inset-bottom, 0px))",
+            }}
         >
             {/* Phase 6f — exactly 6 entries in fixed order:
                   PVP / Roulette / Cases / Leaderboard / Inventory / Profile
