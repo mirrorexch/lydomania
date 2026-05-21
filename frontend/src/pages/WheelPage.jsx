@@ -179,7 +179,20 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             //   makes the pointer land EXACTLY in the centre of the
             //   resolved segment — single source of truth, no perception bug.
             const wobble = 0;
-            const targetMod = -(data.segment_index * SEG_DEG) + (SEG_DEG / 2) + wobble;
+            // Phase 11.3.1 — OFF-BY-ONE in the rotation formula fixed.
+            //   Previously: `-(i * SEG_DEG) + (SEG_DEG / 2)` — the `+ SEG_DEG/2`
+            //   was the wrong sign. Each <path> wedge is drawn from angle
+            //   `i*SEG_DEG` to `(i+1)*SEG_DEG` (center at `i*SEG_DEG + 7.5°`).
+            //   To put the wedge's CENTER under the pointer at the 12 o'clock
+            //   position (0°), the wheel must rotate by `-(i*SEG_DEG + 7.5°)`,
+            //   NOT `-(i*SEG_DEG) + 7.5°`. The old formula was a half-segment
+            //   off — pointer always landed on the COUNTER-CLOCKWISE neighbour
+            //   (i-1) of the actual API-returned segment. Live test confirmed:
+            //   api_segment_index=0 → visual_idx=23 (off by exactly one wedge
+            //   in the CCW direction, == half-segment offset under pointer).
+            //   After this flip the pointer lands inside wedge i (not on its
+            //   23-side border) for every spin.
+            const targetMod = -((data.segment_index + 0.5) * SEG_DEG) + wobble;
             // Keep rotation increasing so framer-motion always animates forward.
             const fullTurns = 5 * 360;
             const next = rotation + fullTurns + ((targetMod - (rotation % 360)) + 720) % 360;
