@@ -408,19 +408,35 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             </section>
 
             {/* Win modal */}
+            {/* Phase 11.2.9 — fix:
+                  Previously this modal used `z-40`, which equals the z-index
+                  of <BottomNav>. With equal stacking, BottomNav (rendered
+                  later in the DOM tree via AppShell) painted ON TOP of the
+                  win panel, hiding the Claim/Close button. On <sm the panel
+                  also docked to the bottom (`items-end`), worsening overlap.
+                  Fixes applied:
+                    • z-[60] (above BottomNav z-40, matches WithdrawModal
+                      convention used elsewhere in the app)
+                    • bottom padding accounts for safe-area + BottomNav height
+                      (~88px) so even with `items-end` on mobile the panel
+                      sits CLEARLY above the nav strip and the Close button
+                      is fully tappable
+                    • backdrop click NO LONGER dismisses — Claim is a real
+                      transaction and the user must press the explicit
+                      button (was: onClick → setResult(null), removed)
+                    • backdrop visually upgraded to bg-black/70 + blur to
+                      match the rest of the app's modal language. */}
             <AnimatePresence>
                 {result && (
                     <motion.div
                         data-testid="wheel-win-modal"
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-40 bg-black/65 flex items-end sm:items-center justify-center p-3"
-                        onClick={() => setResult(null)}
+                        className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 pb-[calc(env(safe-area-inset-bottom,0px)+88px)] sm:pb-3"
                     >
                         <motion.div
                             initial={{ y: 32, scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: 32, scale: 0.95 }}
                             transition={{ type: "spring", damping: 22, stiffness: 220 }}
                             className="relative w-full max-w-md bg-cyber-surface border border-white/10 rounded-3xl p-5 overflow-hidden"
-                            onClick={(e) => e.stopPropagation()}
                         >
                             <WheelResultBody result={result} segments={segments} t={t} onClose={() => setResult(null)} />
                         </motion.div>
