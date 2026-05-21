@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from core.auth import get_current_user
 from core.db import items_col
+from core.image_urls import item_image_url
 from core.ton import static_url
 from core.wheel_engine import (
     FREE_TOKEN_REFRESH_SEC, PAID_SPIN_COST_TON, SEGMENT_COUNT,
@@ -69,18 +70,17 @@ async def get_config(user: dict = Depends(get_current_user)) -> dict:
             "item_name": info.get("name"),
             "item_rarity": info.get("rarity"),
             "item_floor_ton": float(info.get("floor_price_ton") or 0.0) if slug else None,
-            # Phase 11.2.3 — wrap image_path in static_url() so the frontend
-            # receives a fully absolute "/api/static/items/<slug>.png" URL
-            # (the items collection stores the relative path "items/<slug>.png"
-            # only).  Without this the wheel LegendCard rendered <img> tags
-            # whose src was https://<origin>/items/<slug>.png → 404, which
-            # showed up as broken-icon placeholders in the "What you can win"
-            # row under the wheel.
-            "image_path": (
-                static_url(info["image_path"])
-                if slug and info.get("image_path")
-                else None
-            ),
+            # Phase 11.2.3 — image_path was wrapped in static_url() to fix
+            # icons missing on /wheel ("items/<slug>.png" → /api/static/...).
+            # Phase 11.2.5 — switch to the shared item_image_url() helper so
+            # that even when an item doc has image_url= only (no image_path
+            # populated), or has BOTH empty (which on prod was breaking 5
+            # legend icons), we still derive the canonical URL from the slug.
+            # Fallback chain inside the helper:
+            #   1) image_url verbatim
+            #   2) static_url(image_path)
+            #   3) static_url(f'items/{slug or id}.png')
+            "image_path": item_image_url(info) if slug else None,
             "weight": int(s["weight"]),
         })
 

@@ -9,8 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 import game
 from core.auth import get_current_user
 from core.config import BATCH_OPEN_MAX, ROTATE_NONCE_EVERY, logger
-from core.db import (
-    cases_col, inventory_col, items_col, ref_credits_col, rolls_col, users_col,
+from core.image_urls import case_image_url, item_image_url
+from core.db import (    cases_col, inventory_col, items_col, ref_credits_col, rolls_col, users_col,
 )
 from core.models import (
     CaseBasketEntryOut, CaseDetailOut, CaseOpenBatchIn, CaseOpenBatchOut,
@@ -104,7 +104,7 @@ def _build_basket_entries(case_doc: dict, items_meta: dict[str, dict]) -> list[C
         m = items_meta.get(slug, {})
         out.append(CaseBasketEntryOut(
             slug=slug, name=m.get("name", slug), rarity=m.get("rarity", "common"),
-            image_url=_item_image_url(m),
+            image_url=item_image_url(m),
             weight=float(b.get("weight", 0)),
             payout_ton=float(b.get("payout_ton", 0)),
             probability=float(b.get("weight", 0)) / total_w,
@@ -129,59 +129,10 @@ def _category_for(case: dict) -> str:
     return "high"
 
 
-def _case_image_url(c: dict) -> str:
-    """Resolve the public image URL for a case document.
-
-    Phase 11.2.2 — removes the historical `cases/crate_common.png` hardcoded
-    fallback which was overriding any per-case artwork that lived only in the
-    `image_url` field (post-Phase-11.x migrations write a full
-    `/api/static/cases/<slug>.png` URL into `image_url` directly, leaving the
-    legacy `image_path` field unset).
-
-    Priority:
-      1. `image_url` field — used verbatim if non-empty (already absolute,
-         either `/api/static/...` or a fully-qualified http(s) URL).
-      2. `image_path` field — wrapped via static_url() for legacy docs.
-      3. Per-slug derivation `cases/<id>.png` — last-resort default that
-         still resolves to the correct artwork for every known case (no more
-         every-case-falls-back-to-crate_common.png).
-    """
-    url = (c.get("image_url") or "").strip()
-    if url:
-        return url
-    path = (c.get("image_path") or "").strip()
-    if path:
-        return static_url(path)
-    return static_url(f"cases/{c['id']}.png")
-
-
-def _item_image_url(it: dict) -> str:
-    """Resolve the public image URL for an item document (same priority rules
-    as _case_image_url, but rooted at `items/<slug>.png` for the last-resort
-    derivation).
-
-    Phase 11.2.2 — drops the historical `items/crate_common.png` hardcoded
-    fallback that was overriding per-item artwork when the doc only had
-    `image_url` populated (via Phase 11.x gift-artwork migrations).
-
-    Priority:
-      1. `image_url` verbatim (absolute /api/static/... or http(s)://...).
-      2. static_url(`image_path`) for legacy docs.
-      3. static_url(f'items/{slug or id}.png') derived from slug/id — no more
-         crate_common.png blanket fallback.
-    """
-    url = (it.get("image_url") or "").strip()
-    if url:
-        return url
-    path = (it.get("image_path") or "").strip()
-    if path:
-        return static_url(path)
-    key = (it.get("slug") or it.get("id") or "").strip()
-    if key:
-        return static_url(f"items/{key}.png")
-    # No slug/id at all (shouldn't happen for valid docs) — keep last-resort
-    # behaviour stable.
-    return static_url("items/crate_common.png")
+# Phase 11.2.5 — _case_image_url and _item_image_url were moved to
+# core/image_urls.py so routers/wheel.py can share the same fallback chain
+# and prevent the missing-icons regression there.  See:
+#     from core.image_urls import case_image_url, item_image_url
 
 
 async def _case_to_summary(c: dict) -> CaseSummaryOut:
@@ -190,7 +141,7 @@ async def _case_to_summary(c: dict) -> CaseSummaryOut:
     return CaseSummaryOut(
         id=c["id"], name=c["name"], slug=c.get("slug", c["id"]),
         price_ton=float(c["price_ton"]),
-        image_url=_case_image_url(c),
+        image_url=case_image_url(c),
         actual_ev_pct=round((ev / float(c["price_ton"])) * 100, 2) if c["price_ton"] else 0.0,
         house_edge_pct=round((1 - ev / float(c["price_ton"])) * 100, 2) if c["price_ton"] else 0.0,
         enabled=bool(c.get("enabled", True)),
@@ -334,7 +285,7 @@ async def open_case(case_id: str, payload: CaseOpenIn, user: dict = Depends(get_
         winning_item=WonItemOut(
             slug=winning_slug, name=item_meta.get("name", winning_slug),
             rarity=item_meta.get("rarity", "common"),
-            image_url=_item_image_url(item_meta),
+            image_url=item_image_url(item_meta),
             payout_ton=payout_ton,
         ),
         payout_ton=payout_ton,
@@ -442,7 +393,7 @@ async def open_case_batch(
             winning_item=WonItemOut(
                 slug=winning_slug, name=item_meta.get("name", winning_slug),
                 rarity=item_meta.get("rarity", "common"),
-                image_url=_item_image_url(item_meta),
+                image_url=item_image_url(item_meta),
                 payout_ton=payout_ton,
             ),
             payout_ton=payout_ton, nonce=nonce_used, roll_float=float(roll_float),
