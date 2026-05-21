@@ -47,31 +47,55 @@ export const GiftDepositModal = ({ open, onClose, onFulfilled }) => {
     const [loading, setLoading] = useState(false);
     const [intent, setIntent] = useState(null);
     const [now, setNow] = useState(Date.now());
+    // Phase 11.2.5 — error state.  Previously, if createGiftDepositIntent()
+    // threw (network blip, expired token, backend hiccup), the catch block
+    // called onClose() and the user saw the modal slam shut with no visible
+    // feedback — exactly the "click does nothing" symptom reported on prod.
+    // Now we keep the modal open and surface the error + a Retry button.
+    const [error, setError] = useState(null);
     const pollRef = useRef(null);
+
+    const createIntent = async () => {
+        setLoading(true);
+        setIntent(null);
+        setError(null);
+        try {
+            const d = await createGiftDepositIntent();
+            return d;
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error("[gift_deposit] createGiftDepositIntent failed:", e);
+            const msg = e?.response?.data?.detail || e?.message || "network_error";
+            setError(msg);
+            // Still surface a toast for users who DID see the modal opening
+            // briefly, but DO NOT call onClose() — keep the modal open with
+            // the error state so they can retry.
+            toast.error(t("gift_deposit.create_failed"), { description: msg });
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Generate intent on open
     useEffect(() => {
-        if (!open) return;
+        if (!open) {
+            // Reset state on close so a stale error from the previous open
+            // doesn't flash when the user reopens.
+            setError(null);
+            setIntent(null);
+            return;
+        }
         // Phase 6i — modal open whoosh
-        sfx.play("modal_whoosh", { volume: 0.55 });
+        try { sfx.play("modal_whoosh", { volume: 0.55 }); } catch { /* iOS audio context */ }
         let cancelled = false;
         (async () => {
-            setLoading(true);
-            setIntent(null);
-            try {
-                const d = await createGiftDepositIntent();
-                if (!cancelled) setIntent(d);
-            } catch (e) {
-                toast.error(t("gift_deposit.create_failed"), {
-                    description: e?.response?.data?.detail || e?.message,
-                });
-                if (!cancelled) onClose?.();
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
+            const d = await createIntent();
+            if (!cancelled && d) setIntent(d);
         })();
         return () => { cancelled = true; };
-    }, [open, t, onClose]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
 
     // Tick once per second for the countdown
     useEffect(() => {
@@ -168,7 +192,49 @@ export const GiftDepositModal = ({ open, onClose, onFulfilled }) => {
                             </div>
                         </div>
 
-                        {loading || !intent ? (
+                        {loading ? (
+                            <div className="py-12 flex items-center justify-center text-white/50">
+                                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                {t("gift_deposit.preparing")}
+                            </div>
+                        ) : error && !intent ? (
+                            // Phase 11.2.5 — visible error state instead of
+                            // silent onClose() so the user can see WHY the
+                            // gift-deposit flow couldn't start and retry.
+                            <div
+                                data-testid="gift-deposit-error"
+                                className="py-8 flex flex-col items-center text-center gap-3"
+                            >
+                                <div className="p-3 rounded-full bg-red-500/15 border border-red-500/40">
+                                    <AlertTriangle className="w-9 h-9 text-red-400" />
+                                </div>
+                                <h3 className="font-display text-xl font-bold">
+                                    {t("gift_deposit.create_failed")}
+                                </h3>
+                                <p className="text-xs text-white/55 break-words max-w-full px-2 font-mono">
+                                    {String(error).slice(0, 200)}
+                                </p>
+                                <p className="text-[11px] text-white/40">
+                                    {t("gift_deposit.error_hint", { defaultValue: "Please check your connection and try again. If the issue persists, re-login from Profile." })}
+                                </p>
+                                <button
+                                    data-testid="gift-deposit-error-retry"
+                                    onClick={async () => {
+                                        const d = await createIntent();
+                                        if (d) setIntent(d);
+                                    }}
+                                    className="mt-2 w-full bg-gradient-to-r from-cyber-purple to-cyber-cyan text-cyber-bg font-display font-bold rounded-xl py-3 uppercase tracking-wider"
+                                >
+                                    {t("gift_deposit.try_again")}
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className="text-xs text-white/45 hover:text-white/70 underline"
+                                >
+                                    {t("common.close")}
+                                </button>
+                            </div>
+                        ) : !intent ? (
                             <div className="py-12 flex items-center justify-center text-white/50">
                                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
                                 {t("gift_deposit.preparing")}
