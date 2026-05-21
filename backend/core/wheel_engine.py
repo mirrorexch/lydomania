@@ -27,32 +27,50 @@ FREE_TOKEN_REFRESH_SEC: Final[int] = 24 * 60 * 60
 
 # Order matters: wheel_index 0 is "top" (under the pointer at 12 o'clock).
 # Visually rotating clockwise, segments are laid out 0..23 in 15°-wide slices.
+#
+# Phase 11.3 reconfiguration ─────────────────────────────────────────────────
+#   • Layout: alternating ton_multi / item — 12 ton_multi + 12 item = 50/50
+#   • Item pool (12): 6 LOW + 3 MID + 2 HI + 1 JACKPOT
+#   • Removed from wheel: token_dust (0.1 T) and coin_flip (0.3 T) — they
+#     felt like a slap in the face on a 5 T paid spin. They still exist in
+#     items collection for Battle Pass tier rewards (see season_engine.py),
+#     just not in the wheel anymore.
+#   • Renamed: daily_jackpot → lucky_coin (the name "Daily Jackpot" with a
+#     2 T floor was actively misleading users into thinking they'd hit
+#     a jackpot when they got a low-tier consolation item).
+#   • lucky_ticket floor bumped 0.75 → 1.5 T in items collection — anything
+#     below 1 T on a 5 T spin reads as "rigged" even when math is fair.
+#   • Total weight = 192 (96 item / 96 ton_multi exactly = 50/50 by prob).
+#   • ton_multi mix: 5×0.5 + 3×0.75 + 3×1.0 + 1×1.25 → avg = 0.75 ⇒
+#     ton_multi EV per spin = 1.875 T
+#   • Item EV per spin = 2.745 T   (LOW 0.760 + MID 0.8125 + HI 0.625 + JACK 0.547)
+#   • Total EV = 4.62 T  ⇒  RTP = 4.62 / 5.0 = 92.4 %   (target 92 % ✓)
 SEGMENT_DEFS: Final[list[dict[str, Any]]] = [
     # 0..23 — interleave multis and gifts so the wheel looks visually balanced.
-    {"segment_index":  0, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 15},
-    {"segment_index":  1, "segment_type": "low_gift",  "multiplier": None, "item_slug": "token_dust",     "weight":  9},
-    {"segment_index":  2, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 15},
-    {"segment_index":  3, "segment_type": "low_gift",  "multiplier": None, "item_slug": "coin_flip",      "weight":  9},
-    {"segment_index":  4, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 15},
-    {"segment_index":  5, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "top_hat",        "weight":  4},
-    {"segment_index":  6, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 15},
-    {"segment_index":  7, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_ticket",   "weight":  9},
-    {"segment_index":  8, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 15},
-    {"segment_index":  9, "segment_type": "low_gift",  "multiplier": None, "item_slug": "daily_jackpot",  "weight":  9},
-    {"segment_index": 10, "segment_type": "ton_multi", "multiplier": 1.25, "item_slug": None, "weight": 15},
-    {"segment_index": 11, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "flying_broom",   "weight":  4},
-    {"segment_index": 12, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 15},
-    {"segment_index": 13, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lol_pop",        "weight":  9},
-    {"segment_index": 14, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 15},
-    {"segment_index": 15, "segment_type": "low_gift",  "multiplier": None, "item_slug": "candy_cane",     "weight":  9},
-    {"segment_index": 16, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 15},
-    {"segment_index": 17, "segment_type": "high_gift", "multiplier": None, "item_slug": "electric_skull", "weight":  2},
-    {"segment_index": 18, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 15},
-    {"segment_index": 19, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "trapped_heart",  "weight":  4},
-    {"segment_index": 20, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 15},
-    {"segment_index": 21, "segment_type": "high_gift", "multiplier": None, "item_slug": "bonded_ring",    "weight":  2},
-    {"segment_index": 22, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 15},
-    {"segment_index": 23, "segment_type": "jackpot",   "multiplier": None, "item_slug": "heart_of_ton",   "weight":  1},
+    {"segment_index":  0, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
+    {"segment_index":  1, "segment_type": "low_gift",  "multiplier": None, "item_slug": "candy_cane",     "weight": 13},
+    {"segment_index":  2, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 8},
+    {"segment_index":  3, "segment_type": "low_gift",  "multiplier": None, "item_slug": "candy_cane",     "weight": 12},
+    {"segment_index":  4, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
+    {"segment_index":  5, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "top_hat",        "weight": 6},
+    {"segment_index":  6, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
+    {"segment_index":  7, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lol_pop",        "weight": 12},
+    {"segment_index":  8, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 8},
+    {"segment_index":  9, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_coin",     "weight": 12},
+    {"segment_index": 10, "segment_type": "ton_multi", "multiplier": 1.25, "item_slug": None, "weight": 8},
+    {"segment_index": 11, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "flying_broom",   "weight": 6},
+    {"segment_index": 12, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
+    {"segment_index": 13, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_ticket",   "weight": 12},
+    {"segment_index": 14, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 8},
+    {"segment_index": 15, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_ticket",   "weight": 12},
+    {"segment_index": 16, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
+    {"segment_index": 17, "segment_type": "high_gift", "multiplier": None, "item_slug": "electric_skull", "weight": 2},
+    {"segment_index": 18, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
+    {"segment_index": 19, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "trapped_heart",  "weight": 6},
+    {"segment_index": 20, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
+    {"segment_index": 21, "segment_type": "high_gift", "multiplier": None, "item_slug": "bonded_ring",    "weight": 2},
+    {"segment_index": 22, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
+    {"segment_index": 23, "segment_type": "jackpot",   "multiplier": None, "item_slug": "heart_of_ton",   "weight": 1},
 ]
 assert len(SEGMENT_DEFS) == SEGMENT_COUNT
 

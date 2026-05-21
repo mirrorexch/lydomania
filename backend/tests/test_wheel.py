@@ -106,26 +106,28 @@ def test_payout_for_item_no_floor_returns_zero_value():
 
 
 def test_rtp_with_floors_in_band():
-    # Use the SAME floors documented in the segment design comments.
+    # Phase 11.3 — updated item pool: token_dust & coin_flip removed from
+    # the wheel; daily_jackpot renamed to lucky_coin; lucky_ticket floor
+    # bumped 0.75 → 1.5 TON in items collection.
     floors = {
-        "token_dust": 0.10, "coin_flip": 0.30, "lucky_ticket": 0.75,
-        "daily_jackpot": 2.00, "lol_pop": 3.00, "candy_cane": 3.00,
-        "top_hat": 8.00, "flying_broom": 9.00, "trapped_heart": 10.00,
+        "lucky_ticket": 1.50, "candy_cane": 2.00, "lucky_coin": 2.00,
+        "lol_pop": 3.00,
+        "top_hat": 7.00, "flying_broom": 9.00, "trapped_heart": 10.00,
         "electric_skull": 25.00, "bonded_ring": 35.00,
         "heart_of_ton": 105.00,
     }
     r = rtp(SEGMENT_DEFS, cost_ton=PAID_SPIN_COST_TON, item_floor_lookup=floors)
-    # Brief target: 88-96 %.
-    assert 0.88 <= r <= 0.96, f"closed-form RTP {r*100:.2f}% out of band"
+    # Phase 11.3 target band: 90-94 % (closed-form designed for 92.4 %).
+    assert 0.90 <= r <= 0.94, f"closed-form RTP {r*100:.2f}% out of band"
 
 
 @pytest.mark.parametrize("n", [5000])
 def test_simulation_rtp_in_band(n):
     """5 000-spin sim — realised RTP within ±2 % of closed-form."""
     floors = {
-        "token_dust": 0.10, "coin_flip": 0.30, "lucky_ticket": 0.75,
-        "daily_jackpot": 2.00, "lol_pop": 3.00, "candy_cane": 3.00,
-        "top_hat": 8.00, "flying_broom": 9.00, "trapped_heart": 10.00,
+        "lucky_ticket": 1.50, "candy_cane": 2.00, "lucky_coin": 2.00,
+        "lol_pop": 3.00,
+        "top_hat": 7.00, "flying_broom": 9.00, "trapped_heart": 10.00,
         "electric_skull": 25.00, "bonded_ring": 35.00,
         "heart_of_ton": 105.00,
     }
