@@ -148,7 +148,19 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             // and going clockwise. So we need to rotate by `-segment_index × 15°`
             // modulo 360, plus 5-6 full extra turns for drama, plus a small
             // ±3° wobble for natural feel.
-            const wobble = ((Math.random() * 6) - 3);
+            // Phase 11.2.10 — wobble REMOVED.
+            //   Was: `const wobble = ((Math.random() * 6) - 3);` and
+            //         `+ wobble` in the target rotation.
+            //   With SEG_DEG=15° (each segment is only 15° wide), a ±3°
+            //   wobble could land the pointer visually OVER the neighbour
+            //   segment's outer arc — so users saw "JACK" or "MID" under
+            //   the needle while the backend honestly returned the
+            //   adjacent ton_multi segment (e.g. ×0.5 = 2.5 TON).
+            //   The win modal then showed 2.5 TON next to a visible "JACK"
+            //   label, looking like a rigged outcome. Removing wobble
+            //   makes the pointer land EXACTLY in the centre of the
+            //   resolved segment — single source of truth, no perception bug.
+            const wobble = 0;
             const targetMod = -(data.segment_index * SEG_DEG) + (SEG_DEG / 2) + wobble;
             // Keep rotation increasing so framer-motion always animates forward.
             const fullTurns = 5 * 360;
