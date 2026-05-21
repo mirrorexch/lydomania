@@ -126,7 +126,7 @@ def _free_reward_for(tier: int) -> dict[str, Any] | None:
     # Tier 13-17: low gifts + bigger TON
     if tier == 13: return {"type": "item", "item_slug": "lucky_ticket"}
     if tier == 14: return {"type": "ton", "amount_ton": 6.0}
-    if tier == 15: return {"type": "item", "item_slug": "daily_jackpot"}
+    if tier == 15: return {"type": "item", "item_slug": "lucky_coin"}
     if tier == 16: return {"type": "ton", "amount_ton": 8.0}
     if tier == 17: return {"type": "free_spin", "count": 2}
     # Tier 18-22: mid gifts
@@ -161,7 +161,7 @@ def _premium_reward_for(tier: int) -> dict[str, Any] | None:
     if tier == 9:  return {"type": "ton", "amount_ton": 10.0}
     if tier == 10: return {"type": "item", "item_slug": "lucky_ticket"}
     if tier == 11: return {"type": "ton", "amount_ton": 12.0}
-    if tier == 12: return {"type": "item", "item_slug": "daily_jackpot"}
+    if tier == 12: return {"type": "item", "item_slug": "lucky_coin"}
     if tier == 13: return {"type": "ton", "amount_ton": 15.0}
     if tier == 14: return {"type": "item", "item_slug": "top_hat"}
     if tier == 15: return {"type": "ton", "amount_ton": 18.0}

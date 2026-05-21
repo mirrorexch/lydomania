@@ -33,8 +33,8 @@ FREE_CASE_BASKET = [
     ("micro_chip",   "Micro Chip",    "common",  0.05,    250),   # 25%
     ("token_dust",   "Token Dust",    "common",  0.10,    100),   # 10%
     ("coin_flip",    "Coin Flip",     "rare",    0.30,     35),   # 3.5%
-    ("lucky_ticket", "Lucky Ticket",  "rare",    0.75,     12),   # 1.2%
-    ("daily_jackpot","Daily Jackpot", "epic",    2.00,      3),   # 0.3%
+    ("lucky_ticket", "Lucky Ticket",  "rare",    1.50,     12),   # 1.2%  (floor bumped 0.75→1.50 in Phase 11.3)
+    ("lucky_coin",   "Lucky Coin",    "epic",    2.00,      3),   # 0.3%  (renamed daily_jackpot → lucky_coin in Phase 11.3)
 ]
 
 
