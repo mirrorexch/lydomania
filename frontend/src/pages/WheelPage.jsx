@@ -22,30 +22,48 @@ const PRM = () =>
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 // Segment colour per type — same accents as the rest of the app.
-// Phase 11.1 — Wheel segments restricted to the 5-token gold-luxe palette:
-// surface-2 (dark base), surface-3 (alt base), gold-500 (highlight),
-// gold-bright (jackpot/top tier), --danger red (token_dust / loss risk).
+// Phase 11.3 — premium palette overhaul. Five distinct tiers visually:
+//   • ton_multi loss  (×0.5 / ×0.75) — near-black "dud" wedge
+//   • ton_multi neutral/win (≥ ×1.0) — warm gold-tinted base
+//   • low_gift        — deep navy with cyan accent (gift, but small)
+//   • mid_gift        — royal violet (mid-tier gift)
+//   • high_gift       — vivid magenta/pink (rare gift)
+//   • jackpot         — pure gold-bright with strong glow
+// Loss wedges are intentionally darkest so a paying player can SEE the
+// stripe of "bad" segments at a glance — informed expectations build
+// trust even when the math is against you.
 const SEG_FILL = {
-    ton_multi: "#13110C",          // --surface-2 (dark base)
-    low_gift:  "#1C1810",          // --surface-3 (alt base)
-    mid_gift:  "#13110C",          // --surface-2 (alternate band)
-    high_gift: "#D4AF37",          // --gold-500 (highlight)
-    jackpot:   "#FFD700",          // --gold-bright (top tier)
+    ton_multi:      "#13110C",           // base — overridden below for win/loss
+    ton_multi_loss: "#0B0905",           // near-black
+    ton_multi_win:  "#2A2009",           // warm gold-tint
+    low_gift:       "#0E1B2E",           // deep navy
+    mid_gift:       "#1F0F3A",           // royal violet
+    high_gift:      "#3A0E2A",           // dark magenta
+    jackpot:        "#5C4406",           // gold-bright base (rim glows over it)
 };
 const SEG_STROKE = {
-    ton_multi: "rgba(212,175,55,0.45)",
-    low_gift:  "rgba(184,134,11,0.45)",
-    mid_gift:  "rgba(212,175,55,0.55)",
-    high_gift: "rgba(255,215,0,0.85)",
-    jackpot:   "rgba(255,215,0,1.0)",
+    ton_multi:      "rgba(212,175,55,0.30)",
+    ton_multi_loss: "rgba(120,80,30,0.35)",
+    ton_multi_win:  "rgba(255,215,0,0.55)",
+    low_gift:       "rgba(56,189,248,0.55)",   // cyan rim
+    mid_gift:       "rgba(167,139,250,0.65)",  // violet rim
+    high_gift:      "rgba(244,114,182,0.85)",  // pink rim
+    jackpot:        "rgba(255,215,0,1.0)",
 };
 const SEG_LABEL_FILL = {
-    ton_multi: "#FFEB99",          // gold-200
-    low_gift:  "#FFEB99",
-    mid_gift:  "#FFEB99",
-    high_gift: "#0B0905",          // near-black on the gold-500 band
-    jackpot:   "#0B0905",          // near-black on the gold-bright band
+    ton_multi:      "#FFEB99",
+    ton_multi_loss: "#9A5C4A",            // muted rose — clearly a "loss" hue
+    ton_multi_win:  "#FFD700",            // gold-bright
+    low_gift:       "#7DD3FC",            // cyan
+    mid_gift:       "#C4B5FD",            // violet
+    high_gift:      "#F9A8D4",            // pink
+    jackpot:        "#0B0905",            // near-black on gold-bright
 };
+// Resolve the effective tier key for a segment (splits ton_multi by win/loss).
+function tierKey(s) {
+    if (s.segment_type !== "ton_multi") return s.segment_type;
+    return (s.multiplier ?? 1) < 1 ? "ton_multi_loss" : "ton_multi_win";
+}
 
 const VIEW = 320;       // SVG viewport (square)
 const R_OUTER = 150;
@@ -297,9 +315,17 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                 className="relative overflow-hidden rounded-3xl border border-gold-500/25 bg-[radial-gradient(circle_at_50%_45%,rgba(212,175,55,0.10),transparent_60%)] bg-surface-2 p-3 sm:p-6 flex flex-col items-center"
             >
                 <div className="relative" style={{ width: "min(320px, 88vw)", maxWidth: 320 }}>
-                    {/* Pointer at 12 o'clock — gold luxe */}
-                    <div className="absolute left-1/2 -translate-x-1/2 -top-1 z-10 select-none pointer-events-none">
-                        <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-gold-bright drop-shadow-[0_2px_6px_rgba(255,215,0,0.75)]" />
+                    {/* Pointer at 12 o'clock — Phase 11.3 premium needle.
+                        Wider base (16px) + longer tip (24px) + dual gold
+                        drop-shadow for stronger visual anchor. */}
+                    <div className="absolute left-1/2 -translate-x-1/2 -top-1.5 z-10 select-none pointer-events-none">
+                        <div
+                            className="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-gold-bright"
+                            style={{
+                                filter: "drop-shadow(0 2px 4px rgba(255,215,0,0.85)) drop-shadow(0 0 12px rgba(255,215,0,0.45))",
+                            }}
+                        />
+                        <div className="w-2.5 h-2.5 rounded-full bg-gold-bright mx-auto -mt-1 shadow-[0_0_8px_rgba(255,215,0,0.85)]" />
                     </div>
                     <motion.div
                         animate={{ rotate: rotation }}
@@ -319,6 +345,20 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                         style={{ transformOrigin: "50% 50%", willChange: "transform" }}
                     >
                         <svg viewBox={`0 0 ${VIEW} ${VIEW}`} className="w-full h-auto" aria-label={t("wheel.aria_wheel")}>
+                            <defs>
+                                <radialGradient id="hubGlow">
+                                    <stop offset="0%"  stopColor="rgba(255,215,0,0.85)" />
+                                    <stop offset="100%" stopColor="rgba(255,215,0,0)" />
+                                </radialGradient>
+                                <radialGradient id="rimGlow" cx="50%" cy="50%" r="50%">
+                                    <stop offset="92%"  stopColor="rgba(255,215,0,0)" />
+                                    <stop offset="100%" stopColor="rgba(255,215,0,0.55)" />
+                                </radialGradient>
+                                {/* Phase 11.3 — soft inner shadow so each segment looks recessed. */}
+                                <filter id="segInnerShadow" x="-10%" y="-10%" width="120%" height="120%">
+                                    <feGaussianBlur stdDeviation="1.2" />
+                                </filter>
+                            </defs>
                             {segments.length === 0
                                 ? (
                                     <circle cx={CX} cy={CY} r={R_OUTER} fill="rgba(255,255,255,0.04)" />
@@ -327,36 +367,59 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                                     const start = s.segment_index * SEG_DEG;
                                     const end = start + SEG_DEG;
                                     const d = arcPath(CX, CY, R_INNER, R_OUTER, start, end);
-                                    // Phase 11.2.1 — labels live near the OUTER rim,
-                                    // not at the wedge midpoint, so they don't collide
-                                    // near the hub.
-                                    const [lx, ly] = polarPoint(CX, CY, R_OUTER - 22, start + SEG_DEG / 2);
-                                    // Loss wedges (ton_multi with multiplier < 1) get
-                                    // NO label — the dark red fill speaks for itself.
-                                    const isLoss = s.segment_type === "ton_multi" && (s.multiplier ?? 1) < 1;
-                                    const labelText = isLoss
-                                        ? ""
-                                        : s.segment_type === "ton_multi"
-                                            ? `${s.multiplier}×`
-                                            : s.segment_type === "jackpot"
-                                                ? "JACK"
-                                                : s.segment_type === "high_gift"
-                                                    ? "HI"
-                                                    : s.segment_type === "mid_gift"
-                                                        ? "MID"
-                                                        : "LOW";
+                                    const tk = tierKey(s);
+                                    const isItem = s.segment_type !== "ton_multi";
+                                    // Phase 11.3 — for item segments, render the prize
+                                    // icon INSIDE the wedge (near the outer rim), and
+                                    // push the small tier-tag label closer to the hub
+                                    // so it doesn't collide with the icon.
+                                    const labelRadius = isItem ? (R_INNER + 14) : (R_OUTER - 22);
+                                    const [lx, ly] = polarPoint(CX, CY, labelRadius, start + SEG_DEG / 2);
+                                    // For ton_multi we ALWAYS show the multiplier
+                                    // (Phase 11.3 change — was hidden for losses,
+                                    // but post-wobble-fix users want to know that
+                                    // the wedge under their pointer was indeed
+                                    // a ×0.5/×0.75, so show the value with a
+                                    // visibly "loss" tint instead of hiding it).
+                                    const labelText = s.segment_type === "ton_multi"
+                                        ? `${s.multiplier}×`
+                                        : s.segment_type === "jackpot"
+                                            ? "JACK"
+                                            : s.segment_type === "high_gift"
+                                                ? "HI"
+                                                : s.segment_type === "mid_gift"
+                                                    ? "MID"
+                                                    : "LOW";
+                                    // Icon position (item segments only) — outer band.
+                                    const [ix, iy] = polarPoint(CX, CY, R_OUTER - 28, start + SEG_DEG / 2);
+                                    const iconRotate = start + SEG_DEG / 2;          // straighten icon along radius
+                                    const iconSize = 22;
+                                    const itemIcon = isItem && s.image_path ? resolveImage(s.image_path) : null;
                                     return (
                                         <g key={s.segment_index}>
-                                            <path d={d} fill={SEG_FILL[s.segment_type]} stroke={SEG_STROKE[s.segment_type]} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                                            <path
+                                                d={d}
+                                                fill={SEG_FILL[tk] || SEG_FILL[s.segment_type]}
+                                                stroke={SEG_STROKE[tk] || SEG_STROKE[s.segment_type]}
+                                                strokeWidth="1.25" vectorEffect="non-scaling-stroke"
+                                            />
+                                            {itemIcon && (
+                                                <g transform={`rotate(${iconRotate}, ${ix}, ${iy})`}>
+                                                    <image
+                                                        href={itemIcon}
+                                                        x={ix - iconSize/2} y={iy - iconSize/2}
+                                                        width={iconSize} height={iconSize}
+                                                        preserveAspectRatio="xMidYMid meet"
+                                                        style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.85))" }}
+                                                    />
+                                                </g>
+                                            )}
                                             {labelText && (
                                                 <text
                                                     x={lx} y={ly}
-                                                    fill={SEG_LABEL_FILL[s.segment_type]}
-                                                    fontSize="10" fontWeight="800"
+                                                    fill={SEG_LABEL_FILL[tk] || SEG_LABEL_FILL[s.segment_type]}
+                                                    fontSize={isItem ? "8" : "10"} fontWeight="800"
                                                     textAnchor="middle" dominantBaseline="middle"
-                                                    // Tangential orientation — label reads along the arc
-                                                    // (perpendicular to the radius), so neighbour labels no
-                                                    // longer collide near the hub.
                                                     transform={`rotate(${start + SEG_DEG / 2 + 90}, ${lx}, ${ly})`}
                                                     style={{ filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.85))" }}
                                                     pointerEvents="none"
@@ -367,15 +430,21 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                                         </g>
                                     );
                                 })}
-                            {/* Inner hub — gold luxe */}
-                            <circle cx={CX} cy={CY} r={R_INNER} fill="#0B0905" stroke="rgba(212,175,55,0.55)" strokeWidth="1.5" />
-                            <circle cx={CX} cy={CY} r={R_INNER * 0.55} fill="url(#hubGlow)" />
-                            <defs>
-                                <radialGradient id="hubGlow">
-                                    <stop offset="0%"  stopColor="rgba(255,215,0,0.75)" />
-                                    <stop offset="100%" stopColor="rgba(255,215,0,0)" />
-                                </radialGradient>
-                            </defs>
+                            {/* Phase 11.3 — gold outer rim + inner hub with crown emblem */}
+                            <circle cx={CX} cy={CY} r={R_OUTER + 2} fill="none" stroke="url(#rimGlow)" strokeWidth="6" />
+                            <circle cx={CX} cy={CY} r={R_OUTER} fill="none" stroke="#D4AF37" strokeWidth="2" />
+                            <circle cx={CX} cy={CY} r={R_INNER} fill="#0B0905" stroke="#D4AF37" strokeWidth="2" />
+                            <circle cx={CX} cy={CY} r={R_INNER * 0.65} fill="url(#hubGlow)" />
+                            {/* Crown glyph at the centre — pure SVG, no font dep */}
+                            <g transform={`translate(${CX - 13}, ${CY - 9})`} opacity="0.95">
+                                <path
+                                    d="M 2 16 L 2 8 L 7 12 L 13 4 L 19 12 L 24 8 L 24 16 Z M 2 18 L 24 18 L 24 20 L 2 20 Z"
+                                    fill="#FFD700"
+                                    stroke="#0B0905"
+                                    strokeWidth="0.5"
+                                    style={{ filter: "drop-shadow(0 0 4px rgba(255,215,0,0.55))" }}
+                                />
+                            </g>
                         </svg>
                     </motion.div>
                 </div>
