@@ -259,6 +259,30 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
         console.warn("[crash] phase state →", phase);
     }, [phase]);
 
+    // Phase 11.2.5 — betting countdown ticker.  The countdown number in
+    // the betting UI (line ~517 below) is rendered inline as
+    //   `Math.ceil((phase_ends_at - Date.now()) / 1000)`
+    // which only refreshes when the component re-renders.  Pre-Phase-11.2.1
+    // re-renders happened naturally via `setLiveX` on every WS `tick`
+    // (60 Hz), so the countdown kept ticking.  After 11.2.1 the multiplier
+    // is mutated via DOM ref and `setLiveX` is only called inside a
+    // `running` phase RAF — meaning in `betting` we never re-rendered and
+    // the countdown number froze.  This dedicated tick interval forces a
+    // re-render once per 250 ms while the page is in betting (and
+    // automatically cleans up when phase changes).
+    const [bettingTick, setBettingTick] = useState(0);
+    useEffect(() => {
+        if (phase !== "betting") return undefined;
+        const id = setInterval(() => {
+            setBettingTick((n) => (n + 1) & 0xff);
+        }, 250);
+        return () => clearInterval(id);
+    }, [phase]);
+    // Reference bettingTick to keep eslint-no-unused-vars happy AND to
+    // give React a "real" dependency to register the re-render against
+    // (this assignment is a no-op at runtime).
+    void bettingTick;
+
     // Phase 11.2.1 / 11.2.3 / 11.2.4 — Client-side interpolation between
     // server ticks. The RAF loop NEVER calls setState directly: it mutates
     // the multiplier DOM node via ref (writeMultiplier) so React doesn't
