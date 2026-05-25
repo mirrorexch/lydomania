@@ -268,59 +268,81 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             style={{ minHeight: "var(--app-vh, 100dvh)" }}
             className="mx-auto px-3 sm:px-6 pt-4 pb-28 lg:pb-6 space-y-4 max-w-[430px] sm:max-w-[640px] lg:max-w-[1100px]"
         >
-            {/* Hero banner (Polish §1) */}
+            {/* Hero banner — Phase 11.3.2 cinematic ornate-gold ilustration.
+                Was: 180px-tall strip with `backgroundSize: auto 100%` aligned
+                  to `right center` (works only when the PNG is a narrow
+                  side-positioned illustration with a side gradient mask).
+                Now: full cinematic 16:9 hero with the new ornate gold wheel
+                  artwork centred (cover/center), a bottom-only dark vertical
+                  gradient for footer-pill readability, and the previously
+                  separate "Provably fair / next free spin" pill row pulled
+                  INTO the hero footer so the page opens with a single
+                  poster-like visual block instead of two stacked strips. */}
             <header
                 data-testid="wheel-hero"
-                className="relative overflow-hidden rounded-3xl border border-white/10 -mx-1"
+                className="relative overflow-hidden rounded-3xl border border-white/10 -mx-1 aspect-[16/9]"
                 style={{
                     backgroundImage: "url(/banners/wheel.png)",
-                    backgroundSize: "auto 100%",
-                    backgroundPosition: "right center",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center center",
                     backgroundRepeat: "no-repeat",
                     backgroundColor: "#0a0a14",
-                    minHeight: 180,
                 }}
             >
-                <span aria-hidden className="absolute inset-0 pointer-events-none" style={{
-                    background: "linear-gradient(90deg, rgba(10,10,20,0.88) 0%, rgba(10,10,20,0.45) 60%, rgba(10,10,20,0.05) 100%)",
-                }} />
-                <div className="relative flex items-start justify-between gap-3 p-4 sm:p-5">
-                    <div className="min-w-0 self-end">
-                        <div className="text-[10px] uppercase tracking-[0.32em] text-gold-bright font-bold flex items-center gap-1.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]">
-                            <Disc3 className="w-3 h-3" /> {t("wheel.tag")}
-                        </div>
-                        <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-white mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-                            {t("wheel.title")}
-                        </h1>
-                        <p className="text-[11px] sm:text-xs text-white/80 mt-1 max-w-[14rem] leading-snug drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                            {t("wheel.subtitle")}
-                        </p>
+                {/* Vertical gradient — transparent at top so the ornate
+                    wheel artwork stays unmuddied, dark at bottom so the
+                    pill row + countdown stay legible. */}
+                <span
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/0 via-black/0 to-black/65"
+                />
+                {/* Soft left-side wash so the title/subtitle have enough
+                    contrast against any bright god-ray section of the art. */}
+                <span
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                        background: "linear-gradient(90deg, rgba(10,10,20,0.55) 0%, rgba(10,10,20,0.15) 35%, rgba(10,10,20,0) 60%)",
+                    }}
+                />
+                {/* Title cluster — left third */}
+                <div className="absolute top-0 left-0 p-4 sm:p-5 max-w-[60%] sm:max-w-[55%]">
+                    <div className="text-[10px] uppercase tracking-[0.32em] text-gold-bright font-bold flex items-center gap-1.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                        <Disc3 className="w-3 h-3" /> {t("wheel.tag")}
                     </div>
+                    <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white mt-1 leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+                        {t("wheel.title")}
+                    </h1>
+                    <p className="text-[11px] sm:text-xs text-white/85 mt-1.5 max-w-[18rem] leading-snug drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                        {t("wheel.subtitle")}
+                    </p>
+                </div>
+                {/* Footer pill row inside the hero — provably-fair + next free spin */}
+                <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 pb-3 sm:pb-4 flex items-center justify-between gap-2">
+                    <button
+                        type="button"
+                        onClick={() => openFairness(null)}
+                        className="text-[10px] uppercase tracking-wider text-white/80 font-bold flex items-center gap-1 hover:text-white transition-colors rounded-full px-2.5 py-1 bg-black/50 backdrop-blur-sm border border-white/10 focus:outline-none focus:ring-1 focus:ring-gold-bright/50"
+                        data-testid="wheel-provably-fair-pill"
+                        aria-label={t("wheel.fair.aria.open")}
+                    >
+                        <Shield className="w-3 h-3" /> {t("wheel.provably_fair")}
+                        <ChevronRight className="w-3 h-3 opacity-70" aria-hidden="true" />
+                    </button>
+                    {hasFreeToken ? (
+                        <div className="text-[10px] uppercase tracking-wider text-emerald-300 font-bold flex items-center gap-1 rounded-full px-2.5 py-1 bg-emerald-500/10 border border-emerald-400/30 backdrop-blur-sm">
+                            <Ticket className="w-3 h-3" /> {t("wheel.free_token_available")}
+                        </div>
+                    ) : (
+                        <div
+                            data-testid="wheel-next-free-countdown"
+                            className="text-[10px] uppercase tracking-wider text-white/80 font-bold tabular-nums rounded-full px-2.5 py-1 bg-black/50 backdrop-blur-sm border border-white/10"
+                        >
+                            {t("wheel.next_free_in", { time: countdown ?? "—" })}
+                        </div>
+                    )}
                 </div>
             </header>
-
-            {/* Provably-fair pill row (mirrors crash/roulette) */}
-            <div className="flex items-center justify-between gap-2 px-1">
-                <button
-                    type="button"
-                    onClick={() => openFairness(null)}
-                    className="text-[10px] uppercase tracking-wider text-white/55 font-bold flex items-center gap-1 hover:text-white transition-colors rounded px-1 py-0.5 -ml-1 hover:bg-white/5 focus:outline-none focus:ring-1 focus:ring-gold-bright/40"
-                    data-testid="wheel-provably-fair-pill"
-                    aria-label={t("wheel.fair.aria.open")}
-                >
-                                    <Shield className="w-3 h-3" /> {t("wheel.provably_fair")}
-                    <ChevronRight className="w-3 h-3 opacity-60" aria-hidden="true" />
-                </button>
-                {hasFreeToken ? (
-                    <div className="text-[10px] uppercase tracking-wider text-emerald-300 font-bold flex items-center gap-1">
-                        <Ticket className="w-3 h-3" /> {t("wheel.free_token_available")}
-                    </div>
-                ) : (
-                    <div data-testid="wheel-next-free-countdown" className="text-[10px] uppercase tracking-wider text-white/40 font-bold tabular-nums">
-                        {t("wheel.next_free_in", { time: countdown ?? "—" })}
-                    </div>
-                )}
-            </div>
 
             {/* Wheel section */}
             <section
