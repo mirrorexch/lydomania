@@ -124,6 +124,17 @@ function App() {
 
     useEffect(() => {
         boot();
+        // Phase 11.5-A — kick off SFX preload on app boot. The helper
+        // listens for the first user gesture (which is also what iOS
+        // Telegram WebView requires to unblock <audio> autoplay) and
+        // additionally fires on requestIdleCallback so desktop browsers
+        // that never receive a gesture still warm the audio cache.
+        try {
+            // Lazy import to keep the React-strict-mode boot path tiny
+            // and avoid a hard dep on the sound module in tests.
+            // eslint-disable-next-line global-require
+            require("@/lib/sound").schedulePreload?.();
+        } catch {}
     }, [boot]);
 
     const handleDevBypass = () => {

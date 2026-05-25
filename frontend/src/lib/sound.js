@@ -1,9 +1,29 @@
 /**
- * Phase 4a (+6a extensions) — Sound system.
+ * Phase 4a (+6a extensions, +11.5-A perf overhaul) — Sound system.
  *
- * Plays the CC0 procedurally-generated SFX pack in `/sfx/*.wav`.
- * State (mute + volume) persisted to localStorage, mirrored to a tiny
- * event-emitter so any component can subscribe and re-render.
+ * Plays the CC0 procedurally-generated SFX pack in `/sfx/*.wav` plus
+ * the Mixkit royalty-free pack in `/sfx/*.mp3`. State (mute + volume)
+ * persisted to localStorage, mirrored to a tiny event-emitter so any
+ * component can subscribe and re-render.
+ *
+ * Phase 11.5-A perf changes (mobile/Telegram WebView lag fix):
+ *   1. Eager preload of every SFX is scheduled on first user interaction
+ *      (or on idle, whichever comes first) — previously the very FIRST
+ *      sfx.play("X") fetched + decoded /sfx/X.wav over the network,
+ *      adding 200-600 ms of jank on the click that triggered it. The
+ *      preloader uses `audio.load()` (not just `new Audio()`) which
+ *      actually warms the disk cache.
+ *   2. Reusable Audio POOL (3 elements per SFX) instead of cloneNode()
+ *      on every play() — previously each click created a fresh
+ *      HTMLMediaElement that lived until GC, mounting steady memory
+ *      pressure (success_bell: 17 call-sites, chip_click: 5 in Plinko).
+ *      Round-robin index picks the next channel; up to 3 instances of
+ *      the SAME sound can overlap (e.g. "scroll_tick" while flipping a
+ *      list), beyond that we recycle the oldest channel which is the
+ *      best behaviour for click-spam anyway.
+ *   3. 50 ms throttle per SFX name — identical sound can't fire more
+ *      than 20 times per second. Stops 5-rapid-clicks-of-the-same-button
+ *      from emitting 5 overlapping audio streams that all clip and lag.
  *
  * Usage:
  *   import { sfx, audioPrefs, useAudioPrefs } from "@/lib/sound";
@@ -18,6 +38,11 @@ import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "lydo_audio";
 const DEFAULTS = { muted: false, volume: 0.7 };
+
+// Phase 11.5-A — perf knobs.
+const POOL_SIZE_PER_SFX = 3;     // up to 3 overlapping instances per sound
+const THROTTLE_MS = 50;          // same-name play() spam guard
+const PRELOAD_IDLE_TIMEOUT = 1500;
 
 const RARITY_TO_SFX = {
     common: "win_common",
@@ -71,16 +96,33 @@ function savePrefs(p) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch {}
 }
 
-// ---- Audio pool (one HTMLAudioElement per SFX, primed on first use) ----
-const POOL = {};
+// ---- Audio pool (POOL_SIZE_PER_SFX HTMLAudioElements per SFX, round-robin) ----
+const POOL = {};                       // name -> Audio[]
+const POOL_CURSOR = {};                // name -> next-index for round-robin
+const LAST_PLAY_AT = {};               // name -> ms timestamp of last play()
 
-function getEl(name) {
-    if (POOL[name]) return POOL[name];
+function buildPool(name) {
     const ext = SFX_EXT[name] || "wav";
-    const el = new Audio(`/sfx/${name}.${ext}`);
-    el.preload = "auto";
-    POOL[name] = el;
-    return el;
+    const src = `/sfx/${name}.${ext}`;
+    const arr = new Array(POOL_SIZE_PER_SFX);
+    for (let i = 0; i < POOL_SIZE_PER_SFX; i++) {
+        const el = new Audio(src);
+        el.preload = "auto";
+        // Telegram WebView ignores `preload` on first instance sometimes —
+        // force the load() call so the request is actually scheduled.
+        try { el.load(); } catch {}
+        arr[i] = el;
+    }
+    POOL[name] = arr;
+    POOL_CURSOR[name] = 0;
+    return arr;
+}
+
+function nextEl(name) {
+    const pool = POOL[name] || buildPool(name);
+    const i = POOL_CURSOR[name] % POOL_SIZE_PER_SFX;
+    POOL_CURSOR[name] = (i + 1) % POOL_SIZE_PER_SFX;
+    return pool[i];
 }
 
 // ---- Pub/sub for React subscribers ----
@@ -113,11 +155,17 @@ export const sfx = {
     play: (name, opts = {}) => {
         if (_state.muted) return;
         if (!ALL_SFX.includes(name)) return;
+        // Phase 11.5-A — 50 ms throttle per SFX name. Spam-click protection.
+        const now = performance.now ? performance.now() : Date.now();
+        const last = LAST_PLAY_AT[name] || 0;
+        if (now - last < THROTTLE_MS) return;
+        LAST_PLAY_AT[name] = now;
         try {
-            const el = getEl(name);
-            const node = el.cloneNode(true);
-            node.volume = Math.max(0, Math.min(1, _state.volume * (opts.volume ?? 1)));
-            const p = node.play();
+            const el = nextEl(name);
+            // Rewind in case the previous play on this channel hasn't finished.
+            try { el.currentTime = 0; } catch {}
+            el.volume = Math.max(0, Math.min(1, _state.volume * (opts.volume ?? 1)));
+            const p = el.play();
             if (p && typeof p.then === "function") p.catch(() => {});
         } catch {}
     },
@@ -141,10 +189,49 @@ export const sfx = {
             setTimeout(() => sfx.play("coin_drop", { volume: 0.6 }), 350);
         }
     },
+    /**
+     * Build the audio pool for every SFX up-front so the first user
+     * interaction doesn't pay the network + decode cost. Safe to call
+     * multiple times — buildPool() short-circuits on the second pass.
+     */
     preload: () => {
-        for (const name of ALL_SFX) getEl(name);
+        for (const name of ALL_SFX) {
+            if (!POOL[name]) buildPool(name);
+        }
     },
 };
+
+/**
+ * Phase 11.5-A — schedule a single deferred preload on app boot.
+ * Browsers (especially iOS Safari / Telegram WebView) gate <audio>
+ * autoplay behind a real user gesture, so we ALSO fire preload on the
+ * first pointerdown/keydown — that gesture is exactly what's needed to
+ * unblock the upcoming play() calls. The idle-callback path covers
+ * desktops that may never trigger a gesture before the first sound.
+ */
+let _scheduledPreload = false;
+export function schedulePreload() {
+    if (_scheduledPreload) return;
+    _scheduledPreload = true;
+    const fire = () => { try { sfx.preload(); } catch {} };
+    if (typeof window === "undefined") return;
+    // (a) Idle path — gives the main thread some breathing room first.
+    if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(fire, { timeout: PRELOAD_IDLE_TIMEOUT });
+    } else {
+        setTimeout(fire, 800);
+    }
+    // (b) First-gesture path — also primes the autoplay gate on iOS.
+    const gestureOnce = () => {
+        fire();
+        window.removeEventListener("pointerdown", gestureOnce, true);
+        window.removeEventListener("keydown", gestureOnce, true);
+        window.removeEventListener("touchstart", gestureOnce, true);
+    };
+    window.addEventListener("pointerdown", gestureOnce, true);
+    window.addEventListener("keydown",     gestureOnce, true);
+    window.addEventListener("touchstart",  gestureOnce, true);
+}
 
 export function useAudioPrefs() {
     const [s, setS] = useState(audioPrefs.get);
