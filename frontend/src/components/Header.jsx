@@ -130,7 +130,14 @@ export const BottomNav = ({ isAdmin = false }) => {
                 Withdraw CTA at the top of /inventory. */}
             <div className="max-w-[640px] mx-auto grid grid-cols-6 gap-0 px-1 pt-1.5 pb-1.5">
                 <NavTab to="/battles"     icon={Swords}   label={t("nav.pvp")}        testid="nav-pvp" />
-                <NavTab to="/roulette"    icon={Disc3}    label={t("nav.roulette")}   testid="nav-roulette" />
+                {/* Phase 11.5-C — Roulette removed from bottom nav per user
+                    request ("колесо вместо рулетки"). The Roulette page,
+                    route /roulette and WebSocket endpoint are deliberately
+                    kept reachable (via deep links, Game Tiles row, history
+                    entries) so the feature can be re-promoted later with a
+                    one-line revert. Only the entry point in the primary
+                    chrome is swapped to Wheel of Fortune. */}
+                <NavTab to="/wheel"       icon={Disc3}    label={t("nav.wheel")}      testid="nav-wheel" />
                 <NavTab to="/"            icon={Package}  label={t("nav.cases")}      testid="nav-cases" end />
                 <NavTab to="/leaderboard" icon={Trophy}   label={t("nav.leaderboard")} testid="nav-leaderboard" />
                 <NavTab to="/inventory"   icon={Backpack} label={t("nav.inventory")}  testid="nav-inventory" />

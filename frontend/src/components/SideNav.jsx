@@ -76,7 +76,9 @@ export const SideNav = ({ isAdmin = false }) => {
                 if the user has admin rights. */}
             <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
                 <Item to="/battles"     icon={Swords}   label={t("nav.pvp")}        testid="side-nav-pvp" />
-                <Item to="/roulette"    icon={Disc3}    label={t("nav.roulette")}   testid="side-nav-roulette" />
+                {/* Phase 11.5-C — Roulette removed from primary nav per user
+                    request. Route /roulette still works for deep links. */}
+                <Item to="/wheel"       icon={Disc3}    label={t("nav.wheel")}      testid="side-nav-wheel" />
                 <Item to="/" end        icon={Package}  label={t("nav.cases")}      testid="side-nav-cases" />
                 <Item to="/leaderboard" icon={Trophy}   label={t("nav.leaderboard")} testid="side-nav-leaderboard" />
                 <Item to="/inventory"   icon={Backpack} label={t("nav.inventory")}  testid="side-nav-inventory" />
