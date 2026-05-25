@@ -150,6 +150,18 @@ async def get_current_user(
     user = await users_col.find_one({"id": payload.get("sub")}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=401, detail="user not found")
+    # Phase 11.6-C — stamp `last_seen` on every authenticated request.
+    # Used by /api/stats/online (5-minute sliding-window counter) and by
+    # any future presence-related feature (DM availability, live activity
+    # avatar dot, etc.). Fire-and-forget update — we don't want to block
+    # the response on a write, and the value being a few ms stale is fine.
+    try:
+        n = now()
+        await users_col.update_one({"id": user["id"]}, {"$set": {"last_seen": n}})
+        user["last_seen"] = n
+    except Exception:
+        # Never let presence bookkeeping break a real request.
+        pass
     return user
 
 

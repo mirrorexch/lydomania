@@ -61,7 +61,9 @@
     "connected_as": "Подключён: {{addr}}",
     "deposit_onchain": "Перевод on-chain",
     "connect_wallet_desc": "Через TonConnect, для быстрых пополнений и выводов",
-    "deposit_onchain_desc": "Перевод TON на адрес vault'а"
+    "deposit_onchain_desc": "Перевод TON на адрес vault'а",
+    "online_label": "онлайн",
+    "online_tooltip": "Игроки активны в последние 5 минут"
   },
   "boot": {
     "connecting": "Подключение…"

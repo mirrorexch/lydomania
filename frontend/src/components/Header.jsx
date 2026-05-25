@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { formatTON } from "@/lib/rarity";
 import { SoundToggle } from "@/components/SoundToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { OnlineCounter } from "@/components/OnlineCounter";
 import { RollingNumber } from "@/components/RollingNumber";
 import SeasonHud from "@/components/season/SeasonHud";
 import { VipBadge } from "@/components/VipBadge";
@@ -78,6 +79,7 @@ export const Header = ({ user, balance, onLogout, onOpenDeposit }) => {
                     money entry point that opens DepositChoiceModal where
                     "Connect wallet" lives as one of two choices. */}
                 <div className="flex items-center gap-1 lg:gap-2 min-w-0 lg:ml-auto">
+                    <OnlineCounter />
                     <LanguageToggle className="flex-shrink-0" />
                     <SoundToggle compact className="flex-shrink-0" />
                     <button

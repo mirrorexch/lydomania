@@ -61,7 +61,9 @@
     "connected_as": "Connected: {{addr}}",
     "deposit_onchain": "On-chain transfer",
     "connect_wallet_desc": "Via TonConnect for instant deposits & withdrawals",
-    "deposit_onchain_desc": "Send TON to the vault address"
+    "deposit_onchain_desc": "Send TON to the vault address",
+    "online_label": "online",
+    "online_tooltip": "Users active in the last 5 minutes"
   },
   "boot": {
     "connecting": "Connecting…"

@@ -281,6 +281,9 @@ app.include_router(leaderboard_router)
 app.include_router(promo_router)
 app.include_router(internal_router)
 app.include_router(admin_router)
+# Phase 11.6-C — Online users counter
+from routers.stats import router as stats_router  # noqa: E402
+app.include_router(stats_router)
 # Phase 6c — Roulette
 from routers.roulette import router as roulette_router  # noqa: E402
 from routers.ws_roulette import router as roulette_ws_router  # noqa: E402
