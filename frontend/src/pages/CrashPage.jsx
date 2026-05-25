@@ -13,6 +13,7 @@ import {
     tapMedium, tapHeavy, notifySuccess, notifyError, notifyWarning, selectionChanged,
 } from "@/lib/haptics";
 import { fireLegendaryBurst } from "@/lib/celebrations";
+import { RocketAnimation } from "@/components/crash/RocketAnimation";
 
 
 // Polish · honour prefers-reduced-motion globally on this page.
@@ -524,11 +525,33 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                 </div>
             </div>
 
-            {/* Main multiplier display */}
+            {/* Main multiplier display + Phase 11.7 rocket scene.
+                Was: 260px min-height card with only the multiplier number
+                  in the centre.
+                Now: 16:10 aspect-ratio stage (~ 380px tall on mobile) hosting
+                  a full rocket scene — starfield + parabolic trajectory +
+                  trail + explosion burst on crash. The big multiplier
+                  number now floats centred over the scene; the scene is
+                  rendered into the section background via absolute
+                  positioning so it doesn't push the multiplier around. */}
             <section
                 data-testid="crash-display"
-                className="relative overflow-hidden rounded-3xl border border-gold-500/20 bg-[radial-gradient(circle_at_50%_45%,rgba(212,175,55,0.10),transparent_65%)] bg-surface-2 p-6 sm:p-10 min-h-[260px] flex flex-col items-center justify-center"
+                className="relative overflow-hidden rounded-3xl border border-gold-500/20 bg-[radial-gradient(circle_at_50%_45%,rgba(212,175,55,0.10),transparent_65%)] bg-surface-2 aspect-[16/10] sm:aspect-[16/9] flex flex-col items-center justify-center"
             >
+                {/* Phase 11.7 — rocket scene fills the section behind the
+                    multiplier number. Star-field + rocket + explosion are
+                    self-contained; the rocket reads `liveXRef.current`
+                    every RAF tick. We only render the scene during
+                    running and crashed phases — in betting phase the
+                    big countdown sits alone, no need for stars. */}
+                {(phase === "running" || phase === "crashed") && (
+                    <RocketAnimation
+                        phase={phase}
+                        multiplierRef={liveXRef}
+                        crashedX={crashedX}
+                    />
+                )}
+                <div className="relative z-10 w-full h-full flex items-center justify-center">
                 <AnimatePresence mode="wait">
                     {phase === "betting" && (
                         <motion.div key="betting"
@@ -598,6 +621,7 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                         </motion.div>
                     )}
                 </AnimatePresence>
+                </div>
             </section>
 
             {/* Bet / Cashout panel */}

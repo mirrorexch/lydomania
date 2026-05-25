@@ -119,3 +119,67 @@ button[data-tc-connect-button]:hover {
 @media (prefers-reduced-motion: reduce) {
     [style*="lydoRingPulse"] { animation: none !important; }
 }
+
+
+/* Phase 11.7 — Crash rocket animation.
+   The rocket itself is positioned via inline transform updated 60 Hz
+   from a RAF loop (see crash/RocketAnimation.jsx). These CSS rules
+   only handle the crash fade-out and the explosion-burst keyframes. */
+.crash-rocket {
+    transition: opacity 200ms ease-out;
+}
+.crash-rocket.crashed {
+    opacity: 0;
+}
+
+.crash-burst {
+    position: absolute;
+    width: 0; height: 0;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+.crash-burst-core {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 16px; height: 16px;
+    margin-left: -8px; margin-top: -8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffd97a 0%, #ff8a3a 45%, transparent 75%);
+    opacity: 0;
+    will-change: transform, opacity;
+}
+.crash-burst-particle {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 6px; height: 6px;
+    margin-left: -3px; margin-top: -3px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #ffeb99 0%, #ff8a3a 60%, #d44b3a 100%);
+    box-shadow: 0 0 6px rgba(255, 138, 58, 0.7);
+    opacity: 0;
+    transform: rotate(var(--angle, 0deg)) translateY(0);
+    will-change: transform, opacity;
+}
+.crash-burst.burst .crash-burst-core {
+    animation: lydoCrashCore 480ms cubic-bezier(0.18, 0.78, 0.32, 1) forwards;
+}
+.crash-burst.burst .crash-burst-particle {
+    animation: lydoCrashParticle 620ms cubic-bezier(0.18, 0.78, 0.32, 1) forwards;
+    animation-delay: calc(var(--i, 0) * 8ms);
+}
+@keyframes lydoCrashCore {
+    0%   { opacity: 1; transform: scale(0.35); }
+    35%  { opacity: 1; transform: scale(1.8); }
+    100% { opacity: 0; transform: scale(2.6); }
+}
+@keyframes lydoCrashParticle {
+    0%   { opacity: 1; transform: rotate(var(--angle, 0deg)) translateY(0) scale(1); }
+    100% { opacity: 0; transform: rotate(var(--angle, 0deg)) translateY(-48px) scale(0.4); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .crash-burst.burst .crash-burst-core,
+    .crash-burst.burst .crash-burst-particle {
+        animation: none !important;
+        opacity: 0 !important;
+    }
+}
