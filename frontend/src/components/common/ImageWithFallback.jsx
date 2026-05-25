@@ -34,7 +34,13 @@ export const ImageWithFallback = ({
             src={errored ? fallback : (src || fallback)}
             alt={alt}
             draggable={false}
+            // Phase 11.5-B — perf: defer both fetch (loading=lazy) AND
+            // decode (decoding=async). Without decoding=async the browser
+            // synchronously decodes the PNG on the main thread at first
+            // paint, which on iOS Telegram WebView with 13 × ~1 MB case
+            // PNGs adds ~200-500ms of jank to the cases list scroll.
             loading="lazy"
+            decoding="async"
             onError={() => setErrored(true)}
             style={{ objectFit }}
             className={className}

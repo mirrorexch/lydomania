@@ -421,7 +421,16 @@ const BannerCard = ({ to, title, sub, icon: Icon, gradient, accent, testid }) =>
 
 
 // Phase 6g — Vertical case tile: hero artwork fills the top, info compact below.
-const CaseTile = ({ c, i, balance, t }) => {
+// Phase 11.5-B — memoized + content-visibility: auto so off-screen tiles
+// skip layout/paint entirely. With 13 ~1 MB case PNGs on iOS Telegram
+// WebView the cases grid used to drop frames on scroll; tiles that are
+// not in the viewport are now `content-visibility: auto` with an
+// `contain-intrinsic-size` hint matching their on-screen footprint
+// (image is `aspect-square` + ~64 px of body text). That lets the
+// browser cull them from rendering work until the user actually
+// scrolls them into view, while still reserving the right amount of
+// space so the scrollbar geometry stays stable.
+const CaseTile = React.memo(function CaseTile({ c, i, balance, t }) {
     const glow = TIER_GLOW[c.id] || "from-cyber-purple/30 to-cyber-cyan/20";
     const affordable = balance >= c.price_ton;
     return (
@@ -429,6 +438,10 @@ const CaseTile = ({ c, i, balance, t }) => {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.04, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+                contentVisibility: "auto",
+                containIntrinsicSize: "240px 320px",
+            }}
         >
             <Link
                 to={`/case/${c.id}`}
@@ -444,6 +457,7 @@ const CaseTile = ({ c, i, balance, t }) => {
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                         draggable={false}
                         loading="lazy"
+                        decoding="async"
                     />
                     <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-cyber-surface to-transparent pointer-events-none" />
                     {!affordable && (
@@ -479,7 +493,7 @@ const CaseTile = ({ c, i, balance, t }) => {
             </Link>
         </motion.div>
     );
-};
+});
 
 
 const Trust = ({ icon: Icon, label }) => (
