@@ -175,15 +175,10 @@ export const CasesListPage = ({ balance }) => {
                     accent="text-gold-200"
                     testid="banner-pvp"
                 />
-                <BannerCard
-                    to="/roulette"
-                    title={t("home.banner_roulette_title")}
-                    sub={t("home.banner_roulette_sub_short", { defaultValue: "Spin for gifts." })}
-                    icon={Disc3}
-                    gradient="from-gold-500/40 via-gold-600/25 to-gold-900/30"
-                    accent="text-gold-300"
-                    testid="banner-roulette"
-                />
+                {/* Phase 11.6-A — Roulette banner removed per user request
+                    ("полностью убрать рулетку и плинко"). Underlying
+                    RoulettePage + WS endpoint are kept dormant so the
+                    feature can be re-promoted later by un-commenting. */}
                 <BannerCard
                     to="/crash"
                     title={t("home.banner_crash_title", { defaultValue: "Crash" })}
@@ -202,15 +197,8 @@ export const CasesListPage = ({ balance }) => {
                     accent="text-gold-200"
                     testid="banner-wheel"
                 />
-                <BannerCard
-                    to="/plinko"
-                    title={t("home.banner_plinko_title", { defaultValue: "Plinko" })}
-                    sub={t("home.banner_plinko_sub", { defaultValue: "Drop the chip." })}
-                    icon={ChevronsDown}
-                    gradient="from-gold-bright/40 via-gold-400/25 to-gold-800/30"
-                    accent="text-gold-200"
-                    testid="banner-plinko"
-                />
+                {/* Phase 11.6-A — Plinko banner removed per user request.
+                    PlinkoPage code is preserved for future re-enable. */}
                 <BannerCard
                     to="/mines"
                     title={t("home.banner_mines_title", { defaultValue: "Mines" })}

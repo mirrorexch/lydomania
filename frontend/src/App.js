@@ -220,10 +220,12 @@ function App() {
                             path="/leaderboard"
                             element={<LeaderboardPage />}
                         />
-                        <Route
-                            path="/roulette"
-                            element={<RoulettePage user={user} refreshBalance={refreshBalance} />}
-                        />
+                        {/* Phase 11.6-A — /roulette route REMOVED from the
+                            router. RoulettePage component is left importable
+                            (the import above stays so the file is still type-
+                            checked + tree-shaken consistently) but there is no
+                            way to navigate to it through the UI. Direct
+                            visits land on the catch-all 404 below. */}
                         <Route
                             path="/battles"
                             element={<BattlesLobbyPage user={user} refreshBalance={refreshBalance} />}
@@ -249,8 +251,8 @@ function App() {
                             path="/season"
                             element={<BattlePassPage user={user} balance={balance} refreshBalance={refreshBalance} />}
                         />
-                        {/* Phase 8 — Plinko, Mines, Missions, Achievements */}
-                        <Route path="/plinko"        element={<PlinkoPage       user={user} balance={balance} refreshBalance={refreshBalance} />} />
+                        {/* Phase 11.6-A — /plinko route REMOVED. PlinkoPage
+                            kept importable for future re-enable. */}
                         <Route path="/mines"         element={<MinesPage        user={user} balance={balance} refreshBalance={refreshBalance} />} />
                         <Route path="/missions"      element={<MissionsPage     user={user} refreshBalance={refreshBalance} />} />
                         <Route path="/achievements"  element={<AchievementsPage user={user} refreshBalance={refreshBalance} />} />
