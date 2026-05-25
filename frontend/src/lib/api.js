@@ -41,6 +41,25 @@ export function resolveImage(url) {
     return `${full}${sep}v=${IMG_CACHE_BUSTER}`;
 }
 
+/**
+ * Phase 11.6-B — Resolve the WebP thumbnail counterpart of a case image
+ * URL. Used by the cases grid (CaseTile) to load a 384×256 ~9 KB WebP
+ * instead of the full-size 1264×848 ~1 MB PNG.
+ *
+ *     "/api/static/cases/whale_vault.png"
+ *       ↓
+ *     "<origin>/api/static/cases/whale_vault_thumb.webp?v=<buster>"
+ *
+ * If the URL doesn't end in ".png" (older entries, external URLs, …)
+ * we fall back to resolveImage(url) so the <picture> still renders.
+ */
+export function caseThumbUrl(url) {
+    if (!url || typeof url !== "string") return "";
+    if (!url.endsWith(".png")) return resolveImage(url);
+    const thumb = url.replace(/\.png$/i, "_thumb.webp");
+    return resolveImage(thumb);
+}
+
 export const http = axios.create({ baseURL: API });
 
 http.interceptors.request.use((config) => {

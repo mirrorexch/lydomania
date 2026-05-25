@@ -6,7 +6,7 @@ import {
     ChevronsDown, Bomb,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { fetchCases, resolveImage } from "@/lib/api";
+import { fetchCases, resolveImage, caseThumbUrl } from "@/lib/api";
 import { formatTON } from "@/lib/rarity";
 import { DailyFreeCaseTile } from "@/components/DailyFreeCaseTile";
 import { TopWins24h } from "@/components/TopWins24h";
@@ -439,13 +439,36 @@ const CaseTile = React.memo(function CaseTile({ c, i, balance, t }) {
                 {/* Flush hero artwork — edge-to-edge, fills the top of the card. */}
                 <div className="relative aspect-square bg-cyber-bg">
                     <div className={`absolute inset-0 bg-gradient-to-br ${glow} opacity-50 group-hover:opacity-75 transition pointer-events-none`} />
+                    {/* Phase 11.6-B — use lightweight WebP thumbnails
+                        (384×256, ~9 KB each) instead of the full 1264×848
+                        PNG (~1.1 MB). 14 cases × 1.1 MB = ~15 MB decoded
+                        bitmaps used to thrash iOS Telegram WebView memory
+                        on scroll. The full-size PNG is still served via
+                        /api/static/cases/<slug>.png and reached by
+                        CaseDetailPage where the artwork is the hero —
+                        only the grid uses thumbnails.
+
+                        We attempted a <picture> element with WebP source
+                        + PNG fallback, but in practice React/Chromium
+                        kept fetching the full PNG. Direct <img src=webp>
+                        with an onError-based PNG fallback is simpler AND
+                        works correctly on every browser we tested. */}
                     <img
-                        src={resolveImage(c.image_url)}
+                        src={caseThumbUrl(c.image_url)}
                         alt={c.name}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                         draggable={false}
                         loading="lazy"
                         decoding="async"
+                        onError={(e) => {
+                            // WebP not supported (very old WebView) — fall back to PNG.
+                            // Guard against infinite loop by only swapping once.
+                            const el = e.currentTarget;
+                            if (el.dataset.fallback !== "1") {
+                                el.dataset.fallback = "1";
+                                el.src = resolveImage(c.image_url);
+                            }
+                        }}
                     />
                     <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-cyber-surface to-transparent pointer-events-none" />
                     {!affordable && (

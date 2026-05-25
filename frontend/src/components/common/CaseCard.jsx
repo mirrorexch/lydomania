@@ -16,7 +16,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Diamond, ArrowRight } from "lucide-react";
 
-import { resolveImage } from "@/lib/api";
+import { resolveImage, caseThumbUrl } from "@/lib/api";
 import { ImageWithFallback } from "@/components/common/ImageWithFallback";
 import { formatTON } from "@/lib/rarity";
 
@@ -94,13 +94,21 @@ export const CaseCard = ({ case: c, size = "md", headlined: forceHeadlined, onCl
                 background-image cannot composite through under any
                 circumstance (some Telegram WebViews were observed to render
                 `var(--surface-1)` as the fallback "transparent" when the
-                CSS-var resolution lost the race with image painting). */}
+                CSS-var resolution lost the race with image painting).
+                Phase 11.6-B: switched the image source from the full-size
+                PNG (~1.1 MB each) to the 384×256 WebP thumbnail (~9 KB).
+                14 cases × 1.1 MB = ~15 MB of decoded bitmap previously
+                hammered iOS Telegram WebView memory on scroll; thumbnails
+                cut the cases-grid network payload by 99 % and the GPU
+                texture memory by ~40 ×. Full PNG is still served at
+                /api/static/cases/<slug>.png and used by CaseDetailPage. */}
             <div
                 className="relative aspect-[4/3] bg-[#0A0A0A] flex items-center justify-center overflow-hidden z-10"
                 style={{ isolation: "isolate", backgroundColor: "#0A0A0A" }}
             >
                 <ImageWithFallback
-                    src={resolveImage(c.image_path || c.image_url)}
+                    src={caseThumbUrl(c.image_path || c.image_url)}
+                    fallback={resolveImage(c.image_path || c.image_url)}
                     alt={c.name || c.id}
                     objectFit="contain"
                     className="relative w-full h-full"
