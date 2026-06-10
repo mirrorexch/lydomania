@@ -289,7 +289,10 @@ async def open_case(case_id: str, payload: CaseOpenIn, user: dict = Depends(get_
             payout_ton=payout_ton,
         ),
         payout_ton=payout_ton,
-        server_seed_hash=server_seed_hash, server_seed_revealed=server_seed,
+        # SECURITY: do NOT reveal the still-active server seed. Disclosing it before
+        # rotation lets a player predict future rolls and farm jackpots. The retired
+        # seed is disclosed via /fair/rotate after rotation. UI does not consume this.
+        server_seed_hash=server_seed_hash, server_seed_revealed="",
         client_seed=client_seed, nonce=nonce_used, roll_float=float(roll_float),
         new_balance=float(upd["balance_ton"]),
     )
@@ -413,7 +416,8 @@ async def open_case_batch(
         await rotate_fair_state(user["id"])
     return CaseOpenBatchOut(
         rolls=rolls_out, server_seed_hash=server_seed_hash,
-        server_seed_revealed=server_seed, client_seed=client_seed,
+        # SECURITY: never reveal the active server seed (see single-open path above).
+        server_seed_revealed="", client_seed=client_seed,
         total_paid_ton=total_cost, total_won_ton=round(total_won, 9),
         net_pnl_ton=round(total_won - total_cost, 9),
         new_balance=float(upd["balance_ton"]),

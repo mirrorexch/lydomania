@@ -1,5 +1,13 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# SECURITY: never commit secrets (env files, keys, wallet mnemonics).
+.env
+.env.*
+!.env.example
+*.key
+*.mnemonic
+secrets/
+
 # IDE and editors
 .idea/
 .vscode/

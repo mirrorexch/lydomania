@@ -18,7 +18,9 @@ router = APIRouter(prefix="/api")
 
 @router.get("/wallet/deposit-address", response_model=DepositAddressOut)
 async def deposit_address(user: dict = Depends(get_current_user)) -> DepositAddressOut:
-    nonce = secrets.token_hex(4)
+    # SECURITY: 128-bit nonce. A short nonce lets an attacker brute-force a victim's
+    # deposit memo and redirect their incoming TON to their own intent.
+    nonce = secrets.token_hex(16)
     memo = f"dep:{user['id']}:{nonce}"
     expires = now() + timedelta(seconds=DEPOSIT_INTENT_TTL_S)
     await intents_col.insert_one({
