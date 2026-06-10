@@ -44,7 +44,8 @@ async def internal_user_balance(telegram_id: int) -> InternalBalanceOut:
 @router.post("/user/{telegram_id}/deposit-intent", response_model=InternalDepositIntentOut, dependencies=[Depends(verify_internal_secret)])
 async def internal_deposit_intent(telegram_id: int) -> InternalDepositIntentOut:
     user = await upsert_user_from_tg(telegram_id=telegram_id)
-    nonce = secrets.token_hex(4)
+    # SECURITY: 128-bit nonce — see wallet.py. Prevents deposit-memo brute-force/redirect.
+    nonce = secrets.token_hex(16)
     memo = f"dep:{user['id']}:{nonce}"
     expires = now() + timedelta(seconds=DEPOSIT_INTENT_TTL_S)
     await intents_col.insert_one({

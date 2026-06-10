@@ -51,7 +51,9 @@ async def create_gift_deposit_intent(
 ) -> GiftDepositIntentOut:
     if not ENABLE_GIFT_DEPOSITS:
         raise HTTPException(status_code=503, detail="gift deposits disabled")
-    nonce = secrets.token_hex(3)  # 6 hex chars
+    # SECURITY: 128-bit nonce (was 24-bit). A short gift memo is brute-forceable,
+    # letting an attacker claim another user's inbound gift deposit.
+    nonce = secrets.token_hex(16)
     memo = f"gd_{user['id']}_{nonce}"
     expires = now() + timedelta(seconds=INTENT_TTL_S)
     doc = {

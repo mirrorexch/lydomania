@@ -11,13 +11,28 @@ from cryptography.fernet import Fernet, InvalidToken
 
 def _key_bytes() -> bytes:
     raw = os.environ.get("SETTINGS_ENCRYPTION_KEY", "").strip()
-    if not raw:
-        # Last-resort deterministic key derived from JWT_SECRET — better than crashing,
-        # but the env var should always be set in production.
-        seed = os.environ.get("JWT_SECRET", "lydomania_default_fallback_key")
-        digest = hashlib.sha256(seed.encode("utf-8")).digest()
-        return base64.urlsafe_b64encode(digest)
-    return raw.encode("utf-8")
+    if raw:
+        return raw.encode("utf-8")
+
+    # SECURITY: never fall back to a hardcoded key. On mainnet this MUST be set
+    # explicitly or we refuse to boot — a predictable key means encrypted settings
+    # are trivially decryptable by anyone who can read the source.
+    if os.environ.get("TON_NETWORK", "").strip().lower() == "mainnet":
+        raise RuntimeError(
+            "SETTINGS_ENCRYPTION_KEY is required on mainnet. Generate one with "
+            "Fernet.generate_key() and set it in the environment."
+        )
+
+    # Non-mainnet (dev/testnet): derive an ephemeral key from JWT_SECRET so local
+    # work needs no extra setup. Still no hardcoded default — JWT_SECRET must exist.
+    seed = os.environ.get("JWT_SECRET", "").strip()
+    if not seed:
+        raise RuntimeError(
+            "Set SETTINGS_ENCRYPTION_KEY (or at least JWT_SECRET for non-mainnet) — "
+            "no fallback encryption key is permitted."
+        )
+    digest = hashlib.sha256(seed.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest)
 
 
 _fernet = Fernet(_key_bytes())
