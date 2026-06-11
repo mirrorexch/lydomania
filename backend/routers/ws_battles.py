@@ -14,7 +14,7 @@ import logging
 
 from fastapi import APIRouter, Path, Query, WebSocket, WebSocketDisconnect, status
 
-from core.auth import decode_jwt
+from core.auth import authenticate_ws
 from core.db import users_col
 from services.battles import battles_col, hub, public_battle
 
@@ -23,21 +23,8 @@ LOG = logging.getLogger("lydomania.ws.battles")
 router = APIRouter(tags=["battles-ws"])
 
 
-async def _resolve_user(token: str) -> dict | None:
-    try:
-        payload = decode_jwt(token)
-    except Exception:  # noqa: BLE001
-        return None
-    user_id = payload.get("sub")
-    if not user_id:
-        return None
-    return await users_col.find_one(
-        {"id": user_id}, {"_id": 0, "id": 1, "username": 1, "telegram_id": 1},
-    )
-
-
 async def _ws_loop(websocket: WebSocket, channel: str, snapshot_msg: dict) -> None:
-    await websocket.accept()
+    # NOTE: the socket is already accepted by authenticate_ws() before we get here.
     try:
         await websocket.send_json(snapshot_msg)
     except Exception:  # noqa: BLE001
@@ -83,9 +70,9 @@ async def _ws_loop(websocket: WebSocket, channel: str, snapshot_msg: dict) -> No
 @router.websocket("/api/ws/battles/lobby")
 async def lobby_ws(
     websocket: WebSocket,
-    token: str = Query(...),
+    token: str = Query(None),
 ) -> None:
-    user = await _resolve_user(token)
+    user = await authenticate_ws(websocket, token)
     if not user:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
@@ -102,9 +89,9 @@ async def lobby_ws(
 async def battle_ws(
     websocket: WebSocket,
     battle_id: str = Path(..., min_length=4, max_length=64),
-    token: str = Query(...),
+    token: str = Query(None),
 ) -> None:
-    user = await _resolve_user(token)
+    user = await authenticate_ws(websocket, token)
     if not user:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return

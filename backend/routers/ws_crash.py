@@ -11,7 +11,7 @@ import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 
-from core.auth import decode_jwt
+from core.auth import authenticate_ws
 from core.db import users_col
 from services.crash import engine
 
@@ -20,28 +20,16 @@ LOG = logging.getLogger("lydomania.ws.crash")
 router = APIRouter(tags=["crash-ws"])
 
 
-async def _resolve_user(token: str) -> dict | None:
-    try:
-        payload = decode_jwt(token)
-    except Exception:    # noqa: BLE001
-        return None
-    user_id = payload.get("sub")
-    if not user_id:
-        return None
-    doc = await users_col.find_one(
-        {"id": user_id},
-        {"_id": 0, "id": 1, "username": 1, "telegram_id": 1},
-    )
-    return doc
 
 
 @router.websocket("/api/ws/crash")
-async def crash_ws(websocket: WebSocket, token: str = Query(...)) -> None:
-    user = await _resolve_user(token)
+async def crash_ws(websocket: WebSocket, token: str = Query(None)) -> None:
+    # SECURITY: token comes from the first message frame (preferred) or the legacy
+    # ?token= query param. authenticate_ws() accepts the socket before reading it.
+    user = await authenticate_ws(websocket, token)
     if not user:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
-    await websocket.accept()
     try:
         await websocket.send_json(engine.state_snapshot())
     except Exception:        # noqa: BLE001

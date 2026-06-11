@@ -19,7 +19,7 @@ import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 
-from core.auth import decode_jwt
+from core.auth import authenticate_ws
 from core.db import users_col
 from services.roulette import engine
 
@@ -28,30 +28,16 @@ LOG = logging.getLogger("lydomania.ws.roulette")
 router = APIRouter(tags=["roulette-ws"])
 
 
-async def _resolve_user(token: str) -> dict | None:
-    try:
-        payload = decode_jwt(token)
-    except Exception:  # noqa: BLE001
-        return None
-    user_id = payload.get("sub")
-    if not user_id:
-        return None
-    doc = await users_col.find_one(
-        {"id": user_id}, {"_id": 0, "id": 1, "username": 1, "telegram_id": 1},
-    )
-    return doc
-
-
 @router.websocket("/api/ws/roulette")
 async def roulette_ws(
     websocket: WebSocket,
-    token: str = Query(...),
+    token: str = Query(None),
 ) -> None:
-    user = await _resolve_user(token)
+    # SECURITY: token via first frame (preferred) or legacy ?token=. See authenticate_ws.
+    user = await authenticate_ws(websocket, token)
     if not user:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
-    await websocket.accept()
     # Initial snapshot
     try:
         await websocket.send_json(engine.state_snapshot())

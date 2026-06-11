@@ -10,7 +10,7 @@ from typing import Any, Optional
 from urllib.parse import parse_qsl
 
 import jwt
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, WebSocketDisconnect
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from nanoid import generate as nano_gen
 
@@ -193,3 +193,39 @@ async def get_admin_or_readonly_support(
             return user
         raise HTTPException(status_code=403, detail="support role is read-only")
     raise HTTPException(status_code=403, detail="admin only")
+
+
+# ── WebSocket auth ──────────────────────────────────────────────────────────
+async def resolve_ws_user(token: Optional[str]) -> Optional[dict]:
+    """Decode a WS JWT and return the user doc (minimal projection), or None."""
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+    except jwt.PyJWTError:
+        return None
+    return await users_col.find_one(
+        {"id": payload.get("sub")},
+        {"_id": 0, "id": 1, "username": 1, "telegram_id": 1},
+    )
+
+
+async def authenticate_ws(websocket, query_token: Optional[str] = None):
+    """Authenticate a WebSocket, accepting the connection first.
+
+    SECURITY: the JWT is read from the first message frame (`{"token": "<jwt>"}`)
+    so it never appears in the URL / server access logs. The legacy `?token=`
+    query param is still honoured for backward compatibility while clients
+    migrate. Returns the user doc, or None (the caller should then close).
+    """
+    import asyncio  # local import keeps module-level import order unchanged
+    await websocket.accept()
+    token = query_token
+    if not token:
+        try:
+            raw = await asyncio.wait_for(websocket.receive_text(), timeout=10.0)
+            data = json.loads(raw)
+            token = data.get("token") if isinstance(data, dict) else None
+        except (asyncio.TimeoutError, ValueError, WebSocketDisconnect, RuntimeError):
+            token = None
+    return await resolve_ws_user(token)
