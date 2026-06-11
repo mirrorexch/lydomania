@@ -7,6 +7,7 @@
   "common": {
     "loading": "Загрузка…",
     "loading_short": "Загрузка",
+    "deposit": "Пополнить",
     "save": "Сохранить",
     "saving": "Сохраняю…",
     "cancel": "Отмена",

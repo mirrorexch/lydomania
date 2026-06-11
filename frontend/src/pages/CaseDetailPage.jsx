@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useTranslation, Trans } from "react-i18next";
 import { fetchCase, openCase, openCaseBatch, sellInventoryItem, fetchFairCurrent, resolveImage } from "@/lib/api";
+import { openDeposit } from "@/lib/deposit";
 import { formatTON, rarityRank } from "@/lib/rarity";
 import { sfx } from "@/lib/sound";
 import { tapMedium, tapHeavy, notifySuccess, notifyError, notifyWarning } from "@/lib/haptics";
@@ -74,6 +75,7 @@ export const CaseDetailPage = ({ balance, refreshBalance }) => {
             notifyWarning();
             toast.error(t("case_detail.not_enough_ton"), {
                 description: t("case_detail.need_more", { amount: formatTON(data.price_ton - balance) }),
+                action: { label: t("common.deposit"), onClick: openDeposit },
             });
             return;
         }
@@ -100,6 +102,7 @@ export const CaseDetailPage = ({ balance, refreshBalance }) => {
             notifyWarning();
             toast.error(t("case_detail.not_enough_ton_x10"), {
                 description: t("case_detail.need_more_x10", { amount: formatTON(totalCost - balance) }),
+                action: { label: t("common.deposit"), onClick: openDeposit },
             });
             return;
         }
