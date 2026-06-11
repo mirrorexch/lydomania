@@ -57,6 +57,27 @@ async def test_recalibration_is_idempotent():
 
 
 @pytest.mark.asyncio
+async def test_recalibration_heals_corrupted_frozen_jackpot_weight():
+    """A frozen (unpriced) jackpot whose weight got corrupted must be reset to
+    its canonical design weight — a missing price can't keep a grand prize frequent."""
+    await _ensure_wheel_seeded()
+    await _set_realistic_floors()
+    jp = await segments_col.find_one({"segment_type": "jackpot"}, {"_id": 0})
+    assert jp, "wheel must have a jackpot segment"
+    # Ensure the jackpot is unpriced (frozen) and corrupt its weight.
+    await items_col.delete_one({"slug": jp["item_slug"]})
+    await segments_col.update_one(
+        {"segment_index": jp["segment_index"]}, {"$set": {"weight": 11}}
+    )
+    res = await recalibrate_wheel()
+    assert res["ok"], res
+    healed = await segments_col.find_one(
+        {"segment_index": jp["segment_index"]}, {"_id": 0, "weight": 1}
+    )
+    assert healed["weight"] == 1, f"jackpot weight not healed to design: {healed}"
+
+
+@pytest.mark.asyncio
 async def test_recalibration_preserves_total_item_weight():
     await _ensure_wheel_seeded()
     await _set_realistic_floors()
