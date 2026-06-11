@@ -96,7 +96,12 @@ async def test_reveal_safe_then_cashout():
         break
     assert safe_cell is not None
     res = await cashout(uid, g["game_id"])
-    assert res["payout_ton"] > 1.0
+    # Exactly one safe cell revealed on a 1-mine board. Payout must equal
+    # bet × multiplier_for(1, 1). At RTP=0.91 this is ~0.948 (a single near-certain
+    # reveal pays below stake by design), so assert against the engine value rather
+    # than a hardcoded >1.0 that only held at the old 0.97 RTP.
+    assert res["payout_ton"] > 0
+    assert res["payout_ton"] == pytest.approx(1.0 * multiplier_for(1, 1), rel=1e-3)
     assert "server_seed" in res
     assert "mines" in res
 

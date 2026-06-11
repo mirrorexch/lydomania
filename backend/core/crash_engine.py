@@ -12,9 +12,9 @@ industry standard for provably-fair crash games and is well-studied.
     crash = floor(raw) / 100                    # → 2 d.p.
     return max(1.00, crash)
 
-HOUSE_DIVISOR = 33 ⇒ ~3.03% of rounds bust at exactly 1.00× (the house edge
-sink). Calibration sim (`tools/simulate_crash.py`) shows realised RTP
-≈ 97-99% over 10 000 rounds, which is the user-spec target.
+HOUSE_DIVISOR = 12 ⇒ ~8.33% of rounds bust at exactly 1.00× (the house edge
+sink). Realised RTP ≈ 1 − 1/12 ≈ 91.7%, within the 90-92% target band
+(`tools/simulate_crash.py` verifies empirically).
 
 Cashout payout is `floor(bet * x * 100) / 100` (truncate to 2 d.p.) when
 `x < crash_multiplier`. Otherwise the bet is lost.
@@ -30,7 +30,7 @@ from typing import Final
 # ────────────────────────────────────────────────────────────────────────────
 # Tunables (locked by spec)
 # ────────────────────────────────────────────────────────────────────────────
-HOUSE_DIVISOR: Final[int] = 100              # 1/100 ≈ 1.00% instant crashes → RTP ≈ 99%
+HOUSE_DIVISOR: Final[int] = 12               # 1/12 ≈ 8.33% instant crashes → RTP ≈ 91.7% (target 90-92%)
 MIN_BET_TON:  Final[float] = 0.1
 MAX_BET_TON:  Final[float] = 200.0
 MIN_AUTO_CASHOUT_X: Final[float] = 1.01
