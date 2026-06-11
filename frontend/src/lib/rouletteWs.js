@@ -1,7 +1,8 @@
 /**
  * Phase 6c — Roulette WebSocket client wrapper.
  *
- * Connects to /api/ws/roulette?token=<jwt> via the same origin as the
+ * Connects to /api/ws/roulette and authenticates by sending {token} in the
+ * first message frame (the JWT is kept out of the URL). Same origin as the
  * backend. Falls back to REST polling of /api/roulette/state if the WS
  * fails to open or drops (reconnect-safe by design — server pushes a full
  * snapshot on every fresh connection).
@@ -15,11 +16,12 @@ import { tokenStore, http } from "@/lib/api";
 const BASE = process.env.REACT_APP_BACKEND_URL || "";
 
 
-function wsUrl(token) {
+function wsUrl() {
+    // SECURITY: no token in the URL — it is sent in the first message frame.
     const u = new URL(BASE);
     u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
     u.pathname = "/api/ws/roulette";
-    u.search = `?token=${encodeURIComponent(token)}`;
+    u.search = "";
     return u.toString();
 }
 
@@ -51,7 +53,7 @@ export function openRouletteSocket({ token, onMessage }) {
     const connect = () => {
         if (closed) return;
         try {
-            socket = new WebSocket(wsUrl(realToken));
+            socket = new WebSocket(wsUrl());
         } catch (e) {
             scheduleReconnect();
             return;
@@ -69,7 +71,11 @@ export function openRouletteSocket({ token, onMessage }) {
             // Forward as a single batch event; RoulettePage.jsx handles it.
             onMessage?.({ type: "new_bet_batch", bets: batch });
         };
-        socket.onopen = () => { backoff = 1000; };
+        socket.onopen = () => {
+            backoff = 1000;
+            // First frame MUST be the auth token (backend authenticate_ws reads it).
+            try { socket.send(JSON.stringify({ token: realToken })); } catch {}
+        };
         socket.onmessage = (ev) => {
             try {
                 const data = JSON.parse(ev.data);
