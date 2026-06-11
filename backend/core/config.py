@@ -27,6 +27,14 @@ JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALG = "HS256"
 JWT_TTL_HOURS = 24
 ENABLE_DEV_LOGIN = os.environ.get("ENABLE_DEV_LOGIN", "false").lower() == "true"
+_IS_MAINNET = TON_NETWORK.strip().lower() == "mainnet"
+# SECURITY: the dev-login backdoor mints a JWT for ANY telegram_id with no auth.
+# On mainnet it must never be enabled — refuse to boot rather than run exposed.
+if ENABLE_DEV_LOGIN and _IS_MAINNET:
+    raise RuntimeError(
+        "ENABLE_DEV_LOGIN=true is forbidden on mainnet — it lets anyone mint a JWT "
+        "for any user via POST /api/auth/dev-login. Set ENABLE_DEV_LOGIN=false."
+    )
 if ENABLE_DEV_LOGIN:
     logging.getLogger("lydomania").warning(
         "  ⚠⚠⚠  ENABLE_DEV_LOGIN=true — DEV BACKDOOR ACTIVE  ⚠⚠⚠"
@@ -39,6 +47,12 @@ if ENABLE_DEV_LOGIN:
     )
 ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "")
 INTERNAL_API_SECRET = os.environ.get("INTERNAL_API_SECRET", "")
+# SECURITY: on mainnet these guard admin + service-to-service auth. An empty value
+# means a wide-open or predictable surface, so refuse to boot without them.
+if _IS_MAINNET and not INTERNAL_API_SECRET:
+    raise RuntimeError("INTERNAL_API_SECRET is required on mainnet (internal API would be unprotected).")
+if _IS_MAINNET and not ADMIN_API_KEY:
+    raise RuntimeError("ADMIN_API_KEY is required on mainnet (admin portals auth would fall back to a default).")
 MINI_APP_URL = os.environ.get("MINI_APP_URL", "")
 
 # Game tuning ---------------------------------------------------------------

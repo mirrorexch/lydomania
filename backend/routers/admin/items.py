@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import re
 import secrets
 from typing import Any, Optional
 
@@ -51,9 +52,11 @@ async def admin_list_items(
     if rarity and rarity != "all":
         q["rarity"] = rarity
     if search:
+        # SECURITY: escape user input so a crafted pattern can't cause ReDoS / regex injection.
+        _s = re.escape(search)
         q["$or"] = [
-            {"slug": {"$regex": search, "$options": "i"}},
-            {"name": {"$regex": search, "$options": "i"}},
+            {"slug": {"$regex": _s, "$options": "i"}},
+            {"name": {"$regex": _s, "$options": "i"}},
         ]
     out: list[AdminItemOut] = []
     cur = items_col.find(q, {"_id": 0}).sort([("rarity", 1), ("name", 1)]).skip(offset).limit(limit)
