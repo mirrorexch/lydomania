@@ -48,39 +48,75 @@ async def _load_floors(slugs: set[str]) -> dict[str, float]:
     return out
 
 
-def _item_weights_for_lambda(
-    item_segs: list[dict[str, Any]], floors: dict[str, float], lam: float, total_item_weight: int
+_BAND_LO: float = 0.90
+_BAND_HI: float = 0.92
+
+
+def _tunable_weights_for_lambda(
+    tunable: list[dict[str, Any]], floors: dict[str, float], lam: float, budget: int
 ) -> list[int]:
-    """Distribute `total_item_weight` across item segments ∝ exp(-λ·floor), w≥1."""
-    raw = [math.exp(-lam * floors.get(s.get("item_slug") or "", 0.0)) for s in item_segs]
+    """Distribute `budget` across the TUNABLE item segments ∝ exp(-λ·floor), w≥1."""
+    n = len(tunable)
+    if n == 0:
+        return []
+    raw = [math.exp(-lam * floors.get(s.get("item_slug") or "", 0.0)) for s in tunable]
     s = sum(raw) or 1.0
-    # Reserve the minimum first, distribute the remainder by the exp weights.
-    n = len(item_segs)
-    remainder = max(0, total_item_weight - n * _MIN_WEIGHT)
+    remainder = max(0, budget - n * _MIN_WEIGHT)
     weights = [_MIN_WEIGHT + int(round(remainder * (r / s))) for r in raw]
-    # Fix rounding drift so the sum is exactly total_item_weight.
-    drift = total_item_weight - sum(weights)
+    drift = budget - sum(weights)
     if drift != 0:
-        # Apply drift to the segment with the largest exp weight (cheapest item).
-        idx = max(range(n), key=lambda i: raw[i])
+        idx = max(range(n), key=lambda i: raw[i])  # cheapest item absorbs drift
         weights[idx] = max(_MIN_WEIGHT, weights[idx] + drift)
     return weights
 
 
-def _rtp_for_weights(
+def _rtp_for(
     ton_segs: list[dict[str, Any]],
-    item_segs: list[dict[str, Any]],
-    item_weights: list[int],
+    frozen: list[dict[str, Any]],
+    tunable: list[dict[str, Any]],
+    tunable_weights: list[int],
     floors: dict[str, float],
 ) -> float:
-    rebuilt: list[dict[str, Any]] = list(ton_segs)
-    for seg, w in zip(item_segs, item_weights):
+    rebuilt: list[dict[str, Any]] = list(ton_segs) + list(frozen)
+    for seg, w in zip(tunable, tunable_weights):
         rebuilt.append({**seg, "weight": int(w)})
     return wheel_rtp(rebuilt, cost_ton=PAID_SPIN_COST_TON, item_floor_lookup=floors)
 
 
+def _greedy_into_band(
+    ton_segs, frozen, tunable, weights, floors, target_rtp
+) -> list[int]:
+    """Integer-precise landing: move 1 weight unit between the cheapest and
+    most-expensive tunable segment until RTP is inside [_BAND_LO, _BAND_HI]."""
+    w = list(weights)
+    floor_of = lambda i: floors.get(tunable[i].get("item_slug") or "", 0.0)
+    order = sorted(range(len(tunable)), key=floor_of)  # cheap → expensive
+    cheapest, dearest = order[0], order[-1]
+    for _ in range(2000):
+        r = _rtp_for(ton_segs, frozen, tunable, w, floors)
+        if _BAND_LO <= r <= _BAND_HI:
+            break
+        if r > _BAND_HI:               # too generous → make dear rarer, cheap commoner
+            if w[dearest] <= _MIN_WEIGHT:
+                break
+            w[dearest] -= 1
+            w[cheapest] += 1
+        else:                          # too stingy → make dear commoner
+            if w[cheapest] <= _MIN_WEIGHT:
+                break
+            w[cheapest] -= 1
+            w[dearest] += 1
+    return w
+
+
 async def recalibrate_wheel(target_rtp: float = TARGET_RTP) -> dict[str, Any]:
-    """Re-solve item-segment weights so the wheel's RTP ≈ target. Persists to DB."""
+    """Re-solve TUNABLE item-segment weights so the wheel RTP lands in band.
+
+    Segments whose item has no known positive floor (e.g. the jackpot phantom or
+    an unpriced gift) are FROZEN at their current weight — never inflated — so a
+    missing price can't turn a rare grand prize into a frequent one. Fail-safe:
+    if the band can't be reached, nothing is persisted and a warning is logged.
+    """
     segs = [s async for s in segments_col.find({}, {"_id": 0}).sort("segment_index", 1)]
     if not segs:
         return {"ok": False, "reason": "no_wheel_segments"}
@@ -90,45 +126,55 @@ async def recalibrate_wheel(target_rtp: float = TARGET_RTP) -> dict[str, Any]:
     if not item_segs:
         return {"ok": False, "reason": "no_item_segments"}
 
-    slugs = {s.get("item_slug") for s in item_segs if s.get("item_slug")}
-    floors = await _load_floors(slugs)
-    total_item_weight = sum(int(s.get("weight", 0)) for s in item_segs)
+    floors = await _load_floors({s.get("item_slug") for s in item_segs if s.get("item_slug")})
 
+    # Partition: tunable = known positive floor; frozen = missing/zero floor.
+    tunable = [s for s in item_segs if floors.get(s.get("item_slug") or "", 0.0) > 0]
+    frozen = [s for s in item_segs if floors.get(s.get("item_slug") or "", 0.0) <= 0]
+    if not tunable:
+        return {"ok": False, "reason": "no_priced_item_segments"}
+
+    budget = sum(int(s.get("weight", 0)) for s in tunable)  # frozen keep their weight
     rtp_before = wheel_rtp(segs, cost_ton=PAID_SPIN_COST_TON, item_floor_lookup=floors)
 
     def rtp_at(lam: float) -> float:
-        w = _item_weights_for_lambda(item_segs, floors, lam, total_item_weight)
-        return _rtp_for_weights(ton_segs, item_segs, w, floors)
+        w = _tunable_weights_for_lambda(tunable, floors, lam, budget)
+        return _rtp_for(ton_segs, frozen, tunable, w, floors)
 
-    # λ=0 gives the maximum achievable RTP (uniform item weights). If even that is
-    # below target, we can't raise it by re-weighting alone — keep uniform.
-    hi_rtp = rtp_at(0.0)
-    if hi_rtp <= target_rtp + _TOLERANCE:
+    # Binary-search λ for the smooth shape (RTP monotonically decreasing in λ).
+    if rtp_at(0.0) <= target_rtp:
         lam = 0.0
     else:
         lo, hi = 0.0, 5.0
-        # Ensure hi drives RTP below target; expand if needed.
         for _ in range(40):
             if rtp_at(hi) < target_rtp:
                 break
             hi *= 2.0
         lam = hi
-        for _ in range(60):  # binary search — RTP is monotonically decreasing in λ
+        for _ in range(60):
             mid = (lo + hi) / 2.0
             if rtp_at(mid) > target_rtp:
                 lo = mid
             else:
                 hi = mid
             lam = mid
-            if abs(rtp_at(mid) - target_rtp) <= _TOLERANCE:
-                break
 
-    new_weights = _item_weights_for_lambda(item_segs, floors, lam, total_item_weight)
-    rtp_after = _rtp_for_weights(ton_segs, item_segs, new_weights, floors)
+    weights = _tunable_weights_for_lambda(tunable, floors, lam, budget)
+    weights = _greedy_into_band(ton_segs, frozen, tunable, weights, floors, target_rtp)
+    rtp_after = _rtp_for(ton_segs, frozen, tunable, weights, floors)
 
-    # Persist new weights per item segment (only the weight field changes).
+    in_band = _BAND_LO <= rtp_after <= _BAND_HI
+    if not in_band:
+        # Fail-safe: refuse to persist an out-of-band config — keep current weights.
+        logger.warning(
+            "[wheel_recalibration] could NOT reach band: rtp_before=%.2f%% best=%.2f%% — NOT persisting",
+            rtp_before * 100, rtp_after * 100,
+        )
+        return {"ok": False, "reason": "unreachable_band",
+                "rtp_before": round(rtp_before, 4), "rtp_best": round(rtp_after, 4)}
+
     changes: list[dict[str, Any]] = []
-    for seg, w in zip(item_segs, new_weights):
+    for seg, w in zip(tunable, weights):
         if int(seg.get("weight", 0)) != int(w):
             await segments_col.update_one(
                 {"segment_index": seg["segment_index"]},
@@ -143,8 +189,8 @@ async def recalibrate_wheel(target_rtp: float = TARGET_RTP) -> dict[str, Any]:
         })
 
     logger.info(
-        "[wheel_recalibration] RTP %.2f%% -> %.2f%% (target %.0f%%, lambda=%.4f)",
-        rtp_before * 100, rtp_after * 100, target_rtp * 100, lam,
+        "[wheel_recalibration] RTP %.2f%% -> %.2f%% (target %.0f%%, lambda=%.4f, frozen=%d)",
+        rtp_before * 100, rtp_after * 100, target_rtp * 100, lam, len(frozen),
     )
     return {
         "ok": True,
@@ -152,6 +198,7 @@ async def recalibrate_wheel(target_rtp: float = TARGET_RTP) -> dict[str, Any]:
         "rtp_after": round(rtp_after, 4),
         "target": target_rtp,
         "lambda": lam,
-        "in_band": 0.90 <= rtp_after <= 0.92,
+        "frozen_segments": [s.get("item_slug") for s in frozen],
+        "in_band": in_band,
         "changes": changes,
     }
