@@ -21,9 +21,10 @@ async def _set_realistic_floors():
     """Give the wheel a prod-like floor spread: cheap low-gifts (so there's room
     to absorb weight) + a few expensive ones. Returns the slug set used."""
     floors = {
-        "candy_cane": 1.9, "lol_pop": 1.2, "lucky_coin": 2.0, "lucky_ticket": 1.5,
-        "top_hat": 16.5, "flying_broom": 27.2, "trapped_heart": 4.6,
-        "electric_skull": 24.6, "bonded_ring": 156.0,
+        "candy_cane": 3.0, "lol_pop": 3.0, "lucky_coin": 2.0, "lucky_ticket": 1.5,
+        "top_hat": 8.0, "flying_broom": 9.0, "trapped_heart": 4.6,
+        "electric_skull": 25.0, "bonded_ring": 35.0,
+        "durov_cap": 499.0,  # the real 500-TON grand jackpot
     }
     for slug, f in floors.items():
         await items_col.update_one({"slug": slug}, {"$set": {"floor_price_ton": f}}, upsert=True)
@@ -64,8 +65,8 @@ async def test_recalibration_heals_corrupted_frozen_jackpot_weight():
     await _set_realistic_floors()
     jp = await segments_col.find_one({"segment_type": "jackpot"}, {"_id": 0})
     assert jp, "wheel must have a jackpot segment"
-    # Ensure the jackpot is unpriced (frozen) and corrupt its weight.
-    await items_col.delete_one({"slug": jp["item_slug"]})
+    # Jackpot is frozen by type (a real 500-TON prize). Corrupt its weight and
+    # confirm recalibration heals it back to the rare design weight.
     await segments_col.update_one(
         {"segment_index": jp["segment_index"]}, {"$set": {"weight": 11}}
     )
@@ -78,14 +79,15 @@ async def test_recalibration_heals_corrupted_frozen_jackpot_weight():
 
 
 @pytest.mark.asyncio
-async def test_recalibration_preserves_total_item_weight():
+async def test_recalibration_keeps_jackpot_rare_and_all_winnable():
     await _ensure_wheel_seeded()
     await _set_realistic_floors()
-    before = [s async for s in segments_col.find({"segment_type": {"$ne": "ton_multi"}}, {"_id": 0})]
-    total_before = sum(int(s.get("weight", 0)) for s in before)
-    await recalibrate_wheel()
+    res = await recalibrate_wheel()
+    assert res["ok"], res
     after = [s async for s in segments_col.find({"segment_type": {"$ne": "ton_multi"}}, {"_id": 0})]
-    total_after = sum(int(s.get("weight", 0)) for s in after)
-    assert total_after == total_before, (total_before, total_after)
     # Every item slice keeps weight >= 1 (no unwinnable slices).
     assert all(int(s.get("weight", 0)) >= 1 for s in after)
+    # The 500-TON jackpot stays at the rare design weight (1) — diluting is done
+    # by scaling the OTHER items up, never by making the grand prize common.
+    jp = await segments_col.find_one({"segment_type": "jackpot"}, {"_id": 0, "weight": 1})
+    assert jp["weight"] == 1, jp

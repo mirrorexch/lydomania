@@ -72,7 +72,7 @@ SEGMENT_DEFS: Final[list[dict[str, Any]]] = [
     {"segment_index": 20, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
     {"segment_index": 21, "segment_type": "high_gift", "multiplier": None, "item_slug": "bonded_ring",    "weight": 2},
     {"segment_index": 22, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
-    {"segment_index": 23, "segment_type": "jackpot",   "multiplier": None, "item_slug": "heart_of_ton",   "weight": 1},
+    {"segment_index": 23, "segment_type": "jackpot",   "multiplier": None, "item_slug": "durov_cap",      "weight": 1},
 ]
 assert len(SEGMENT_DEFS) == SEGMENT_COUNT
 
