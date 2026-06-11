@@ -4,7 +4,7 @@ import { Rocket, Shield, Zap, Users, AlertTriangle, TrendingUp, History } from "
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { http } from "@/lib/api";
+import { http, tokenStore } from "@/lib/api";
 import { formatTON } from "@/lib/rarity";
 import { sfx } from "@/lib/sound";
 import { openCrashSocket } from "@/lib/crashWs";
@@ -47,7 +47,11 @@ function tierBg(x) {
 function useCrashSocket(onMessage) {
     const ref = useRef(null);
     useEffect(() => {
-        const token = localStorage.getItem("auth_token");
+        // BUG FIX: the JWT is stored under tokenStore's key ("lydo_token"), NOT
+        // "auth_token" — reading the wrong key left `token` null so the crash WS
+        // never connected (no ticks → no rocket animation). Every other game's WS
+        // already uses tokenStore.get().
+        const token = tokenStore.get();
         if (!token) return;
         const s = openCrashSocket({ token, onMessage });
         ref.current = s;
