@@ -13,11 +13,12 @@ import { tokenStore } from "@/lib/api";
 
 const BASE = process.env.REACT_APP_BACKEND_URL || "";
 
-function wsUrl(path, token) {
+function wsUrl(path) {
+    // SECURITY: no token in the URL — sent in the first message frame instead.
     const u = new URL(BASE);
     u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
     u.pathname = path;
-    u.search = `?token=${encodeURIComponent(token)}`;
+    u.search = "";
     return u.toString();
 }
 
@@ -47,12 +48,16 @@ function openSocket(path, { onMessage, pollFallbackFn }) {
     const connect = () => {
         if (closed) return;
         try {
-            socket = new WebSocket(wsUrl(path, token));
+            socket = new WebSocket(wsUrl(path));
         } catch {
             scheduleReconnect();
             return;
         }
-        socket.onopen = () => { backoff = 1000; };
+        socket.onopen = () => {
+            backoff = 1000;
+            // First frame MUST be the auth token (backend authenticate_ws reads it).
+            try { socket.send(JSON.stringify({ token })); } catch {}
+        };
         socket.onmessage = (ev) => {
             try {
                 const data = JSON.parse(ev.data);

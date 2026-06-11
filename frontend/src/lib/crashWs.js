@@ -20,11 +20,15 @@ const WS_URL = (() => {
 
 
 export function openCrashSocket({ token, onMessage, onClose }) {
-    const ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
+    // SECURITY: the token is sent in the first message frame (below), NOT in the
+    // URL, so the JWT never lands in server access logs / Referer headers.
+    const ws = new WebSocket(WS_URL);
     let closed = false;
     let pingTimer = null;
 
     ws.onopen = () => {
+        // First frame MUST be the auth token (backend authenticate_ws reads it).
+        try { ws.send(JSON.stringify({ token })); } catch {}
         // Mild keepalive every 25s — Telegram WebView can throttle idle WS.
         pingTimer = setInterval(() => {
             try { if (ws.readyState === WebSocket.OPEN) ws.send("ping"); } catch {}
