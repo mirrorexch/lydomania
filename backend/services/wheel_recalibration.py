@@ -232,16 +232,18 @@ async def recalibrate_wheel(target_rtp: float = TARGET_RTP) -> dict[str, Any]:
             "new_weight": int(w),
         })
 
+    total_weight = sum(int(s.get("weight", 0)) for s in ton_segs) + \
+        sum(int(s["weight"]) for s in frozen) + sum(int(w) for w in weights)
     logger.info(
-        "[wheel_recalibration] RTP %.2f%% -> %.2f%% (target %.0f%%, lambda=%.4f, frozen=%d)",
-        rtp_before * 100, rtp_after * 100, target_rtp * 100, lam, len(frozen),
+        "[wheel_recalibration] RTP %.2f%% -> %.2f%% (target %.0f%%, total_weight=%d, frozen=%d)",
+        rtp_before * 100, rtp_after * 100, target_rtp * 100, total_weight, len(frozen),
     )
     return {
         "ok": True,
         "rtp_before": round(rtp_before, 4),
         "rtp_after": round(rtp_after, 4),
         "target": target_rtp,
-        "lambda": lam,
+        "total_weight": total_weight,
         "frozen_segments": [s.get("item_slug") for s in frozen],
         "in_band": in_band,
         "changes": changes,

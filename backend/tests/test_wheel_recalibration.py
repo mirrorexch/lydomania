@@ -79,14 +79,15 @@ async def test_recalibration_heals_corrupted_frozen_jackpot_weight():
 
 
 @pytest.mark.asyncio
-async def test_recalibration_preserves_total_item_weight():
+async def test_recalibration_keeps_jackpot_rare_and_all_winnable():
     await _ensure_wheel_seeded()
     await _set_realistic_floors()
-    before = [s async for s in segments_col.find({"segment_type": {"$ne": "ton_multi"}}, {"_id": 0})]
-    total_before = sum(int(s.get("weight", 0)) for s in before)
-    await recalibrate_wheel()
+    res = await recalibrate_wheel()
+    assert res["ok"], res
     after = [s async for s in segments_col.find({"segment_type": {"$ne": "ton_multi"}}, {"_id": 0})]
-    total_after = sum(int(s.get("weight", 0)) for s in after)
-    assert total_after == total_before, (total_before, total_after)
     # Every item slice keeps weight >= 1 (no unwinnable slices).
     assert all(int(s.get("weight", 0)) >= 1 for s in after)
+    # The 500-TON jackpot stays at the rare design weight (1) — diluting is done
+    # by scaling the OTHER items up, never by making the grand prize common.
+    jp = await segments_col.find_one({"segment_type": "jackpot"}, {"_id": 0, "weight": 1})
+    assert jp["weight"] == 1, jp
