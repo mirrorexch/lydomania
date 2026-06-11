@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Unbounded:wght@500;700;800;900&family=Cormorant+Garamond:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Fonts are loaded via <link> in public/index.html (all four families) — that's
+   non-blocking and fetched earlier than a CSS @import, so we don't @import here. */
 
 /* Phase 11 — Gold-luxe brand tokens (CSS vars). Imported BEFORE Tailwind so
    the var() colours are resolved by Tailwind's JIT at compile time. */
