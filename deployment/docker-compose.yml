@@ -22,6 +22,10 @@ services:
     image: mongo:7
     container_name: lydomania-mongo
     restart: unless-stopped
+    # Single-node replica set so the app can use multi-document transactions for
+    # money flows. --keyFile provides the internal auth required when auth+replSet
+    # are both on (the keyfile must be chown 999:999 + chmod 400 on the host).
+    command: ["mongod", "--replSet", "rs0", "--keyFile", "/etc/mongo-keyfile", "--bind_ip_all"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:?missing}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?missing}
@@ -29,6 +33,7 @@ services:
     volumes:
       - mongo-data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./mongo-keyfile:/etc/mongo-keyfile:ro
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
@@ -47,7 +52,7 @@ services:
         condition: service_healthy
     env_file: .env
     environment:
-      MONGO_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      MONGO_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin&replicaSet=rs0
       DB_NAME: ${DB_NAME:-lydomania}
     volumes:
       - backend-static:/app/backend/static
@@ -70,7 +75,7 @@ services:
         condition: service_healthy
     env_file: .env
     environment:
-      MONGO_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      MONGO_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin&replicaSet=rs0
       DB_NAME: ${DB_NAME:-lydomania}
       INTERNAL_BACKEND_BASE: http://backend:8000
     networks: [lydomania-net]

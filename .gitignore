@@ -6,6 +6,7 @@
 !.env.example
 *.key
 *.mnemonic
+mongo-keyfile
 secrets/
 
 # IDE and editors
