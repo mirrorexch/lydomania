@@ -10,12 +10,12 @@ from typing import Any, Optional
 from urllib.parse import parse_qsl
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from nanoid import generate as nano_gen
 
 from core.config import (
-    JWT_ALG, JWT_SECRET, JWT_TTL_HOURS, is_admin_tid, logger,
+    JWT_ALG, JWT_SECRET, JWT_TTL_HOURS, is_admin_tid, is_support_tid, logger,
 )
 from core.db import pending_refs_col, users_col
 from core.models import UserOut
@@ -169,3 +169,27 @@ async def get_admin_user(user: dict = Depends(get_current_user)) -> dict:
     if not is_admin_tid(user.get("telegram_id")):
         raise HTTPException(status_code=403, detail="admin only")
     return user
+
+
+# Safe (non-mutating) HTTP methods that read-only support staff are allowed to use.
+_READONLY_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+
+
+async def get_admin_or_readonly_support(
+    request: Request, user: dict = Depends(get_current_user)
+) -> dict:
+    """RBAC gate for the admin surface.
+
+    - Full admins (ADMIN_TELEGRAM_IDS): unrestricted (read + write).
+    - Support staff (SUPPORT_TELEGRAM_IDS): READ-ONLY — safe methods only;
+      any write (POST/PATCH/PUT/DELETE) is rejected with 403.
+    - Everyone else: 403.
+    """
+    tid = user.get("telegram_id")
+    if is_admin_tid(tid):
+        return user
+    if is_support_tid(tid):
+        if request.method.upper() in _READONLY_METHODS:
+            return user
+        raise HTTPException(status_code=403, detail="support role is read-only")
+    raise HTTPException(status_code=403, detail="admin only")

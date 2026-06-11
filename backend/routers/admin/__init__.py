@@ -1,9 +1,15 @@
-"""Admin router package. All sub-routers require is_admin via Depends(get_admin_user)."""
+"""Admin router package.
+
+RBAC: full admins (ADMIN_TELEGRAM_IDS) get read+write; support staff
+(SUPPORT_TELEGRAM_IDS) get READ-ONLY access — safe HTTP methods only, any
+write is rejected. Enforced once at the router level so every sub-router
+inherits it. See core.auth.get_admin_or_readonly_support.
+"""
 from fastapi import APIRouter, Depends
 
-from core.auth import get_admin_user
+from core.auth import get_admin_or_readonly_support
 
-admin = APIRouter(prefix="/api/admin", dependencies=[Depends(get_admin_user)])
+admin = APIRouter(prefix="/api/admin", dependencies=[Depends(get_admin_or_readonly_support)])
 
 from . import withdrawals as _wd        # noqa: F401,E402
 from . import cases as _cases           # noqa: F401,E402

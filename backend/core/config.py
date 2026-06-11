@@ -73,8 +73,8 @@ ROULETTE_PRIZE_MODE = os.environ.get("ROULETTE_PRIZE_MODE", "gifts").lower()   #
 ROULETTE_SELL_THRESHOLD_TON = float(os.environ.get("ROULETTE_SELL_THRESHOLD_TON", "100"))
 
 
-def _parse_admin_ids() -> set[int]:
-    raw = os.environ.get("ADMIN_TELEGRAM_IDS", "").strip()
+def _parse_id_set(env_name: str) -> set[int]:
+    raw = os.environ.get(env_name, "").strip()
     out: set[int] = set()
     for chunk in raw.split(","):
         chunk = chunk.strip()
@@ -87,11 +87,22 @@ def _parse_admin_ids() -> set[int]:
     return out
 
 
-ADMIN_TELEGRAM_IDS: set[int] = _parse_admin_ids()
+# Full admins: unrestricted access to the admin surface (read + write).
+ADMIN_TELEGRAM_IDS: set[int] = _parse_id_set("ADMIN_TELEGRAM_IDS")
+# Support staff: READ-ONLY access to the admin surface (safe HTTP methods only).
+# An id present in both sets is treated as a full admin.
+SUPPORT_TELEGRAM_IDS: set[int] = _parse_id_set("SUPPORT_TELEGRAM_IDS")
 
 
 def is_admin_tid(telegram_id: Optional[int]) -> bool:
     return bool(telegram_id) and int(telegram_id) in ADMIN_TELEGRAM_IDS
+
+
+def is_support_tid(telegram_id: Optional[int]) -> bool:
+    """True for support staff OR full admins (admins implicitly include support)."""
+    return bool(telegram_id) and (
+        int(telegram_id) in SUPPORT_TELEGRAM_IDS or int(telegram_id) in ADMIN_TELEGRAM_IDS
+    )
 
 
 # Logging -------------------------------------------------------------------
