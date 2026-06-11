@@ -7,7 +7,12 @@
         <meta name="description" content="Lydomania — Telegram Mini App TON Casino. Provably-fair gift cases on TON mainnet." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Unbounded:wght@500;700;800;900&display=swap" rel="stylesheet" />
+        <!-- Load ALL four families the app actually uses (Inter, Unbounded,
+             Cormorant Garamond, JetBrains Mono) here so they're fetched early and
+             non-blocking. Previously only Inter+Unbounded were linked while the CSS
+             @import pulled the other two later → Cormorant/JetBrains text flashed a
+             Georgia/system-mono fallback (the "inconsistent fonts" bug). -->
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Unbounded:wght@500;700;800;900&family=Cormorant+Garamond:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
         <script src="https://telegram.org/js/telegram-web-app.js"></script>
         <title>Lydomania · TON Casino</title>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
