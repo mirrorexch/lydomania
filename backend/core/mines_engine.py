@@ -13,10 +13,11 @@ Provably fair:
     places mines via Fisher–Yates over `[0..24]` using HMAC-SHA256 stream.
   • On bust OR cashout, server_seed is revealed; anyone reproduces the layout.
 
-Multiplier curve (fair RTP ≈ 0.97):
+Multiplier curve (RTP = 0.91, target 90-92%):
   After revealing k safe cells out of (25 - mines):
       mult(k) = (prod_{i=0..k-1} 25-i / (25-mines-i)) × RTP
   This is the canonical inverse of "probability of getting k safe reveals".
+  RTP scales the whole curve linearly, so RTP=0.91 ⇒ 91% return.
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ from typing import Final
 GRID_SIZE: Final[int] = 25
 MINES_MIN: Final[int] = 1
 MINES_MAX: Final[int] = 24
-RTP:       Final[float] = 0.97
+RTP:       Final[float] = 0.91   # target 90-92% band
 
 
 class MinesError(Exception):

@@ -72,11 +72,11 @@ def test_derive_crash_known_vectors():
 
 
 def test_derive_crash_instant_rate_close_to_one_in_house_divisor():
-    """Expected instant-crash rate ≈ 2% (1% from natural floor() + 1% from %100 check).
+    """Expected instant-crash rate ≈ 9.3% (1% natural floor() + ~8.33% from %12 check).
 
     The bustabit formula `floor((100E-e)/(E-e))/100 == 1.00` whenever u=e/E ∈ [0, 0.01),
     so 1% of rounds land at 1.00x naturally. The explicit `% HOUSE_DIVISOR == 0` check
-    stacks another 1% on top → total ~2% house edge → realised RTP ~98% (target band).
+    (HOUSE_DIVISOR=12) adds ~8.33% → total ~9.3% → realised RTP ≈ 91.7% (target 90-92%).
     """
     import secrets
     n = 5_000
@@ -84,8 +84,8 @@ def test_derive_crash_instant_rate_close_to_one_in_house_divisor():
         1 for _ in range(n)
         if derive_crash_multiplier(secrets.token_hex(32), secrets.token_hex(8), "") == 1.00
     )
-    # Expect ~100 instant crashes (2% of 5000). Allow a generous envelope for variance.
-    assert 50 <= inst <= 180, f"instant-crash rate {inst}/{n} ({100*inst/n:.2f}%) out of expected ~2% band"
+    # Expect ~465 instant crashes (9.3% of 5000). Allow a generous envelope for variance.
+    assert 360 <= inst <= 580, f"instant-crash rate {inst}/{n} ({100*inst/n:.2f}%) out of expected ~9.3% band"
 
 
 # ─── Multiplier curve + cashout maths ────────────────────────────────────────
@@ -165,14 +165,15 @@ def test_sha256_hex_known_vector():
 # ─── 10 000-round RTP sim (matches the acceptance criterion) ────────────────
 @pytest.mark.slow
 def test_simulation_rtp_within_band():
-    """End-to-end: realised RTP for cashout-at-2× must land in [97, 99]% on 10k rounds.
+    """End-to-end: realised RTP for cashout-at-2× lands near 1 − 1/HOUSE_DIVISOR.
 
-    With HOUSE_DIVISOR=100 the intrinsic RTP of the bustabit formula is
-    exactly 99% (the only losing case for X-cashout is an instant 1.00× crash).
-    Sample-variance gives a ~±0.5% band at n=10000 → assert 97–99%.
+    With HOUSE_DIVISOR=12 the intrinsic RTP of the bustabit formula is
+    ≈ 91.7% (the only losing case for X-cashout is an instant 1.00× crash).
+    Sample-variance gives a ~±1% band at n=10000 → assert a generous 89–94%
+    to stay within the 90-92% business target without flaking.
     """
     res = simulate(10_000)
     rtp_2x = res["rtp_strategy_x"][2.0]
-    assert 0.970 <= rtp_2x <= 0.995, f"realised RTP {rtp_2x*100:.2f}% out of band"
+    assert 0.890 <= rtp_2x <= 0.940, f"realised RTP {rtp_2x*100:.2f}% out of band"
     # Mean should be > 1.00 with non-trivial mass above 2×
     assert res["mean"] > 1.0
