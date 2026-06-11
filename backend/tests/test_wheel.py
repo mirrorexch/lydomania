@@ -105,31 +105,30 @@ def test_payout_for_item_no_floor_returns_zero_value():
     assert p["estimated_value_ton"] == 0.0
 
 
-def test_rtp_with_floors_in_band():
-    # Phase 11.3 — updated item pool: token_dust & coin_flip removed from
-    # the wheel; daily_jackpot renamed to lucky_coin; lucky_ticket floor
-    # bumped 0.75 → 1.5 TON in items collection.
+# NOTE: the jackpot (segment 23) is now a real 500-TON gift (durov_cap), so the
+# raw SEGMENT_DEFS weights intentionally do NOT sit in the RTP band — only the
+# weights produced by services.wheel_recalibration do (it dilutes the jackpot by
+# scaling total weight). Band is asserted in test_wheel_recalibration.py. Here we
+# only check the pure rtp() helper computes and the sim is consistent with it.
+def test_rtp_function_computes_positive():
     floors = {
-        "lucky_ticket": 1.50, "candy_cane": 2.00, "lucky_coin": 2.00,
-        "lol_pop": 3.00,
-        "top_hat": 7.00, "flying_broom": 9.00, "trapped_heart": 10.00,
-        "electric_skull": 25.00, "bonded_ring": 35.00,
-        "heart_of_ton": 105.00,
+        "lucky_ticket": 1.50, "candy_cane": 3.00, "lucky_coin": 2.00,
+        "lol_pop": 3.00, "top_hat": 8.00, "flying_broom": 9.00,
+        "trapped_heart": 4.60, "electric_skull": 25.00, "bonded_ring": 35.00,
+        "durov_cap": 499.00,
     }
     r = rtp(SEGMENT_DEFS, cost_ton=PAID_SPIN_COST_TON, item_floor_lookup=floors)
-    # Target band 90-92 % (closed-form ≈ 91.4 % after dropping seg10 1.25×→1.00×).
-    assert 0.90 <= r <= 0.92, f"closed-form RTP {r*100:.2f}% out of band"
+    assert r > 0
 
 
 @pytest.mark.parametrize("n", [5000])
-def test_simulation_rtp_in_band(n):
-    """5 000-spin sim — realised RTP within ±2 % of closed-form."""
+def test_simulation_matches_closed_form(n):
+    """5 000-spin sim realised value tracks the closed-form EV (consistency)."""
     floors = {
-        "lucky_ticket": 1.50, "candy_cane": 2.00, "lucky_coin": 2.00,
-        "lol_pop": 3.00,
-        "top_hat": 7.00, "flying_broom": 9.00, "trapped_heart": 10.00,
-        "electric_skull": 25.00, "bonded_ring": 35.00,
-        "heart_of_ton": 105.00,
+        "lucky_ticket": 1.50, "candy_cane": 3.00, "lucky_coin": 2.00,
+        "lol_pop": 3.00, "top_hat": 8.00, "flying_broom": 9.00,
+        "trapped_heart": 4.60, "electric_skull": 25.00, "bonded_ring": 35.00,
+        "durov_cap": 499.00,
     }
     total = 0.0
     for _ in range(n):
@@ -141,11 +140,8 @@ def test_simulation_rtp_in_band(n):
         total += p["estimated_value_ton"]
     sim_rtp = total / (n * PAID_SPIN_COST_TON)
     closed = rtp(SEGMENT_DEFS, cost_ton=PAID_SPIN_COST_TON, item_floor_lookup=floors)
-    # Sim variance is dominated by the 105-TON jackpot at p≈0.4 %, so the
-    # 2-sigma band at n=5000 is roughly ±3 %. Allow ±4 % to suppress flakes.
-    assert abs(sim_rtp - closed) < 0.04, (sim_rtp, closed)
-    # And within the user-spec target band 88-96 %.
-    assert 0.85 <= sim_rtp <= 0.98, f"sim RTP {sim_rtp*100:.2f}% wildly off"
+    # The 499-TON jackpot at p≈0.5% dominates variance; allow a wide ±25% band.
+    assert abs(sim_rtp - closed) < 0.25 * closed + 0.05, (sim_rtp, closed)
 
 
 # ─── Free-token refresh logic (pure helper) ─────────────────────────────────

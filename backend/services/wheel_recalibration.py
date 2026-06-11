@@ -59,18 +59,25 @@ _BAND_LO: float = 0.90
 _BAND_HI: float = 0.92
 
 
-def _tunable_weights_for_lambda(
-    tunable: list[dict[str, Any]], floors: dict[str, float], lam: float, budget: int
+def _tunable_weights_for_scale(
+    tunable: list[dict[str, Any]], floors: dict[str, float], total: int
 ) -> list[int]:
-    """Distribute `budget` across the TUNABLE item segments ∝ exp(-λ·floor), w≥1."""
+    """Distribute `total` weight across TUNABLE item segments ∝ 1/floor (cheap
+    items common, expensive rare), each w≥1.
+
+    Total item weight is a FREE variable (not a fixed budget): scaling it up
+    dilutes a high-value frozen jackpot, which is how a 500-TON grand prize can
+    sit on a 5-TON wheel at the target RTP. RTP is monotonically decreasing in
+    `total`, so the caller binary-searches it.
+    """
     n = len(tunable)
     if n == 0:
         return []
-    raw = [math.exp(-lam * floors.get(s.get("item_slug") or "", 0.0)) for s in tunable]
+    raw = [1.0 / max(0.01, floors.get(s.get("item_slug") or "", 0.0)) for s in tunable]
     s = sum(raw) or 1.0
-    remainder = max(0, budget - n * _MIN_WEIGHT)
+    remainder = max(0, total - n * _MIN_WEIGHT)
     weights = [_MIN_WEIGHT + int(round(remainder * (r / s))) for r in raw]
-    drift = budget - sum(weights)
+    drift = total - sum(weights)
     if drift != 0:
         idx = max(range(n), key=lambda i: raw[i])  # cheapest item absorbs drift
         weights[idx] = max(_MIN_WEIGHT, weights[idx] + drift)
@@ -143,40 +150,46 @@ async def recalibrate_wheel(target_rtp: float = TARGET_RTP) -> dict[str, Any]:
     def _design_w(seg: dict[str, Any]) -> int:
         return _DESIGN_WEIGHT.get(int(seg["segment_index"]), int(seg.get("weight", 1)))
 
-    tunable = [s for s in item_segs if floors.get(s.get("item_slug") or "", 0.0) > 0]
-    frozen = [{**s, "weight": _design_w(s)} for s in item_segs
-              if floors.get(s.get("item_slug") or "", 0.0) <= 0]
+    # Frozen = the jackpot (always rare, by type) + any unpriced segment. Frozen
+    # segments keep their design weight; their (possibly large) value is counted
+    # but their rarity is fixed so a grand prize can't become frequent.
+    def _is_frozen(seg: dict[str, Any]) -> bool:
+        return seg.get("segment_type") == "jackpot" or floors.get(seg.get("item_slug") or "", 0.0) <= 0
+
+    tunable = [s for s in item_segs if not _is_frozen(s)]
+    frozen = [{**s, "weight": _design_w(s)} for s in item_segs if _is_frozen(s)]
     if not tunable:
-        return {"ok": False, "reason": "no_priced_item_segments"}
+        return {"ok": False, "reason": "no_tunable_item_segments"}
 
-    # Budget = total design item weight − frozen design weight, so the solve is
-    # deterministic from SEGMENT_DEFS + live floors regardless of current DB state.
-    total_item_design = sum(_design_w(s) for s in item_segs)
-    budget = total_item_design - sum(int(s["weight"]) for s in frozen)
+    # Binary-search the TOTAL tunable item weight. Scaling it up dilutes the frozen
+    # jackpot (and ton_multi), monotonically lowering RTP — so we can place a
+    # 500-TON grand prize on a 5-TON wheel and still hit the band.
+    n = len(tunable)
 
-    def rtp_at(lam: float) -> float:
-        w = _tunable_weights_for_lambda(tunable, floors, lam, budget)
-        return _rtp_for(ton_segs, frozen, tunable, w, floors)
+    def rtp_at(total: int) -> float:
+        return _rtp_for(ton_segs, frozen, tunable, _tunable_weights_for_scale(tunable, floors, total), floors)
 
-    # Binary-search λ for the smooth shape (RTP monotonically decreasing in λ).
-    if rtp_at(0.0) <= target_rtp:
-        lam = 0.0
+    lo, hi = n, n  # grow hi until RTP drops below target
+    hi = max(n + 1, 64)
+    for _ in range(40):
+        if rtp_at(hi) < target_rtp:
+            break
+        hi *= 2
+    if rtp_at(n) < target_rtp:
+        total = n  # even minimal tunable weight already under target → use minimum
     else:
-        lo, hi = 0.0, 5.0
-        for _ in range(40):
-            if rtp_at(hi) < target_rtp:
-                break
-            hi *= 2.0
-        lam = hi
+        lo = n
         for _ in range(60):
-            mid = (lo + hi) / 2.0
+            mid = (lo + hi) // 2
+            if mid <= lo:
+                break
             if rtp_at(mid) > target_rtp:
                 lo = mid
             else:
                 hi = mid
-            lam = mid
+        total = hi
 
-    weights = _tunable_weights_for_lambda(tunable, floors, lam, budget)
+    weights = _tunable_weights_for_scale(tunable, floors, total)
     weights = _greedy_into_band(ton_segs, frozen, tunable, weights, floors, target_rtp)
     rtp_after = _rtp_for(ton_segs, frozen, tunable, weights, floors)
 
