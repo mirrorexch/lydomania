@@ -125,18 +125,30 @@ def _assign_two_tier_weights(items: list[dict[str, Any]], price: float) -> list[
     bulk = [it for it in items if it["rarity"] not in res]
     bulk_floors = [it["floor"] for it in bulk]
 
-    if not bulk or rprob <= 0.02:
-        # Degenerate (no bulk / everything reserved) — fall back to a plain
-        # whole-basket exp solve so we still hit RTP.
+    mn = min(bulk_floors) if bulk_floors else 0.0
+    mx = max(bulk_floors) if bulk_floors else 0.0
+    # Under-budget: even max-weighting the bulk can't reach target (catalog too
+    # cheap for an expensive case) → plain whole-basket exp solve hits RTP.
+    if not bulk or rprob <= 0.02 or reserved_ev + rprob * mx < target_ev:
         floors = [it["floor"] for it in items]
         a = _solve_alpha(floors, target_ev)
         w = _stable_weights(floors, a)
         s = sum(w) or 1.0
         return [max(1, round(WEIGHT_TOTAL * x / s)) for x in w]
 
-    # The bulk must average this so the whole basket lands on target.
+    # Over-budget: reserved mids alone would push EV above target even with the
+    # cheapest possible bulk → scale the reserved probabilities down so the case
+    # still lands on exactly 90% RTP (mids stay winnable, just rarer here).
+    if (target_ev - reserved_ev) / rprob < mn:
+        sr = sum(res.values())
+        denom = reserved_ev - mn * sr
+        f = max(0.0, min(1.0, (target_ev - mn) / denom)) if denom > 1e-9 else 0.0
+        res = {t: p * f for t, p in res.items()}
+        reserved_ev *= f
+        rprob = 1.0 - sum(res.values())
+
     rem_avg = (target_ev - reserved_ev) / rprob
-    rem_avg = min(max(rem_avg, min(bulk_floors)), max(bulk_floors))  # clamp feasible
+    rem_avg = min(max(rem_avg, mn), mx)  # clamp feasible
     a = _solve_alpha(bulk_floors, rem_avg)
     bw = _stable_weights(bulk_floors, a)
     bs = sum(bw) or 1.0
