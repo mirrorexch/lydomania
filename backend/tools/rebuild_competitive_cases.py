@@ -90,11 +90,11 @@ def _solve_weights(payouts: list[float], target_ev: float) -> list[float]:
             hi = mid
     alpha = (lo + hi) / 2.0
     raw = [math.exp(alpha * p) for p in payouts]
-    # Scale so the RAREST item (smallest raw weight) becomes 1 and the rest scale
-    # up proportionally — uniform scaling preserves EV exactly, and avoids the
-    # min-weight-1 forcing that would otherwise inflate a rare jackpot's odds.
-    mn = min(raw) or 1.0
-    return [max(1, round(r / mn)) for r in raw]
+    # Normalise to a fixed large total so weights stay within MongoDB's int64 even
+    # for wide value ranges. The total is big enough (1e6) that forcing an
+    # ultra-rare jackpot up to weight 1 adds negligible EV (≈ floor/1e6 TON).
+    s = sum(raw) or 1.0
+    return [max(1, round(1_000_000 * r / s)) for r in raw]
 
 
 async def main() -> None:
