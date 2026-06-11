@@ -10,12 +10,18 @@ from __future__ import annotations
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from core.auth import get_admin_user
+from core.auth import get_admin_or_readonly_support, get_admin_user
 from core.config import logger
 from core.db import inventory_col, sell_reviews_col, users_col
 from core.time_utils import iso, now
 
-router = APIRouter(prefix="/api/admin/sell-reviews", tags=["admin", "sell-reviews"])
+# RBAC: router-level gate lets support staff READ (safe methods) but blocks their
+# writes; full admins get everything. Approve/reject keep get_admin_user (full admin).
+router = APIRouter(
+    prefix="/api/admin/sell-reviews",
+    tags=["admin", "sell-reviews"],
+    dependencies=[Depends(get_admin_or_readonly_support)],
+)
 
 
 class SellReviewRow(BaseModel):
@@ -44,7 +50,7 @@ class SellReviewListOut(BaseModel):
 async def admin_list_sell_reviews(
     status: str = Query("all", pattern=r"^(all|pending|approved|rejected)$"),
     limit: int = Query(100, ge=1, le=500),
-    _: dict = Depends(get_admin_user),
+    # Read access: router-level RBAC gate already allows full admins + read-only support.
 ) -> SellReviewListOut:
     q: dict = {}
     if status != "all":

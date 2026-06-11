@@ -27,7 +27,7 @@ from typing import Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from core.auth import get_current_user
+from core.auth import get_admin_or_readonly_support, get_current_user
 from core.config import ENABLE_DEV_LOGIN, ENABLE_GIFT_DEPOSITS, is_admin_tid, logger
 from core.db import (
     gift_deposit_intents_col,
@@ -39,10 +39,16 @@ from core.db import (
 from core.time_utils import iso, now
 from core.ton import static_url
 
-router = APIRouter(prefix="/api/admin/gift-deposits")
+# RBAC: router-level gate lets support staff READ (safe methods) but blocks
+# their writes; full admins get everything. Mirrors the main /api/admin router.
+router = APIRouter(
+    prefix="/api/admin/gift-deposits",
+    dependencies=[Depends(get_admin_or_readonly_support)],
+)
 
 
 async def _require_admin(user: dict = Depends(get_current_user)) -> dict:
+    """Full-admin gate for write endpoints (credit / reject). Support is read-only."""
     if not is_admin_tid(user.get("telegram_id")):
         raise HTTPException(status_code=403, detail="admin only")
     return user
@@ -75,7 +81,7 @@ class GiftDepositAdminListOut(BaseModel):
 async def admin_list_gift_deposits(
     status: str = Query("all", pattern=r"^(all|pending|fulfilled|unattributed|expired|rejected)$"),
     limit: int = Query(100, ge=1, le=500),
-    _: dict = Depends(_require_admin),
+    # Read access: router-level RBAC gate already allows full admins + read-only support.
 ) -> GiftDepositAdminListOut:
     q: dict = {}
     if status != "all":
