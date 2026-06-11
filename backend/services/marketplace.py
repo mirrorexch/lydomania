@@ -18,7 +18,7 @@ from typing import Any
 
 from pymongo import ASCENDING, DESCENDING, ReturnDocument
 
-from core.db import db, inventory_col, items_col, users_col
+from core.db import db, inventory_col, items_col, users_col, with_txn
 from core.time_utils import iso, now
 from core.ton import static_url
 
@@ -165,51 +165,49 @@ async def buy_listing(buyer_user_id: str, listing_id: str,
     fee = _fee_for(price, vip_fee_discount_bps)
     seller_credit = round(price - fee, 6)
 
-    # Atomic CAS on listing status — exactly one buyer wins
-    flipped = await listings_col.find_one_and_update(
-        {"listing_id": listing_id, "status": "active"},
-        {"$set": {"status": "sold", "sold_at": iso(now()),
-                  "buyer_user_id": buyer_user_id,
-                  "fee_ton": fee, "seller_credit_ton": seller_credit}},
-        return_document=ReturnDocument.AFTER, projection={"_id": 0},
-    )
-    if not flipped:
-        raise MarketError("listing_already_sold")
-
-    # Atomic buyer debit
-    debited = await users_col.find_one_and_update(
-        {"id": buyer_user_id, "balance_ton": {"$gte": price}},
-        {"$inc": {"balance_ton": -price},
-         "$set": {"updated_at": iso(now())}},
-        return_document=ReturnDocument.AFTER, projection={"_id": 0, "balance_ton": 1},
-    )
-    if not debited:
-        # Rollback: flip listing back to active, refund nothing
-        await listings_col.update_one(
-            {"listing_id": listing_id},
-            {"$set": {"status": "active"}, "$unset": {"sold_at": "", "buyer_user_id": ""}},
+    # All money movements run in ONE transaction: listing flip, buyer debit,
+    # seller credit, item transfer, fee. If any step fails (e.g. insufficient
+    # balance), the whole thing rolls back atomically — no half-sold listings,
+    # no debit-without-transfer. Concurrent buyers conflict on the status CAS and
+    # exactly one wins.
+    async def _txn(session):
+        flipped = await listings_col.find_one_and_update(
+            {"listing_id": listing_id, "status": "active"},
+            {"$set": {"status": "sold", "sold_at": iso(now()),
+                      "buyer_user_id": buyer_user_id,
+                      "fee_ton": fee, "seller_credit_ton": seller_credit}},
+            return_document=ReturnDocument.AFTER, projection={"_id": 0}, session=session,
         )
-        raise MarketError("insufficient_balance")
+        if not flipped:
+            raise MarketError("listing_already_sold")
+        debited_doc = await users_col.find_one_and_update(
+            {"id": buyer_user_id, "balance_ton": {"$gte": price}},
+            {"$inc": {"balance_ton": -price}, "$set": {"updated_at": iso(now())}},
+            return_document=ReturnDocument.AFTER, projection={"_id": 0, "balance_ton": 1},
+            session=session,
+        )
+        if not debited_doc:
+            # Abort → the listing flip above is rolled back automatically.
+            raise MarketError("insufficient_balance")
+        await users_col.update_one(
+            {"id": listing["seller_user_id"]},
+            {"$inc": {"balance_ton": seller_credit}, "$set": {"updated_at": iso(now())}},
+            session=session,
+        )
+        await inventory_col.update_one(
+            {"id": listing["inventory_item_id"]},
+            {"$set": {"user_id": buyer_user_id, "marketplace_status": "off_sale",
+                      "updated_at": iso(now())},
+             "$unset": {"marketplace_listing_id": ""}},
+            session=session,
+        )
+        await fees_col.insert_one(
+            {"listing_id": listing_id, "fee_ton": fee, "created_at": iso(now())},
+            session=session,
+        )
+        return debited_doc
 
-    # Credit seller (price minus fee)
-    await users_col.update_one(
-        {"id": listing["seller_user_id"]},
-        {"$inc": {"balance_ton": seller_credit},
-         "$set": {"updated_at": iso(now())}},
-    )
-
-    # Transfer inventory item: change user_id + unlock + clear listing_id
-    await inventory_col.update_one(
-        {"id": listing["inventory_item_id"]},
-        {"$set": {"user_id": buyer_user_id, "marketplace_status": "off_sale",
-                  "updated_at": iso(now())},
-         "$unset": {"marketplace_listing_id": ""}},
-    )
-
-    # Persist fee
-    await fees_col.insert_one({
-        "listing_id": listing_id, "fee_ton": fee, "created_at": iso(now()),
-    })
+    debited = await with_txn(_txn)
 
     # Hooks
     try:

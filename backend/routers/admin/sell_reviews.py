@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from core.auth import get_admin_or_readonly_support, get_admin_user
 from core.config import logger
-from core.db import inventory_col, sell_reviews_col, users_col
+from core.db import inventory_col, sell_reviews_col, users_col, with_txn
 from core.time_utils import iso, now
 
 # RBAC: router-level gate lets support staff READ (safe methods) but blocks their
@@ -79,34 +79,39 @@ async def admin_approve_sell_review(
     if review["status"] != "pending":
         raise HTTPException(status_code=409, detail=f"review is {review['status']}")
 
-    # Atomic: flip inventory row to sold + credit user.
-    inv = await inventory_col.find_one_and_update(
-        {"id": review["inventory_id"], "user_id": review["user_id"],
-         "status": "pending_admin_review"},
-        {"$set": {"status": "sold", "sold_at": iso(now())}},
-        return_document=True, projection={"_id": 0},
-    )
-    if not inv:
-        raise HTTPException(status_code=409, detail="inventory row not in pending_admin_review state")
-
     payout = float(review["floor_ton"])
-    upd_user = await users_col.find_one_and_update(
-        {"id": review["user_id"]},
-        {"$inc": {"balance_ton": payout},
-         "$set": {"updated_at": iso(now())}},
-        return_document=True, projection={"_id": 0},
-    )
 
-    await sell_reviews_col.update_one(
-        {"id": review_id},
-        {"$set": {
-            "status": "approved",
-            "decided_at": iso(now()),
-            "decided_by_admin": int(admin.get("telegram_id") or 0),
-            "decision_note": (note or "")[:500],
-            "credited_ton": payout,
-        }},
-    )
+    # One transaction: flip inventory row → sold, credit the user, mark the review
+    # approved. If the inventory CAS fails (already decided elsewhere) the whole
+    # thing aborts so we never credit without consuming the item.
+    async def _txn(session):
+        inv = await inventory_col.find_one_and_update(
+            {"id": review["inventory_id"], "user_id": review["user_id"],
+             "status": "pending_admin_review"},
+            {"$set": {"status": "sold", "sold_at": iso(now())}},
+            return_document=True, projection={"_id": 0}, session=session,
+        )
+        if not inv:
+            raise HTTPException(status_code=409, detail="inventory row not in pending_admin_review state")
+        upd = await users_col.find_one_and_update(
+            {"id": review["user_id"]},
+            {"$inc": {"balance_ton": payout}, "$set": {"updated_at": iso(now())}},
+            return_document=True, projection={"_id": 0}, session=session,
+        )
+        await sell_reviews_col.update_one(
+            {"id": review_id},
+            {"$set": {
+                "status": "approved",
+                "decided_at": iso(now()),
+                "decided_by_admin": int(admin.get("telegram_id") or 0),
+                "decision_note": (note or "")[:500],
+                "credited_ton": payout,
+            }},
+            session=session,
+        )
+        return upd
+
+    upd_user = await with_txn(_txn)
     logger.info("sell_review APPROVED id=%s user=%s slug=%s payout=%.2f admin=%s",
                 review_id, review["user_id"], review["item_slug"], payout, admin.get("telegram_id"))
     return {

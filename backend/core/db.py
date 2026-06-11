@@ -8,6 +8,19 @@ from core.config import DB_NAME, MONGO_URL
 mongo_client = AsyncIOMotorClient(MONGO_URL)
 db = mongo_client[DB_NAME]
 
+
+async def with_txn(callback):
+    """Run `callback(session)` inside a MongoDB multi-document transaction.
+
+    Used for money flows (marketplace buy, sell-review payout, promo redeem) so a
+    partial failure rolls the whole thing back atomically. `with_transaction`
+    auto-retries on transient transaction errors. Requires the replica set (prod
+    runs single-node rs0); if a caller hits a standalone, the driver raises and the
+    caller surfaces the error rather than half-applying.
+    """
+    async with await mongo_client.start_session() as session:
+        return await session.with_transaction(callback)
+
 # Existing
 users_col = db["users"]
 intents_col = db["deposit_intents"]
