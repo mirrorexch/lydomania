@@ -1,6 +1,7 @@
 """Admin withdrawals queue endpoints."""
 from __future__ import annotations
 
+import re
 from typing import Any, Optional
 
 from fastapi import Depends, HTTPException, Query
@@ -50,7 +51,8 @@ async def admin_list_withdrawals(
         ors: list[dict[str, Any]] = [{"id": s}]
         if s.isdigit():
             ors.append({"telegram_id": int(s)})
-        ids = [u["id"] async for u in users_col.find({"username": {"$regex": s, "$options": "i"}}, {"_id": 0, "id": 1})]
+        # SECURITY: escape user input so a crafted pattern can't cause ReDoS / regex injection.
+        ids = [u["id"] async for u in users_col.find({"username": {"$regex": re.escape(s), "$options": "i"}}, {"_id": 0, "id": 1})]
         if ids:
             ors.append({"user_id": {"$in": ids}})
         q["$or"] = ors

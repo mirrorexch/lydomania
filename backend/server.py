@@ -243,15 +243,17 @@ async def lifespan(app: FastAPI):
         mongo_client.close()
 
 
+# SECURITY: never expose the OpenAPI schema or interactive docs on mainnet —
+# they enumerate every route (including admin/internal endpoints) to anyone.
+# Dev/testnet keep them for route self-discovery.
+_DOCS_ENABLED = TON_NETWORK.strip().lower() != "mainnet"
 app = FastAPI(
     title="Lydomania API",
     version="0.3.0",
     lifespan=lifespan,
-    # Phase 11 workflow hygiene — surface auto-OpenAPI at /api/openapi.json
-    # (the SPA owns the root /) so testers can self-discover routes.
-    openapi_url="/api/openapi.json",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json" if _DOCS_ENABLED else None,
+    docs_url="/api/docs" if _DOCS_ENABLED else None,
+    redoc_url="/api/redoc" if _DOCS_ENABLED else None,
 )
 
 app.add_middleware(
