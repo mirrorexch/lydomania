@@ -22,7 +22,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from core.auth import get_current_user
-from core.db import promo_codes_col, promo_redemptions_col, users_col
+from core.db import promo_codes_col, promo_redemptions_col, users_col, with_txn
 from core.models import PromoRedeemIn, PromoRedeemOut
 from core.time_utils import iso, now
 
@@ -62,33 +62,45 @@ async def redeem_promo(payload: PromoRedeemIn, user: dict = Depends(get_current_
         amount = float(value or 0)
         if amount <= 0:
             raise HTTPException(status_code=500, detail="malformed code (ton_bonus value <=0)")
-        upd = await users_col.find_one_and_update(
-            {"id": user["id"]},
-            {"$inc": {"balance_ton": amount}},
-            return_document=True, projection={"_id": 0, "balance_ton": 1},
-        )
-        new_balance = float((upd or {}).get("balance_ton") or 0)
-        applied = {"type": "ton_bonus", "credited_ton": amount, "new_balance_ton": new_balance}
     elif kind == "free_spin_token":
         tokens = int(value or 1)
         if tokens <= 0:
             raise HTTPException(status_code=500, detail="malformed code (free_spin_token value <=0)")
-        upd = await users_col.find_one_and_update(
-            {"id": user["id"]},
-            {"$inc": {"free_spin_tokens": tokens}},
-            return_document=True, projection={"_id": 0, "free_spin_tokens": 1},
-        )
-        new_total = int((upd or {}).get("free_spin_tokens") or 0)
-        applied = {"type": "free_spin_token", "tokens_added": tokens, "free_spin_tokens": new_total}
     else:
         raise HTTPException(status_code=500, detail=f"unknown promo type: {kind}")
 
-    # record redemption + bump counter (best-effort, in two writes; idempotent enforce above)
-    await promo_redemptions_col.insert_one({
-        "id": secrets.token_hex(12),
-        "user_id": user["id"], "code": code,
-        "type": kind, "value": value,
-        "redeemed_at": iso(now()),
-    })
-    await promo_codes_col.update_one({"code": code}, {"$inc": {"current_redemptions": 1}})
+    # One transaction: re-check the per-user limit, apply the credit, record the
+    # redemption, and bump the code counter together — so a code is never credited
+    # without its redemption being recorded (or vice-versa).
+    async def _txn(session):
+        seen = await promo_redemptions_col.count_documents(
+            {"user_id": user["id"], "code": code}, session=session,
+        )
+        if seen >= user_max:
+            raise HTTPException(status_code=400, detail="already redeemed this code")
+        if kind == "ton_bonus":
+            u = await users_col.find_one_and_update(
+                {"id": user["id"]}, {"$inc": {"balance_ton": amount}},
+                return_document=True, projection={"_id": 0, "balance_ton": 1}, session=session,
+            )
+            out = {"type": "ton_bonus", "credited_ton": amount,
+                   "new_balance_ton": float((u or {}).get("balance_ton") or 0)}
+        else:
+            u = await users_col.find_one_and_update(
+                {"id": user["id"]}, {"$inc": {"free_spin_tokens": tokens}},
+                return_document=True, projection={"_id": 0, "free_spin_tokens": 1}, session=session,
+            )
+            out = {"type": "free_spin_token", "tokens_added": tokens,
+                   "free_spin_tokens": int((u or {}).get("free_spin_tokens") or 0)}
+        await promo_redemptions_col.insert_one({
+            "id": secrets.token_hex(12),
+            "user_id": user["id"], "code": code,
+            "type": kind, "value": value, "redeemed_at": iso(now()),
+        }, session=session)
+        await promo_codes_col.update_one(
+            {"code": code}, {"$inc": {"current_redemptions": 1}}, session=session,
+        )
+        return out
+
+    applied = await with_txn(_txn)
     return PromoRedeemOut(code=code, applied=applied)
