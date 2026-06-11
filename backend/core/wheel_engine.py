@@ -41,10 +41,12 @@ FREE_TOKEN_REFRESH_SEC: Final[int] = 24 * 60 * 60
 #   • lucky_ticket floor bumped 0.75 → 1.5 T in items collection — anything
 #     below 1 T on a 5 T spin reads as "rigged" even when math is fair.
 #   • Total weight = 192 (96 item / 96 ton_multi exactly = 50/50 by prob).
-#   • ton_multi mix: 5×0.5 + 3×0.75 + 3×1.0 + 1×1.25 → avg = 0.75 ⇒
-#     ton_multi EV per spin = 1.875 T
+#   • ton_multi mix: 5×0.5 + 3×0.75 + 4×1.0 → avg = 0.7292 ⇒
+#     ton_multi EV per spin = 1.823 T
+#     (Phase: dropped the lone 1.25× on seg 10 to 1.00× to pull RTP into the
+#      90-92% band — was 92.4%, now ~91.4%.)
 #   • Item EV per spin = 2.745 T   (LOW 0.760 + MID 0.8125 + HI 0.625 + JACK 0.547)
-#   • Total EV = 4.62 T  ⇒  RTP = 4.62 / 5.0 = 92.4 %   (target 92 % ✓)
+#   • Total EV ≈ 4.568 T  ⇒  RTP ≈ 4.568 / 5.0 ≈ 91.4 %   (target 90-92% ✓)
 SEGMENT_DEFS: Final[list[dict[str, Any]]] = [
     # 0..23 — interleave multis and gifts so the wheel looks visually balanced.
     {"segment_index":  0, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
@@ -57,7 +59,7 @@ SEGMENT_DEFS: Final[list[dict[str, Any]]] = [
     {"segment_index":  7, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lol_pop",        "weight": 12},
     {"segment_index":  8, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 8},
     {"segment_index":  9, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_coin",     "weight": 12},
-    {"segment_index": 10, "segment_type": "ton_multi", "multiplier": 1.25, "item_slug": None, "weight": 8},
+    {"segment_index": 10, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
     {"segment_index": 11, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "flying_broom",   "weight": 6},
     {"segment_index": 12, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
     {"segment_index": 13, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_ticket",   "weight": 12},
