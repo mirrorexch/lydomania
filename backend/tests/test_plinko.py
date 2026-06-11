@@ -39,11 +39,11 @@ def test_final_bucket_in_range():
 
 
 def test_expected_rtp_in_band_all_combos():
-    """Every multiplier table should land in 0.92–1.00 (RTP band)."""
+    """Every multiplier table is normalised to the 90-92% target band."""
     for rows in ROWS_ALLOWED:
         for risk in RISKS_ALLOWED:
             rtp = expected_rtp(rows, risk)
-            assert 0.92 <= rtp <= 1.02, (rows, risk, rtp)
+            assert 0.90 <= rtp <= 0.92, (rows, risk, rtp)
 
 
 def test_monte_carlo_matches_analytical_rtp():

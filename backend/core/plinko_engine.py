@@ -26,21 +26,44 @@ ROWS_ALLOWED:   Final[tuple[int, ...]] = (8, 12, 16)
 RISKS_ALLOWED:  Final[tuple[str, ...]] = ("low", "medium", "high")
 
 
-# Multiplier tables (bucket index 0 = leftmost, n = rightmost; n+1 buckets total)
-# These have been chosen so that ΣP(k)·m[k] ≈ 0.96–0.98 for fair Binomial(n,0.5).
-MULTIPLIERS: Final[dict[tuple[int, str], list[float]]] = {
-    # 8 rows → 9 buckets   (RTPs: low=0.99, med=0.98, hi=0.95)
+# Target Return-To-Player for every (rows, risk) table — platform-wide 90-92% band.
+TARGET_RTP: Final[float] = 0.91
+
+# RAW multiplier shapes (bucket 0 = leftmost … n = rightmost). These encode the
+# *shape* of each payout curve; absolute scale is normalised below so every table
+# lands at exactly TARGET_RTP under fair Binomial(n, 0.5). Symmetric by design.
+_RAW_MULTIPLIERS: Final[dict[tuple[int, str], list[float]]] = {
+    # 8 rows → 9 buckets
     (8, "low"):    [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
     (8, "medium"): [10.0, 2.4, 1.2, 1.0, 0.2, 1.0, 1.2, 2.4, 10.0],
     (8, "high"):   [21.0, 3.3, 1.4, 0.5, 0.2, 0.5, 1.4, 3.3, 21.0],
-    # 12 rows → 13 buckets (RTPs: low=0.99, med=0.98, hi=0.98)
+    # 12 rows → 13 buckets
     (12, "low"):    [10.0, 3.0, 1.6, 1.4, 1.1, 1.0, 0.5, 1.0, 1.1, 1.4, 1.6, 3.0, 10.0],
     (12, "medium"): [25.0, 9.0, 3.0, 1.5, 1.0, 0.9, 0.3, 0.9, 1.0, 1.5, 3.0, 9.0, 25.0],
     (12, "high"):   [130.0, 18.0, 6.0, 1.7, 0.8, 0.5, 0.2, 0.5, 0.8, 1.7, 6.0, 18.0, 130.0],
-    # 16 rows → 17 buckets (RTPs: low=0.99, med=0.99, hi=0.99)
+    # 16 rows → 17 buckets
     (16, "low"):    [16.0, 9.0, 2.0, 1.4, 1.4, 1.2, 1.1, 1.0, 0.5, 1.0, 1.1, 1.2, 1.4, 1.4, 2.0, 9.0, 16.0],
     (16, "medium"): [110.0, 41.0, 10.0, 5.0, 3.0, 1.5, 1.0, 0.5, 0.3, 0.5, 1.0, 1.5, 3.0, 5.0, 10.0, 41.0, 110.0],
     (16, "high"):   [1000.0, 130.0, 26.0, 9.0, 4.0, 2.0, 0.2, 0.2, 0.2, 0.2, 0.2, 2.0, 4.0, 9.0, 26.0, 130.0, 1000.0],
+}
+
+
+def _normalize_to_target(table: list[float], rows: int) -> list[float]:
+    """Scale a shape table so ΣP(k)·m[k] == TARGET_RTP under Binomial(rows, 0.5).
+
+    Uniform scaling preserves the payout shape and symmetry exactly while moving
+    the RTP to the target. Rounded to 4 d.p. (RTP drift < 1e-4).
+    """
+    from math import comb
+    denom = float(1 << rows)
+    rtp = sum((comb(rows, k) / denom) * table[k] for k in range(rows + 1))
+    factor = TARGET_RTP / rtp
+    return [round(m * factor, 4) for m in table]
+
+
+# Normalised tables actually used at runtime — every one calibrated to TARGET_RTP.
+MULTIPLIERS: Final[dict[tuple[int, str], list[float]]] = {
+    key: _normalize_to_target(tbl, key[0]) for key, tbl in _RAW_MULTIPLIERS.items()
 }
 
 
