@@ -58,6 +58,7 @@ import {
     isDevMode,
     tgReady,
 } from "@/lib/telegram";
+import { OPEN_DEPOSIT_EVENT } from "@/lib/deposit";
 
 function App() {
     const { t } = useTranslation();
@@ -121,6 +122,14 @@ function App() {
 
         setBootState("out");
     }, [t]);
+
+    // Any page can open the deposit modal by dispatching `lydo:open-deposit`
+    // (e.g. the insufficient-balance toast CTA) — see lib/deposit.openDeposit().
+    useEffect(() => {
+        const onOpenDeposit = () => setDepositOpen(true);
+        window.addEventListener(OPEN_DEPOSIT_EVENT, onOpenDeposit);
+        return () => window.removeEventListener(OPEN_DEPOSIT_EVENT, onOpenDeposit);
+    }, []);
 
     useEffect(() => {
         boot();

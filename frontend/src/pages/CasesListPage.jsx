@@ -154,7 +154,9 @@ export const CasesListPage = ({ balance }) => {
                     <div className="mt-5 grid grid-cols-3 gap-3 max-w-md">
                         <JackpotCounter />
                         <HeroStat label="Items paid out" value="71" suffix="gifts" />
-                        <HeroStat label="House edge" value="15" suffix="%" />
+                        {/* Positive, accurate framing — cases pay back ~90% (was a
+                            scary, and now incorrect, "House edge 15%"). */}
+                        <HeroStat label="Avg. payout" value="90" suffix="%" />
                     </div>
                 </div>
             </section>
