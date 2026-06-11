@@ -243,6 +243,27 @@ async def sync_floors_to_items(*, apply: bool = True) -> dict[str, Any]:
     return {"items_updated": updated, "applied": apply, "diffs": diffs}
 
 
+async def sync_and_recalibrate_all(*, apply: bool = True) -> dict[str, Any]:
+    """Propagate live Fragment floors into the games and re-hold every RTP target.
+
+    Chain: gift_floor_prices (kept fresh by floor_watcher) → items.floor_price_ton
+    → re-solve case baskets to 90% → re-solve wheel weights to ~91%. This is the
+    missing link that kept item values stale even though the floor-watcher was
+    scraping correctly. All DB-only (no scraping here) so it's cheap to run often.
+    """
+    from services.wheel_recalibration import recalibrate_wheel  # local import avoids cycle
+    sync = await sync_floors_to_items(apply=apply)
+    cases = await recalibrate_all_cases(apply=apply)
+    wheel = await recalibrate_wheel()
+    return {
+        "items_updated": sync.get("items_updated"),
+        "cases_ok": cases.get("cases_ok"),
+        "cases_failed": cases.get("cases_failed"),
+        "wheel_rtp_after": wheel.get("rtp_after"),
+        "wheel_in_band": wheel.get("in_band"),
+    }
+
+
 async def recalibrate_all_cases(
     *, max_payout_multiplier: float = 200.0, min_basket_size: int = 4, apply: bool = True,
 ) -> dict[str, Any]:
