@@ -1,0 +1,129 @@
+/* ============================================================================
+   Obsidian Vault — design system for the new Lydomania frontend.
+   Deep obsidian + liquid gold + jewel-tone rarity, glass depth, film grain.
+   Semantic .v-* classes so pages stay composition, not ad-hoc Tailwind soup.
+   ========================================================================== */
+:root{
+  --v-obsidian:#0B0B0F; --v-surface:#14141A; --v-surface-2:#1B1B22; --v-surface-3:#23232C;
+  --v-line:rgba(232,184,75,.14); --v-line-soft:rgba(255,255,255,.06);
+  --v-gold:#E8B84B; --v-gold-deep:#C99A3A; --v-gold-hi:#F7E3A1;
+  --v-text:#F5F3EE; --v-muted:#8C8C97; --v-muted-2:#5B5B66;
+  --v-emerald:#2FBF8F; --v-sapphire:#4A8FE7; --v-ruby:#E04A6B; --v-amethyst:#A877E6;
+  --v-r:18px;
+}
+
+/* App-wide canvas: obsidian + ambient gold light + grain. Applied to <body>. */
+.v-app{ background:var(--v-obsidian); color:var(--v-text);
+  font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+.v-bg::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(120% 60% at 50% -10%, rgba(232,184,75,.10), transparent 55%),
+             radial-gradient(80% 50% at 85% 12%, rgba(168,119,230,.06), transparent 60%);}
+.v-bg::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.045;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+.v-mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.v-disp{font-family:'Space Grotesk','Inter',sans-serif}
+.v-eyebrow{font:600 10px/1 'Inter';letter-spacing:.34em;text-transform:uppercase;color:var(--v-gold)}
+.v-muted{color:var(--v-muted)}
+
+/* Surfaces */
+.v-glass{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
+  border:1px solid var(--v-line-soft);backdrop-filter:blur(12px);border-radius:var(--v-r)}
+.v-card{background:var(--v-surface);border:1px solid var(--v-line-soft);border-radius:var(--v-r);
+  box-shadow:0 12px 30px -20px rgba(0,0,0,.9)}
+.v-panel{background:var(--v-surface);border:1px solid var(--v-line-soft);border-radius:16px}
+
+/* Gold text + metal accents */
+.v-gold-text{background:linear-gradient(180deg,var(--v-gold-hi),var(--v-gold-deep));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Buttons */
+.v-cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;border-radius:14px;
+  background:linear-gradient(180deg,var(--v-gold-hi),var(--v-gold) 55%,var(--v-gold-deep));color:#0b0b0f;
+  font:700 13px 'Inter';letter-spacing:.02em;text-transform:uppercase;border:0;cursor:pointer;
+  box-shadow:0 10px 28px -8px rgba(232,184,75,.55),inset 0 1px 0 rgba(255,255,255,.5);transition:filter .15s,transform .1s}
+.v-cta:hover{filter:brightness(1.06)} .v-cta:active{transform:translateY(1px)}
+.v-cta:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.3)}
+.v-cta--emerald{background:linear-gradient(180deg,#5fe3b6,var(--v-emerald) 55%,#1e8f69);box-shadow:0 10px 28px -8px rgba(47,191,143,.5)}
+.v-ghost{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 16px;border-radius:12px;
+  background:rgba(255,255,255,.04);border:1px solid var(--v-line-soft);color:var(--v-text);font:600 12px 'Inter';cursor:pointer;transition:border-color .15s}
+.v-ghost:hover{border-color:var(--v-line)}
+
+/* Header */
+.v-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;position:sticky;top:0;z-index:30;
+  background:linear-gradient(180deg,var(--v-obsidian) 62%,transparent)}
+.v-brand{display:flex;align-items:center;gap:9px}
+.v-sigil{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#1d1a12,#0d0c08);border:1px solid var(--v-line);box-shadow:inset 0 1px 0 rgba(232,184,75,.25)}
+.v-sigil span{font:700 16px 'Space Grotesk';background:linear-gradient(180deg,var(--v-gold-hi),var(--v-gold-deep));-webkit-background-clip:text;background-clip:text;color:transparent}
+.v-balpill{display:flex;align-items:center;gap:8px;padding:7px 8px 7px 12px;border-radius:999px;
+  background:linear-gradient(180deg,rgba(232,184,75,.10),rgba(232,184,75,.02));border:1px solid var(--v-line)}
+.v-balpill .coin{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--v-gold-hi),var(--v-gold-deep));box-shadow:0 0 8px rgba(232,184,75,.5)}
+.v-balpill b{font:600 14px 'JetBrains Mono';color:var(--v-gold-hi)}
+.v-balpill .plus{width:20px;height:20px;border-radius:7px;display:grid;place-items:center;background:var(--v-gold);color:#0b0b0f;font:700 15px 'Inter';line-height:1;border:0;cursor:pointer}
+
+/* Section heads */
+.v-sechead{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.v-sechead h2{font:600 17px 'Space Grotesk';letter-spacing:-.01em}
+.v-sechead a{font:600 11px 'Inter';color:var(--v-gold);text-transform:uppercase;letter-spacing:.1em;cursor:pointer}
+
+/* Rarity system (tint + jewel) — set data-rarity on the element */
+[data-rarity]{--tint:rgba(232,184,75,.18);--jewel:var(--v-gold)}
+[data-rarity="common"]{--tint:rgba(140,140,151,.16);--jewel:#9a9aa4}
+[data-rarity="uncommon"],[data-rarity="rare"]{--tint:rgba(74,143,231,.20);--jewel:var(--v-sapphire)}
+[data-rarity="epic"]{--tint:rgba(47,191,143,.20);--jewel:var(--v-emerald)}
+[data-rarity="legendary"]{--tint:rgba(232,184,75,.22);--jewel:var(--v-gold)}
+[data-rarity="mythic"]{--tint:rgba(224,74,107,.20);--jewel:var(--v-ruby)}
+.v-jewel{width:6px;height:6px;border-radius:50%;background:var(--jewel);box-shadow:0 0 7px var(--jewel)}
+.v-rar{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;
+  background:rgba(11,11,15,.6);border:1px solid var(--v-line-soft);font:600 9px 'Inter';letter-spacing:.12em;text-transform:uppercase;backdrop-filter:blur(6px);color:var(--jewel)}
+
+/* Case card */
+.v-case{position:relative;border-radius:var(--v-r);overflow:hidden;cursor:pointer;
+  background:var(--v-surface);border:1px solid var(--v-line-soft);box-shadow:0 12px 30px -20px rgba(0,0,0,.9);transition:transform .15s,border-color .15s}
+.v-case:hover{transform:translateY(-2px);border-color:var(--v-line)}
+.v-case .v-top{position:relative;aspect-ratio:1/.92;display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(80% 80% at 50% 35%,var(--tint),transparent 70%),linear-gradient(180deg,#16151b,#0d0c11)}
+.v-case .v-gift{font-size:54px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
+.v-case .v-gift img{width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
+.v-case .v-rar{position:absolute;top:9px;left:9px}
+.v-case .v-meta{padding:11px 12px 13px}
+.v-case .v-meta h3{font:600 13px 'Space Grotesk';margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-case .v-price{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.v-case .v-price .p{display:flex;align-items:center;gap:5px;font:600 14px 'JetBrains Mono';color:var(--v-gold-hi);min-width:0}
+.v-case .v-price .p .coin{width:11px;height:11px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,var(--v-gold-hi),var(--v-gold-deep))}
+.v-case .v-price .open{flex:none;font:600 10px 'Inter';text-transform:uppercase;letter-spacing:.1em;color:var(--v-gold);padding:5px 10px;border:1px solid var(--v-line);border-radius:9px}
+
+/* Game tiles */
+.v-games{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.v-game{padding:13px 8px 11px;border-radius:15px;text-align:center;background:var(--v-surface);border:1px solid var(--v-line-soft);cursor:pointer;transition:border-color .15s}
+.v-game .ic{width:34px;height:34px;margin:0 auto 7px;border-radius:11px;display:grid;place-items:center;font-size:18px;background:linear-gradient(160deg,var(--v-surface-3),#101015);border:1px solid var(--v-line-soft)}
+.v-game span{font:600 10px 'Inter';color:var(--v-muted)}
+.v-game.on{border-color:var(--v-line);background:linear-gradient(180deg,#1a160c,#100e09)}
+.v-game.on .ic{background:linear-gradient(160deg,#2a2212,#1a150b);border-color:var(--v-line)}
+.v-game.on span{color:var(--v-gold-hi)}
+
+/* Hero / vault panel */
+.v-hero{position:relative;margin:6px 0 0;padding:22px 20px 24px;border-radius:24px;overflow:hidden;
+  background:radial-gradient(120% 120% at 50% 0,#1a160c 0,#0e0d09 48%,#0b0b0f 100%);
+  border:1px solid var(--v-line);box-shadow:0 24px 60px -30px rgba(232,184,75,.35),inset 0 1px 0 rgba(232,184,75,.18)}
+.v-hero .v-ring{position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;
+  background:conic-gradient(from 200deg,transparent,rgba(232,184,75,.22),transparent 60%);filter:blur(2px)}
+.v-hero h1{font:600 30px/1.02 'Space Grotesk';letter-spacing:-.01em;margin:10px 0 6px}
+.v-hero p{font:400 12.5px/1.5 'Inter';color:var(--v-muted);max-width:240px;margin-bottom:16px}
+
+/* Game stage (crash/mines/wheel shared dark stage) */
+.v-stage{position:relative;border-radius:24px;overflow:hidden;border:1px solid var(--v-line);
+  background:radial-gradient(circle at 50% 42%,rgba(232,184,75,.08),transparent 62%),var(--v-surface)}
+
+/* Bottom nav */
+.v-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:calc(100% - 28px);max-width:402px;z-index:40;
+  display:flex;justify-content:space-around;padding:9px 6px;border-radius:18px;
+  background:rgba(16,16,20,.72);border:1px solid var(--v-line);backdrop-filter:blur(18px);box-shadow:0 16px 40px -16px rgba(0,0,0,.8)}
+.v-nav a{display:flex;flex-direction:column;align-items:center;gap:3px;font:600 9px 'Inter';color:var(--v-muted-2);padding:3px 10px;cursor:pointer}
+.v-nav a .gi{font-size:18px;line-height:1}
+.v-nav a.on{color:var(--v-gold-hi)}
+
+/* layout container */
+.v-wrap{position:relative;z-index:1;max-width:430px;margin:0 auto;padding:0 16px 100px}
+.v-sec{margin-top:26px}
