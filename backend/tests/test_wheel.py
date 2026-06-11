@@ -117,8 +117,8 @@ def test_rtp_with_floors_in_band():
         "heart_of_ton": 105.00,
     }
     r = rtp(SEGMENT_DEFS, cost_ton=PAID_SPIN_COST_TON, item_floor_lookup=floors)
-    # Phase 11.3 target band: 90-94 % (closed-form designed for 92.4 %).
-    assert 0.90 <= r <= 0.94, f"closed-form RTP {r*100:.2f}% out of band"
+    # Target band 90-92 % (closed-form ≈ 91.4 % after dropping seg10 1.25×→1.00×).
+    assert 0.90 <= r <= 0.92, f"closed-form RTP {r*100:.2f}% out of band"
 
 
 @pytest.mark.parametrize("n", [5000])
