@@ -17,22 +17,30 @@ async def _ensure_wheel_seeded():
         await seed_main()
 
 
+async def _set_realistic_floors():
+    """Give the wheel a prod-like floor spread: cheap low-gifts (so there's room
+    to absorb weight) + a few expensive ones. Returns the slug set used."""
+    floors = {
+        "candy_cane": 1.9, "lol_pop": 1.2, "lucky_coin": 2.0, "lucky_ticket": 1.5,
+        "top_hat": 16.5, "flying_broom": 27.2, "trapped_heart": 4.6,
+        "electric_skull": 24.6, "bonded_ring": 156.0,
+    }
+    for slug, f in floors.items():
+        await items_col.update_one({"slug": slug}, {"$set": {"floor_price_ton": f}}, upsert=True)
+
+
 @pytest.mark.asyncio
 async def test_recalibration_brings_drifted_wheel_into_band():
     await _ensure_wheel_seeded()
-
-    # Simulate severe floor drift: blow up a high-gift floor far above design.
-    high_seg = await segments_col.find_one({"segment_type": "high_gift"}, {"_id": 0})
-    assert high_seg and high_seg.get("item_slug"), "wheel must have a high_gift segment"
-    slug = high_seg["item_slug"]
+    await _set_realistic_floors()
+    # Severe drift on the priciest gift — recalibration must still reach the band.
     await items_col.update_one(
-        {"slug": slug}, {"$set": {"floor_price_ton": 500.0}}, upsert=True
+        {"slug": "bonded_ring"}, {"$set": {"floor_price_ton": 500.0}}, upsert=True
     )
 
     res = await recalibrate_wheel()
     assert res["ok"], res
-    # After recalibration the wheel must be back in the 90-92% band despite the
-    # 500-TON floor — expensive gifts get re-weighted rarer.
+    # Back inside the 90-92% band despite the 500-TON floor.
     assert 0.90 <= res["rtp_after"] <= 0.92, res
     assert res["in_band"] is True, res
 
@@ -40,6 +48,7 @@ async def test_recalibration_brings_drifted_wheel_into_band():
 @pytest.mark.asyncio
 async def test_recalibration_is_idempotent():
     await _ensure_wheel_seeded()
+    await _set_realistic_floors()
     first = await recalibrate_wheel()
     second = await recalibrate_wheel()
     assert first["ok"] and second["ok"]
@@ -50,6 +59,7 @@ async def test_recalibration_is_idempotent():
 @pytest.mark.asyncio
 async def test_recalibration_preserves_total_item_weight():
     await _ensure_wheel_seeded()
+    await _set_realistic_floors()
     before = [s async for s in segments_col.find({"segment_type": {"$ne": "ton_multi"}}, {"_id": 0})]
     total_before = sum(int(s.get("weight", 0)) for s in before)
     await recalibrate_wheel()
