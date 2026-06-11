@@ -76,10 +76,19 @@ def _select(pool: list[dict[str, Any]], price: float) -> list[dict[str, Any]]:
     return chosen
 
 
+def _stable_weights(payouts: list[float], alpha: float) -> list[float]:
+    """exp(α·payout), log-sum-exp stabilised (subtract max exponent) so large
+    payouts like a 7000-TON jackpot don't overflow math.exp. Subtracting a
+    constant from every exponent cancels in the normalisation."""
+    exps = [alpha * p for p in payouts]
+    m = max(exps)
+    return [math.exp(e - m) for e in exps]
+
+
 def _solve_weights(payouts: list[float], target_ev: float) -> list[float]:
     """weight_i ∝ exp(α·payout); binary-search α so EV == target. Monotonic in α."""
     def ev_at(alpha: float) -> float:
-        w = [math.exp(alpha * p) for p in payouts]
+        w = _stable_weights(payouts, alpha)
         return sum(a * b for a, b in zip(payouts, w)) / sum(w)
     lo, hi = -3.0, 3.0
     for _ in range(90):
@@ -89,7 +98,7 @@ def _solve_weights(payouts: list[float], target_ev: float) -> list[float]:
         else:
             hi = mid
     alpha = (lo + hi) / 2.0
-    raw = [math.exp(alpha * p) for p in payouts]
+    raw = _stable_weights(payouts, alpha)
     # Normalise to a fixed large total so weights stay within MongoDB's int64 even
     # for wide value ranges. The total is big enough (1e6) that forcing an
     # ultra-rare jackpot up to weight 1 adds negligible EV (≈ floor/1e6 TON).
