@@ -225,6 +225,21 @@ async def lifespan(app: FastAPI):
         id="season_rollover", replace_existing=True,
         max_instances=1, coalesce=True, misfire_grace_time=600,
     )
+    # Wheel auto-recalibration — hold the wheel at target RTP despite gift-floor
+    # drift (the wheel has no floor-watcher of its own, unlike roulette). Runs
+    # every 6h, and once now on startup so a freshly-drifted wheel self-corrects.
+    from services.wheel_recalibration import recalibrate_wheel  # noqa: E402
+    try:
+        _res = await recalibrate_wheel()
+        logger.info("[wheel_recalibration] startup run: %s", _res.get("rtp_after"))
+    except Exception as _e:  # noqa: BLE001
+        logger.warning("[wheel_recalibration] startup run failed: %s", _e)
+    _scheduler.add_job(
+        recalibrate_wheel,
+        CronTrigger(hour="*/6", minute=20, timezone="UTC"),
+        id="wheel_recalibration", replace_existing=True,
+        max_instances=1, coalesce=True, misfire_grace_time=3600,
+    )
     _scheduler.start()
     logger.info("APScheduler started · daily_digest cron at %02d:00 UTC · weekly_leaderboard_snapshot Mon 00:05 UTC", hour)
     try:
