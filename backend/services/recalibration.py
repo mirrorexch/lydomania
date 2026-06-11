@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from core.config import logger
 from core.db import cases_col, gift_floor_prices_col, items_col
 from core.time_utils import iso, now
 
@@ -253,12 +254,21 @@ async def sync_and_recalibrate_all(*, apply: bool = True) -> dict[str, Any]:
     """
     from services.wheel_recalibration import recalibrate_wheel  # local import avoids cycle
     sync = await sync_floors_to_items(apply=apply)
-    cases = await recalibrate_all_cases(apply=apply)
+    # Rebuild case baskets with the competitive TWO-TIER structure (winnable mids
+    # + rare jackpot) using live floors — NOT the old single-jackpot-weight solve,
+    # which would crush the mid tiers back to ~0% on every run.
+    cases_rebuilt = 0
+    if apply:
+        try:
+            from tools.rebuild_competitive_cases import main as _rebuild_cases
+            await _rebuild_cases()
+            cases_rebuilt = 1
+        except Exception as e:  # noqa: BLE001
+            logger.warning("[floor_pipeline] case rebuild failed: %s", e)
     wheel = await recalibrate_wheel()
     return {
         "items_updated": sync.get("items_updated"),
-        "cases_ok": cases.get("cases_ok"),
-        "cases_failed": cases.get("cases_failed"),
+        "cases_rebuilt": cases_rebuilt,
         "wheel_rtp_after": wheel.get("rtp_after"),
         "wheel_in_band": wheel.get("in_band"),
     }
