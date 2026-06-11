@@ -28,9 +28,16 @@ from typing import Any
 from core.config import logger
 from core.db import db, items_col
 from core.time_utils import iso, now
-from core.wheel_engine import PAID_SPIN_COST_TON, rtp as wheel_rtp
+from core.wheel_engine import PAID_SPIN_COST_TON, SEGMENT_DEFS, rtp as wheel_rtp
 
 segments_col = db["wheel_segments"]
+
+# Canonical design weight per segment_index — the recalibration baselines on these
+# (not on the live DB weights) so a frozen/unpriced segment always returns to its
+# intended rarity even if a prior run left a bad value in the DB (self-healing).
+_DESIGN_WEIGHT: dict[int, int] = {
+    int(d["segment_index"]): int(d["weight"]) for d in SEGMENT_DEFS
+}
 
 TARGET_RTP: float = 0.91
 _TOLERANCE: float = 0.004  # land within ±0.4pp of target
@@ -128,14 +135,24 @@ async def recalibrate_wheel(target_rtp: float = TARGET_RTP) -> dict[str, Any]:
 
     floors = await _load_floors({s.get("item_slug") for s in item_segs if s.get("item_slug")})
 
+    rtp_before = wheel_rtp(segs, cost_ton=PAID_SPIN_COST_TON, item_floor_lookup=floors)
+
     # Partition: tunable = known positive floor; frozen = missing/zero floor.
+    # Frozen segments are RESET to their canonical design weight (self-healing: a
+    # prior bad run can't leave an unpriced jackpot stuck at an inflated weight).
+    def _design_w(seg: dict[str, Any]) -> int:
+        return _DESIGN_WEIGHT.get(int(seg["segment_index"]), int(seg.get("weight", 1)))
+
     tunable = [s for s in item_segs if floors.get(s.get("item_slug") or "", 0.0) > 0]
-    frozen = [s for s in item_segs if floors.get(s.get("item_slug") or "", 0.0) <= 0]
+    frozen = [{**s, "weight": _design_w(s)} for s in item_segs
+              if floors.get(s.get("item_slug") or "", 0.0) <= 0]
     if not tunable:
         return {"ok": False, "reason": "no_priced_item_segments"}
 
-    budget = sum(int(s.get("weight", 0)) for s in tunable)  # frozen keep their weight
-    rtp_before = wheel_rtp(segs, cost_ton=PAID_SPIN_COST_TON, item_floor_lookup=floors)
+    # Budget = total design item weight − frozen design weight, so the solve is
+    # deterministic from SEGMENT_DEFS + live floors regardless of current DB state.
+    total_item_design = sum(_design_w(s) for s in item_segs)
+    budget = total_item_design - sum(int(s["weight"]) for s in frozen)
 
     def rtp_at(lam: float) -> float:
         w = _tunable_weights_for_lambda(tunable, floors, lam, budget)
@@ -174,6 +191,20 @@ async def recalibrate_wheel(target_rtp: float = TARGET_RTP) -> dict[str, Any]:
                 "rtp_before": round(rtp_before, 4), "rtp_best": round(rtp_after, 4)}
 
     changes: list[dict[str, Any]] = []
+    # Heal any frozen segment whose live DB weight drifted from its design weight.
+    cur_by_idx = {int(s["segment_index"]): int(s.get("weight", 0)) for s in item_segs}
+    for seg in frozen:
+        idx = int(seg["segment_index"])
+        if cur_by_idx.get(idx) != int(seg["weight"]):
+            await segments_col.update_one(
+                {"segment_index": idx},
+                {"$set": {"weight": int(seg["weight"]), "recalibrated_at": iso(now())}},
+            )
+            changes.append({
+                "segment_index": idx, "item_slug": seg.get("item_slug"),
+                "floor": 0.0, "old_weight": cur_by_idx.get(idx, 0),
+                "new_weight": int(seg["weight"]), "frozen": True,
+            })
     for seg, w in zip(tunable, weights):
         if int(seg.get("weight", 0)) != int(w):
             await segments_col.update_one(
