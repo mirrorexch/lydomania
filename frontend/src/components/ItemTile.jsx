@@ -32,10 +32,11 @@ export const ItemTile = ({
     return (
         <div
             data-testid={testId}
-            className="relative rounded-xl bg-cyber-surface overflow-hidden flex flex-col transition-all"
+            className="relative rounded-xl overflow-hidden flex flex-col transition-all"
             style={{
+                background: "var(--v-surface, #14141A)",
                 boxShadow: highlight ? glow : "none",
-                border: isJackpot ? "2px solid transparent" : `1px solid ${ringColor}40`,
+                border: isJackpot ? "2px solid transparent" : `1px solid ${ringColor}33`,
                 ...(isJackpot
                     ? {
                           background:
@@ -45,12 +46,15 @@ export const ItemTile = ({
                     : {}),
             }}
         >
-            <div className="relative aspect-square bg-cyber-bg">
+            <div
+                className="relative aspect-square"
+                style={{ background: `radial-gradient(72% 72% at 50% 42%, ${ringColor}26, transparent 72%), linear-gradient(180deg,#17161d,#0d0c11)` }}
+            >
                 <img
                     src={resolveImage(url)}
                     alt={name}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    style={{ filter: `drop-shadow(0 0 14px ${ringColor}55)` }}
+                    className="absolute inset-0 w-full h-full object-contain"
+                    style={{ padding: "17%", filter: `drop-shadow(0 4px 12px ${ringColor}66)` }}
                     draggable={false}
                     loading="lazy"
                 />
@@ -71,7 +75,7 @@ export const ItemTile = ({
                 </div>
                 <div className="flex items-center justify-between mt-0.5">
                     <span className="inline-flex items-center gap-0.5">
-                        <Diamond className="w-3 h-3 text-cyber-cyan" strokeWidth={2.5} />
+                        <Diamond className="w-3 h-3" style={{ color: "var(--v-gold, #E8B84B)" }} strokeWidth={2.5} />
                         <span className={`${dims.price} font-bold tabular-nums text-white`}>
                             {formatTON(payout)}
                         </span>

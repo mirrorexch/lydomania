@@ -84,9 +84,17 @@
   background:var(--v-surface);border:1px solid var(--v-line-soft);box-shadow:0 12px 30px -20px rgba(0,0,0,.9);transition:transform .15s,border-color .15s}
 .v-case:hover{transform:translateY(-2px);border-color:var(--v-line)}
 .v-case .v-top{position:relative;aspect-ratio:1/.92;display:grid;place-items:center;overflow:hidden;
-  background:radial-gradient(80% 80% at 50% 35%,var(--tint),transparent 70%),linear-gradient(180deg,#16151b,#0d0c11)}
-.v-case .v-gift{font-size:54px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
-.v-case .v-gift img{width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
+  background:
+    radial-gradient(56% 46% at 50% 40%, var(--tint), transparent 70%),
+    radial-gradient(38% 30% at 50% 38%, rgba(255,255,255,.05), transparent 72%),
+    repeating-radial-gradient(circle at 50% 40%, transparent 0 10px, rgba(255,255,255,.013) 10px 11px),
+    radial-gradient(140% 120% at 50% 132%, rgba(0,0,0,.5), transparent 56%),
+    linear-gradient(180deg,#1a1822,#100e16)}
+/* soft glow pedestal under the gift */
+.v-case .v-top::after{content:"";position:absolute;left:50%;bottom:14%;width:62%;height:14%;transform:translateX(-50%);
+  background:radial-gradient(closest-side, var(--tint), transparent 75%);filter:blur(6px);opacity:.9;pointer-events:none}
+.v-case .v-gift{font-size:54px;filter:drop-shadow(0 10px 14px rgba(0,0,0,.55));position:relative;z-index:1}
+.v-case .v-gift img{width:78px;height:78px;object-fit:contain;filter:drop-shadow(0 10px 14px rgba(0,0,0,.55))}
 .v-case .v-rar{position:absolute;top:9px;left:9px}
 .v-case .v-meta{padding:11px 12px 13px}
 .v-case .v-meta h3{font:600 13px 'Space Grotesk';margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -277,9 +285,16 @@
 
 /* ── Case detail hero ────────────────────────────────────────── */
 .v-cdhero{position:relative;border-radius:24px;overflow:hidden;border:1px solid var(--v-line);
-  background:radial-gradient(90% 90% at 50% 30%,var(--tint),transparent 68%),linear-gradient(180deg,#16151b,#0c0b10);
+  background:
+    radial-gradient(60% 52% at 50% 34%, var(--tint), transparent 70%),
+    radial-gradient(40% 30% at 50% 30%, rgba(255,255,255,.05), transparent 72%),
+    repeating-radial-gradient(circle at 50% 34%, transparent 0 13px, rgba(255,255,255,.012) 13px 14px),
+    radial-gradient(140% 120% at 50% 130%, rgba(0,0,0,.5), transparent 58%),
+    linear-gradient(180deg,#1a1822,#0c0b10);
   padding:22px 20px;display:flex;flex-direction:column;align-items:center;text-align:center}
-.v-cdhero .art{width:128px;height:128px;object-fit:contain;filter:drop-shadow(0 14px 26px rgba(0,0,0,.6));margin-bottom:14px}
+.v-cdhero::after{content:"";position:absolute;left:50%;top:30%;width:54%;height:18%;transform:translate(-50%,-10%);
+  background:radial-gradient(closest-side, var(--tint), transparent 75%);filter:blur(10px);opacity:.85;pointer-events:none}
+.v-cdhero .art{position:relative;z-index:1;width:120px;height:120px;object-fit:contain;filter:drop-shadow(0 16px 22px rgba(0,0,0,.6));margin-bottom:14px}
 .v-cdhero .art.emoji{font-size:96px;line-height:128px}
 .v-cdhero h1{font:600 24px 'Space Grotesk';letter-spacing:-.01em;margin:0 0 4px}
 .v-cdhero .rtp{font:600 9px 'Inter';letter-spacing:.18em;text-transform:uppercase;color:var(--v-gold);margin-bottom:10px}

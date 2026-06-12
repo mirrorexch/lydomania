@@ -1036,5 +1036,12 @@
     "empty": {
       "no_season": "No active season right now. Check back soon."
     }
+  },
+  "vnav": {
+    "games": "Games",
+    "rocket": "Rocket",
+    "gifts": "Gifts",
+    "pass": "Pass",
+    "more": "More"
   }
 }
