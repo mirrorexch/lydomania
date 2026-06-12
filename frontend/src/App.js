@@ -11,8 +11,8 @@ import { AppShell } from "@/components/AppShell";
 import { DepositModal } from "@/components/DepositModal";
 import { DepositChoiceModal } from "@/components/DepositChoiceModal";
 import { OutOfTelegram } from "@/components/OutOfTelegram";
-import { CasesListPage } from "@/pages/CasesListPage";
-import { CaseDetailPage } from "@/pages/CaseDetailPage";
+import VaultCasesList from "@/pages/VaultCasesList";
+import VaultCaseDetail from "@/pages/VaultCaseDetail";
 import { InventoryPage } from "@/pages/InventoryPage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { WithdrawalsPage } from "@/pages/WithdrawalsPage";
@@ -195,14 +195,14 @@ function App() {
                 >
                     <Routes>
                         <Route path="/" element={<VaultHome balance={balance} />} />
-                        <Route path="/cases" element={<CasesListPage balance={balance} />} />
+                        <Route path="/cases" element={<VaultCasesList balance={balance} />} />
                         <Route
                             path="/case/:id"
-                            element={<CaseDetailPage balance={balance} refreshBalance={refreshBalance} />}
+                            element={<VaultCaseDetail balance={balance} refreshBalance={refreshBalance} />}
                         />
                         <Route
                             path="/cases/:id"
-                            element={<CaseDetailPage balance={balance} refreshBalance={refreshBalance} />}
+                            element={<VaultCaseDetail balance={balance} refreshBalance={refreshBalance} />}
                         />
                         <Route
                             path="/inventory"

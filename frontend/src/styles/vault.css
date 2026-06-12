@@ -74,6 +74,7 @@
 [data-rarity="epic"]{--tint:rgba(47,191,143,.20);--jewel:var(--v-emerald)}
 [data-rarity="legendary"]{--tint:rgba(232,184,75,.22);--jewel:var(--v-gold)}
 [data-rarity="mythic"]{--tint:rgba(224,74,107,.20);--jewel:var(--v-ruby)}
+[data-rarity="jackpot"]{--tint:rgba(168,119,230,.24);--jewel:var(--v-amethyst)}
 .v-jewel{width:6px;height:6px;border-radius:50%;background:var(--jewel);box-shadow:0 0 7px var(--jewel)}
 .v-rar{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;
   background:rgba(11,11,15,.6);border:1px solid var(--v-line-soft);font:600 9px 'Inter';letter-spacing:.12em;text-transform:uppercase;backdrop-filter:blur(6px);color:var(--jewel)}
@@ -127,3 +128,95 @@
 /* layout container */
 .v-wrap{position:relative;z-index:1;max-width:430px;margin:0 auto;padding:0 16px 100px}
 .v-sec{margin-top:26px}
+
+/* ── Back link ───────────────────────────────────────────────── */
+.v-back{display:inline-flex;align-items:center;gap:6px;font:600 12px 'Inter';color:var(--v-muted);
+  background:none;border:0;cursor:pointer;padding:4px 0;transition:color .15s}
+.v-back:hover{color:var(--v-gold)}
+.v-back .a{font-size:15px;line-height:1}
+
+/* ── Cases list grid (denser than featured) ──────────────────── */
+.v-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-empty{grid-column:1/-1;text-align:center;padding:40px 0;color:var(--v-muted);font:500 12px 'Inter'}
+
+/* ── Case detail hero ────────────────────────────────────────── */
+.v-cdhero{position:relative;border-radius:24px;overflow:hidden;border:1px solid var(--v-line);
+  background:radial-gradient(90% 90% at 50% 30%,var(--tint),transparent 68%),linear-gradient(180deg,#16151b,#0c0b10);
+  padding:22px 20px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.v-cdhero .art{width:128px;height:128px;object-fit:contain;filter:drop-shadow(0 14px 26px rgba(0,0,0,.6));margin-bottom:14px}
+.v-cdhero .art.emoji{font-size:96px;line-height:128px}
+.v-cdhero h1{font:600 24px 'Space Grotesk';letter-spacing:-.01em;margin:0 0 4px}
+.v-cdhero .rtp{font:600 9px 'Inter';letter-spacing:.18em;text-transform:uppercase;color:var(--v-gold);margin-bottom:10px}
+
+/* ── Open controls ───────────────────────────────────────────── */
+.v-openbar{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:18px}
+.v-x10{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--v-line);color:var(--v-gold-hi);
+  font:700 13px 'Inter';text-transform:uppercase;letter-spacing:.04em;cursor:pointer;transition:border-color .15s}
+.v-x10:hover{border-color:var(--v-gold)} .v-x10 small{font:600 9px 'JetBrains Mono';color:var(--v-muted)}
+.v-x10:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── The reel (CS:GO-style horizontal scroll) ────────────────── */
+.v-reelbox{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--v-line);
+  background:radial-gradient(circle at 50% 50%,rgba(232,184,75,.06),transparent 60%),#0c0b10;padding:18px 0;margin-top:18px}
+.v-reelmask{position:relative;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)}
+.v-reelstrip{display:flex;gap:8px;padding:0 8px;will-change:transform}
+.v-reelitem{flex:0 0 92px;height:104px;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  background:radial-gradient(70% 70% at 50% 38%,var(--tint),transparent 72%),linear-gradient(180deg,#17161d,#0e0d12);
+  border:1px solid var(--v-line-soft);position:relative}
+.v-reelitem img{width:54px;height:54px;object-fit:contain}
+.v-reelitem .emoji{font-size:42px}
+.v-reelitem .pz{font:600 10px 'JetBrains Mono';color:var(--v-gold-hi)}
+.v-reelitem::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--jewel);opacity:.85}
+.v-pointer{position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);z-index:3;
+  background:linear-gradient(180deg,var(--v-gold-hi),transparent);box-shadow:0 0 14px var(--v-gold)}
+.v-pointer::before,.v-pointer::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
+  border-left:6px solid transparent;border-right:6px solid transparent}
+.v-pointer::before{top:-1px;border-top:7px solid var(--v-gold-hi)}
+.v-pointer::after{bottom:-1px;border-bottom:7px solid var(--v-gold-hi)}
+
+/* ── Win reveal overlay ──────────────────────────────────────── */
+.v-reveal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:24px;
+  background:rgba(8,8,11,.78);backdrop-filter:blur(8px);animation:vFade .25s ease}
+@keyframes vFade{from{opacity:0}to{opacity:1}}
+.v-revealcard{position:relative;width:100%;max-width:340px;border-radius:24px;padding:26px 22px 22px;text-align:center;
+  background:radial-gradient(90% 70% at 50% 0,var(--tint),transparent 70%),linear-gradient(180deg,#16151c,#0d0c11);
+  border:1px solid var(--jewel);box-shadow:0 30px 80px -30px var(--jewel),inset 0 1px 0 rgba(255,255,255,.08);
+  animation:vPop .4s cubic-bezier(.18,.9,.32,1.2)}
+@keyframes vPop{from{transform:scale(.86);opacity:0}to{transform:scale(1);opacity:1}}
+.v-revealcard .won{font:600 10px 'Inter';letter-spacing:.22em;text-transform:uppercase;color:var(--jewel);margin-bottom:14px}
+.v-revealcard .art{width:120px;height:120px;object-fit:contain;margin:0 auto 12px;filter:drop-shadow(0 12px 24px rgba(0,0,0,.6))}
+.v-revealcard .art.emoji{font-size:92px;line-height:120px}
+.v-revealcard h2{font:600 20px 'Space Grotesk';margin:0 0 3px}
+.v-revealcard .pay{font:600 22px 'JetBrains Mono';color:var(--v-gold-hi);margin:2px 0 18px;display:inline-flex;align-items:center;gap:7px}
+.v-revealcard .pay .coin{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--v-gold-hi),var(--v-gold-deep))}
+.v-revealacts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v-revealcard.wide{max-width:380px}
+.v-batchgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:6px 0 16px}
+.v-batchcell{position:relative;aspect-ratio:1;border-radius:9px;display:grid;place-items:center;
+  background:radial-gradient(70% 70% at 50% 40%,var(--tint),transparent 72%),#0e0d12;border:1px solid var(--v-line-soft)}
+.v-batchcell img{width:30px;height:30px;object-fit:contain} .v-batchcell .emoji{font-size:22px}
+.v-batchcell::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--jewel);opacity:.8}
+.v-batchtotal{font:600 22px 'JetBrains Mono';color:var(--v-gold-hi);display:inline-flex;align-items:center;gap:7px;margin:2px 0 16px}
+.v-batchtotal .coin{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--v-gold-hi),var(--v-gold-deep))}
+
+/* ── Basket grid (what's inside) ─────────────────────────────── */
+.v-basket{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.v-bitem{position:relative;border-radius:14px;padding:10px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:radial-gradient(80% 70% at 50% 30%,var(--tint),transparent 72%),var(--v-surface);border:1px solid var(--v-line-soft)}
+.v-bitem img{width:46px;height:46px;object-fit:contain}
+.v-bitem .emoji{font-size:36px;line-height:46px}
+.v-bitem .nm{font:600 10px 'Inter';color:var(--v-text);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.v-bitem .pz{font:600 11px 'JetBrains Mono';color:var(--v-gold-hi)}
+.v-bitem .pct{font:500 9px 'JetBrains Mono';color:var(--v-muted)}
+.v-bitem::after{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:var(--jewel);opacity:.7}
+
+/* ── Sort select + fairness ──────────────────────────────────── */
+.v-select{background:var(--v-surface-2);border:1px solid var(--v-line-soft);border-radius:9px;
+  font:600 11px 'Inter';color:var(--v-text);padding:6px 8px;outline:none}
+.v-select:focus{border-color:var(--v-line)}
+.v-fair{margin-top:16px;border-radius:14px;background:var(--v-surface);border:1px solid var(--v-line-soft);padding:11px 13px}
+.v-fair summary{font:600 10px 'Inter';letter-spacing:.16em;text-transform:uppercase;color:var(--v-muted);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}
+.v-fair summary::-webkit-details-marker{display:none}
+.v-fair .body{margin-top:10px;font:500 9.5px 'JetBrains Mono';color:var(--v-muted);word-break:break-all;display:grid;gap:4px}
+.v-fair .body .k{color:var(--v-muted-2)}
