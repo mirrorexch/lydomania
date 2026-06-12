@@ -198,6 +198,25 @@
 .v-hrow .vbtn{display:inline-flex;align-items:center;gap:3px;font:700 9px 'Inter';letter-spacing:.06em;text-transform:uppercase;color:var(--v-gold);cursor:pointer;padding:3px 6px;border-radius:6px}
 .v-hrow .vbtn:hover{background:rgba(232,184,75,.1)}
 
+/* ── Plinko ─────────────────────────────────────────────────────── */
+.v-seg{display:flex;gap:7px}
+.v-segbtn{flex:1;padding:9px 0;border-radius:10px;font:700 12px 'Inter';color:var(--v-muted);
+  background:var(--v-surface-2);border:1px solid var(--v-line-soft);cursor:pointer;transition:border-color .12s,color .12s;text-transform:capitalize}
+.v-segbtn:hover{color:var(--v-text);border-color:var(--v-line)}
+.v-segbtn.on{background:linear-gradient(180deg,#1f1a0e,#15110a);border-color:var(--v-gold);color:var(--v-gold-hi)}
+.v-buckets{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px}
+.v-bucket{flex:none;min-width:44px;padding:9px 4px;border-radius:9px;text-align:center;font:700 11px 'JetBrains Mono';
+  border:1px solid var(--v-line-soft);background:var(--v-surface-2);color:var(--v-muted)}
+.v-bucket[data-tier="1"]{color:var(--v-gold-deep);background:rgba(201,154,58,.12);border-color:rgba(201,154,58,.4)}
+.v-bucket[data-tier="2"]{color:var(--v-gold);background:rgba(232,184,75,.14);border-color:rgba(232,184,75,.45)}
+.v-bucket[data-tier="3"]{color:var(--v-gold-hi);background:rgba(232,184,75,.22);border-color:var(--v-gold);box-shadow:0 0 12px -2px rgba(232,184,75,.55)}
+.v-bucket[data-tier="4"]{color:var(--v-gold-hi);background:rgba(247,227,161,.28);border-color:var(--v-gold-hi);box-shadow:0 0 18px -2px rgba(247,227,161,.7)}
+.v-bucket.hit{outline:2px solid var(--v-text);outline-offset:1px}
+.v-lastres{margin-top:12px;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:11px;
+  background:var(--v-surface-2);border:1px solid var(--v-line-soft);font:600 12px 'Inter'}
+.v-lastres .b{color:var(--v-muted)} .v-lastres .mx{color:var(--v-text);font-family:'JetBrains Mono'}
+.v-lastres .pay{margin-left:auto;font:700 12px 'JetBrains Mono';color:var(--v-gold-hi)}
+
 /* Bottom nav */
 .v-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:calc(100% - 28px);max-width:402px;z-index:40;
   display:flex;justify-content:space-around;padding:9px 6px;border-radius:18px;
