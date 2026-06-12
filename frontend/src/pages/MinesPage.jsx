@@ -151,66 +151,46 @@ export default function MinesPage({ user, balance, refreshBalance }) {
 
     return (
         <main
-            className="px-3 sm:px-5 pt-3 pb-24 max-w-2xl mx-auto w-full overflow-x-hidden space-y-4"
+            className="v-wrap"
             style={{ minHeight: "var(--app-vh, 100dvh)" }}
             data-testid="mines-page"
         >
-            <motion.div
-                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: PRM() ? 0 : 0.3 }}
-                className="relative rounded-2xl border border-gold-500/30 overflow-hidden p-4"
-                style={{
-                    minHeight: 130,
-                    background: "linear-gradient(120deg, rgba(20,12,5,0.95) 0%, rgba(20,12,5,0.5) 100%), radial-gradient(circle at 90% 50%, rgba(255,215,0,0.18), transparent 60%), radial-gradient(circle at 88% 30%, rgba(244,63,94,0.14), transparent 50%), #0b0905",
-                }}
-                data-testid="mines-hero"
-            >
-                <div className="flex items-center gap-2 mb-1.5">
-                    <Bomb className="w-4 h-4 text-rose-300" />
-                    <span className="text-[10px] uppercase tracking-[0.32em] font-mono text-rose-300/90">Provably fair</span>
-                </div>
-                <h1 className="text-2xl font-bold text-white">Mines</h1>
-                <p className="text-sm text-white/70 mt-1">Reveal safe cells. Cashout before you hit a bomb.</p>
-            </motion.div>
+            <header className="v-gamehead" data-game="mines" data-testid="mines-hero">
+                <div className="v-eyebrow"><Bomb className="w-3 h-3" /> Provably fair</div>
+                <h1 className="v-disp">Mines</h1>
+                <p>Reveal safe cells. Cash out before you hit a bomb.</p>
+            </header>
 
             {!game && (
-                <section className="rounded-xl bg-zinc-900/70 border border-white/10 p-3 space-y-3" data-testid="mines-controls">
-                    <div className="grid grid-cols-2 gap-2">
-                        <div>
-                            <label className="text-[10px] uppercase tracking-widest text-white/45 font-bold block mb-1">Bet (TON)</label>
+                <section className="v-card v-betpanel" data-testid="mines-controls">
+                    <div className="v-fields">
+                        <label className="v-field">
+                            <span className="lbl">Bet (TON)</span>
                             <input type="number" step="0.1" min="0.1" max="100" value={bet} onChange={(e) => setBet(e.target.value)}
-                                inputMode="decimal"
-                                className="w-full px-3 py-2 rounded-md bg-black/40 border border-white/10 text-white font-mono"
-                                data-testid="mines-bet-input"
+                                inputMode="decimal" data-testid="mines-bet-input"
                             />
-                        </div>
-                        <div>
-                            <label className="text-[10px] uppercase tracking-widest text-white/45 font-bold block mb-1">Mines · {minesCount}</label>
+                        </label>
+                        <label className="v-field">
+                            <span className="lbl">Mines · {minesCount}</span>
                             <input type="range" min="1" max="24" value={minesCount}
                                 onChange={(e) => setMinesCount(parseInt(e.target.value))}
-                                className="w-full accent-rose-400"
-                                data-testid="mines-count-slider"
+                                className="v-range" data-testid="mines-count-slider"
                             />
-                        </div>
+                        </label>
                     </div>
-                    <button type="button" onClick={start} disabled={busy}
-                        className="w-full py-3 rounded-xl bg-gradient-to-b from-gold-300 to-gold-500 hover:brightness-110 text-zinc-950 font-bold text-sm disabled:opacity-40 flex items-center justify-center gap-2 shadow-[0_8px_24px_-6px_rgba(212,175,55,0.55)]"
-                        data-testid="mines-start-btn"
-                    >
+                    <button type="button" onClick={start} disabled={busy} className="v-cta v-wide" data-testid="mines-start-btn">
                         {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Starting…</> : <><Bomb className="w-4 h-4" /> Start round</>}
                     </button>
                 </section>
             )}
 
             {game && (
-                <section className="rounded-xl bg-zinc-900/70 border border-white/10 p-3" data-testid="mines-grid-section">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="text-[11px] font-mono text-white/55">
-                            <span className="text-white/45">Mines:</span> {game.mines_count} · <span className="text-white/45">Bet:</span> {formatTON(game.bet_ton)} TON
-                        </div>
-                        <div className="font-luxe text-2xl font-bold text-gold-bright tabular-nums leading-none drop-shadow-[0_0_10px_rgba(255,215,0,0.45)]" data-testid="mines-current-mult">{mult}×</div>
+                <section className="v-card v-betpanel" data-testid="mines-grid-section">
+                    <div className="v-minetop">
+                        <div className="meta"><span className="v-muted">Mines</span> <b>{game.mines_count}</b> · <span className="v-muted">Bet</span> <b>{formatTON(game.bet_ton)}</b> TON</div>
+                        <div className="v-mult" data-testid="mines-current-mult">{mult}×</div>
                     </div>
-                    <div className="grid grid-cols-5 gap-1.5 mb-3" data-testid="mines-grid">
+                    <div className="v-minesgrid" data-testid="mines-grid">
                         {Array.from({ length: 25 }, (_, i) => i).map((cell) => {
                             const isRevealed = revealed.includes(cell);
                             return (
@@ -220,11 +200,7 @@ export default function MinesPage({ user, balance, refreshBalance }) {
                                     whileTap={PRM() ? {} : { scale: 0.9 }}
                                     disabled={isRevealed || busy}
                                     onClick={() => reveal(cell)}
-                                    className={`aspect-square rounded-md border text-sm font-bold flex items-center justify-center transition-all ${
-                                        isRevealed
-                                            ? "bg-gold-bright/15 border-gold-bright/55 text-gold-bright shadow-[0_0_12px_-2px_rgba(255,215,0,0.55)]"
-                                            : "bg-[var(--surface-2)] border-gold-500/15 text-gold-200/40 hover:border-gold-500/40 hover:text-gold-200"
-                                    }`}
+                                    className={`v-mcell${isRevealed ? " on" : ""}`}
                                     data-testid={`mines-cell-${cell}`}
                                 >
                                     {isRevealed ? <Gem className="w-4 h-4" /> : ""}
@@ -233,9 +209,7 @@ export default function MinesPage({ user, balance, refreshBalance }) {
                         })}
                     </div>
                     <button type="button" onClick={cashout} disabled={busy || revealed.length === 0}
-                        className="w-full py-2.5 rounded-xl bg-gradient-to-b from-gold-300 to-gold-500 text-zinc-950 font-bold text-sm hover:brightness-110 transition-all disabled:opacity-40 flex items-center justify-center gap-2 shadow-[0_8px_24px_-6px_rgba(212,175,55,0.45)]"
-                        data-testid="mines-cashout-btn"
-                    >
+                        className="v-cta v-wide" data-testid="mines-cashout-btn">
                         <Wallet className="w-4 h-4" /> Cashout · {formatTON(game.bet_ton * mult)} TON
                     </button>
                 </section>
@@ -244,14 +218,12 @@ export default function MinesPage({ user, balance, refreshBalance }) {
             {outcome && (
                 <motion.section
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl bg-zinc-900/70 border border-white/10 p-3"
+                    className={`v-outcome ${outcome.hit_mine ? "boom" : "win"}`}
                     data-testid="mines-outcome"
                 >
-                    <div className={`flex items-center gap-2 mb-2 ${outcome.hit_mine ? "text-rose-300" : "text-emerald-300"}`}>
+                    <div className="top">
                         {outcome.hit_mine ? <X className="w-4 h-4" /> : <Coins className="w-4 h-4" />}
-                        <span className="text-sm font-bold">
-                            {outcome.hit_mine ? "Boom — better luck next time" : `Cashed out · ${formatTON(outcome.payout_ton)} TON`}
-                        </span>
+                        <span>{outcome.hit_mine ? "Boom — better luck next time" : `Cashed out · ${formatTON(outcome.payout_ton)} TON`}</span>
                         <button
                             type="button"
                             onClick={() => setVerifyGame({
@@ -261,46 +233,37 @@ export default function MinesPage({ user, balance, refreshBalance }) {
                                 bet_ton: outcome.bet_ton, multiplier: outcome.multiplier ?? mult,
                                 revealed_count: outcome.revealed_count ?? revealed.length,
                             })}
-                            className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded bg-gold-bright/15 border border-gold-bright/45 text-gold-bright text-[10px] font-bold uppercase tracking-wider hover:bg-gold-bright/25 transition-colors"
+                            className="v-verify"
                             data-testid="mines-outcome-verify-btn"
                         >
                             <Shield className="w-3 h-3" /> Verify
                         </button>
                     </div>
-                    <div className="text-[11px] text-white/55 font-mono">
-                        Mines: [{outcome.mines.join(", ")}]
-                    </div>
+                    <div className="mines">Mines: [{outcome.mines.join(", ")}]</div>
                 </motion.section>
             )}
 
-            {/* Fix-E: History section with VERIFY chips */}
-            <section className="rounded-xl bg-zinc-900/70 border border-white/10 p-3" data-testid="mines-history">
-                <div className="flex items-center gap-2 mb-2">
-                    <History className="w-3.5 h-3.5 text-white/45" />
-                    <span className="text-[10px] uppercase tracking-widest text-white/45 font-bold">History</span>
-                </div>
+            {/* History with VERIFY chips */}
+            <section className="v-feed" data-testid="mines-history">
+                <div className="hd"><History className="w-3.5 h-3.5" /> History</div>
                 {history.length === 0 && (
-                    <p className="text-sm text-white/45 py-4 text-center" data-testid="mines-history-empty">No previous games.</p>
+                    <p className="v-feedempty" style={{ textAlign: "center", padding: "14px 0" }} data-testid="mines-history-empty">No previous games.</p>
                 )}
                 {history.map((h) => (
-                    <div key={h.game_id} className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-md bg-white/[0.03] border border-white/8 mb-1" data-testid={`mines-history-row-${h.game_id}`}>
-                        <span className={`text-[10px] uppercase font-bold tabular-nums ${
-                            h.status === "cashed_out" ? "text-emerald-300" : "text-rose-300"
-                        }`}>
+                    <div key={h.game_id} className="v-hrow" data-testid={`mines-history-row-${h.game_id}`}>
+                        <span className={`tag ${h.status === "cashed_out" ? "win" : "bust"}`}>
                             {h.status === "cashed_out" ? "WIN" : "BUST"}
                         </span>
-                        <span className="font-mono text-white/80">{formatTON(h.bet_ton)}→{formatTON(h.payout_ton || 0)} TON</span>
-                        <span className="text-[10px] text-white/45 tabular-nums">×{h.current_multiplier ?? 1.0}</span>
-                        <span className="ml-auto text-[9px] font-mono text-white/35">
-                            {(h.server_seed_hash || "").slice(0, 6)}…
-                        </span>
+                        <span className="amt">{formatTON(h.bet_ton)}→{formatTON(h.payout_ton || 0)} TON</span>
+                        <span className="mx">×{h.current_multiplier ?? 1.0}</span>
+                        <span className="hash">{(h.server_seed_hash || "").slice(0, 6)}…</span>
                         <button
                             type="button"
                             onClick={() => { setVerifyGame(h); tapMedium(); }}
-                            className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-bright/85 hover:text-gold-bright px-1.5 py-0.5 rounded hover:bg-gold-bright/10"
+                            className="vbtn"
                             data-testid={`mines-history-verify-${h.game_id}`}
                         >
-                            <Shield className="w-2.5 h-2.5" /> VERIFY
+                            <Shield className="w-2.5 h-2.5" /> Verify
                         </button>
                     </div>
                 ))}
