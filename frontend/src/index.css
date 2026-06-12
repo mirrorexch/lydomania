@@ -9,10 +9,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Obsidian Vault — new frontend design system (semantic .v-* classes). */
+@import "./styles/vault.css";
+
 html, body, #root {
     margin: 0;
-    background: var(--surface-0);
-    color: #ffffff;
+    background: var(--v-obsidian);
+    color: var(--v-text);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

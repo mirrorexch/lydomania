@@ -5,13 +5,14 @@ import { useTranslation } from "react-i18next";
 import "@/App.css";
 import { Toaster, toast } from "sonner";
 
-import { Header, BottomNav } from "@/components/Header";
+import { VaultHeader, VaultNav } from "@/components/VaultChrome";
+import VaultHome from "@/pages/VaultHome";
 import { AppShell } from "@/components/AppShell";
 import { DepositModal } from "@/components/DepositModal";
 import { DepositChoiceModal } from "@/components/DepositChoiceModal";
 import { OutOfTelegram } from "@/components/OutOfTelegram";
-import { CasesListPage } from "@/pages/CasesListPage";
-import { CaseDetailPage } from "@/pages/CaseDetailPage";
+import VaultCasesList from "@/pages/VaultCasesList";
+import VaultCaseDetail from "@/pages/VaultCaseDetail";
 import { InventoryPage } from "@/pages/InventoryPage";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { WithdrawalsPage } from "@/pages/WithdrawalsPage";
@@ -186,28 +187,22 @@ function App() {
 
     return (
         <BrowserRouter>
-            <div data-testid="app-root" className="min-h-screen cyber-grid-bg">
+            <div data-testid="app-root" className="min-h-screen v-app v-bg">
                 <AppShell
                     user={user}
-                    mobileHeader={
-                        <Header
-                            user={user}
-                            balance={balance}
-                            onLogout={handleLogout}
-                            onOpenDeposit={() => setChoiceOpen(true)}
-                        />
-                    }
-                    mobileNav={<BottomNav isAdmin={!!user?.is_admin} />}
+                    mobileHeader={<VaultHeader balance={balance} />}
+                    mobileNav={<VaultNav />}
                 >
                     <Routes>
-                        <Route path="/" element={<CasesListPage balance={balance} />} />
+                        <Route path="/" element={<VaultHome balance={balance} />} />
+                        <Route path="/cases" element={<VaultCasesList balance={balance} />} />
                         <Route
                             path="/case/:id"
-                            element={<CaseDetailPage balance={balance} refreshBalance={refreshBalance} />}
+                            element={<VaultCaseDetail balance={balance} refreshBalance={refreshBalance} />}
                         />
                         <Route
                             path="/cases/:id"
-                            element={<CaseDetailPage balance={balance} refreshBalance={refreshBalance} />}
+                            element={<VaultCaseDetail balance={balance} refreshBalance={refreshBalance} />}
                         />
                         <Route
                             path="/inventory"

@@ -8,7 +8,6 @@ import { http, tokenStore } from "@/lib/api";
 import { formatTON } from "@/lib/rarity";
 import { sfx } from "@/lib/sound";
 import { openCrashSocket } from "@/lib/crashWs";
-import { RollingNumber } from "@/components/RollingNumber";
 import {
     tapMedium, tapHeavy, notifySuccess, notifyError, notifyWarning, selectionChanged,
 } from "@/lib/haptics";
@@ -29,17 +28,12 @@ function multiplierAt(elapsedSec) {
     return Math.exp(k * elapsedSec);
 }
 
-function tierClass(x) {
-    if (x < 1.5)  return "text-rose-400";
-    if (x < 5)    return "text-amber-300";
-    if (x < 25)   return "text-emerald-300";
-    return "text-yellow-300";
-}
-function tierBg(x) {
-    if (x < 1.5)  return "bg-rose-500/15 text-rose-300 border-rose-500/30";
-    if (x < 5)    return "bg-amber-500/15 text-amber-300 border-amber-500/30";
-    if (x < 25)   return "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
-    return "bg-yellow-500/15 text-yellow-300 border-yellow-500/30";
+// Multiplier tier → key driving the Vault tier colours (CSS data-tier).
+function tierKey(x) {
+    if (x < 1.5) return "low";
+    if (x < 5)   return "mid";
+    if (x < 25)  return "hi";
+    return "epic";
 }
 
 
@@ -483,77 +477,27 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
         <main
             data-testid="crash-page"
             // Polish · use --app-vh fallback (publishes from telegram.js) so the
-            // page fills the viewport on iOS Telegram WebView. Pre-mount tg.ready()
-            // has already populated --app-vh from viewportStableHeight.
+            // page fills the viewport on iOS Telegram WebView.
             style={{ minHeight: "var(--app-vh, 100dvh)" }}
-            className="mx-auto px-3 sm:px-6 pt-4 pb-28 lg:pb-6 space-y-4 max-w-[430px] sm:max-w-[640px] lg:max-w-[1100px]"
+            className="v-wrap"
         >
-            {/* Hero banner */}
-            <header
-                data-testid="crash-hero"
-                className="relative overflow-hidden rounded-3xl border border-white/10 -mx-1"
-                style={{
-                    backgroundImage: "url(/banners/crash.png)",
-                    backgroundSize: "auto 100%",
-                    backgroundPosition: "right center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundColor: "#0a0a14",
-                    minHeight: 180,
-                }}
-            >
-                <span aria-hidden className="absolute inset-0 pointer-events-none" style={{
-                    background: "linear-gradient(90deg, rgba(10,10,20,0.88) 0%, rgba(10,10,20,0.45) 60%, rgba(10,10,20,0.05) 100%)",
-                }} />
-                <div className="relative flex items-start justify-between gap-3 p-4 sm:p-5">
-                    <div className="min-w-0 self-end">
-                        <div className="text-[10px] uppercase tracking-[0.32em] text-gold-bright font-bold flex items-center gap-1.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]">
-                            <Rocket className="w-3 h-3" /> {t("crash.tag")}
-                        </div>
-                        <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-white mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-                            {t("crash.title")}
-                        </h1>
-                        <p className="text-[11px] sm:text-xs text-white/80 mt-1 max-w-[14rem] leading-snug drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                            {t("crash.subtitle")}
-                        </p>
-                    </div>
-                </div>
+            {/* Hero */}
+            <header data-testid="crash-hero" className="v-gamehead" data-game="crash">
+                <div className="v-eyebrow"><Rocket className="w-3 h-3" /> {t("crash.tag")}</div>
+                <h1 className="v-disp">{t("crash.title")}</h1>
+                <p>{t("crash.subtitle")}</p>
             </header>
 
-            {/* Phase chip + provably-fair entry */}
-            <div className="flex items-center justify-between gap-2 px-1">
-                <div className="text-xs sm:text-sm font-bold text-white/85 tabular-nums" data-testid="crash-phase-label">
-                    {phaseLabel}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-white/30 font-bold flex items-center gap-1">
-                    <Shield className="w-3 h-3" /> {t("crash.provably_fair")}
-                </div>
+            {/* Phase + provably-fair */}
+            <div className="v-phaserow">
+                <div className="ph" data-testid="crash-phase-label">{phaseLabel}</div>
+                <div className="pf"><Shield className="w-3 h-3" /> {t("crash.provably_fair")}</div>
             </div>
 
-            {/* Main multiplier display + Phase 11.7 rocket scene.
-                Was: 260px min-height card with only the multiplier number
-                  in the centre.
-                Now: 16:10 aspect-ratio stage (~ 380px tall on mobile) hosting
-                  a full rocket scene — starfield + parabolic trajectory +
-                  trail + explosion burst on crash. The big multiplier
-                  number now floats centred over the scene; the scene is
-                  rendered into the section background via absolute
-                  positioning so it doesn't push the multiplier around. */}
-            <section
-                data-testid="crash-display"
-                className="relative overflow-hidden rounded-3xl border border-gold-500/20 bg-[radial-gradient(circle_at_50%_45%,rgba(212,175,55,0.10),transparent_65%)] bg-surface-2 aspect-[16/10] sm:aspect-[16/9] flex flex-col items-center justify-center"
-            >
-                {/* Phase 11.7 — rocket scene fills the section behind the
-                    multiplier number. Star-field + rocket + explosion are
-                    self-contained; the rocket reads `liveXRef.current`
-                    every RAF tick. We only render the scene during
-                    running and crashed phases — in betting phase the
-                    big countdown sits alone, no need for stars. */}
+            {/* Multiplier stage + rocket scene */}
+            <section data-testid="crash-display" className="v-stage v-crashstage">
                 {(phase === "running" || phase === "crashed") && (
-                    <RocketAnimation
-                        phase={phase}
-                        multiplierRef={liveXRef}
-                        crashedX={crashedX}
-                    />
+                    <RocketAnimation phase={phase} multiplierRef={liveXRef} crashedX={crashedX} />
                 )}
                 <div className="relative z-10 w-full h-full flex items-center justify-center">
                 <AnimatePresence mode="wait">
@@ -561,42 +505,32 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                         <motion.div key="betting"
                             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                             className="text-center">
-                            <div className="text-[11px] uppercase tracking-[0.32em] text-gold-bright font-bold mb-2">
+                            <div className="v-mxsub" style={{ marginTop: 0, marginBottom: 10, color: "var(--v-gold)" }}>
                                 {t("crash.label.next_round_in")}
                             </div>
-                            <div className="font-display text-6xl sm:text-7xl font-black tabular-nums text-white">
+                            <div className="v-count">
                                 {state ? Math.max(0, Math.ceil((new Date(state.phase_ends_at).getTime() - Date.now()) / 1000)) : "—"}s
                             </div>
-                            <div className="text-xs text-white/55 mt-3">
-                                {t("crash.label.place_your_bet")}
-                            </div>
+                            <div className="v-mxsub">{t("crash.label.place_your_bet")}</div>
                         </motion.div>
                     )}
                     {phase === "running" && (
                         <motion.div key="running"
                             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                             className="text-center">
-                            {/* Phase 11.2.1 hot-fix — the big multiplier is mutated
-                                DIRECTLY in the DOM via multiplierDomRef so React
-                                doesn't re-render at 60 Hz. tier→colour switch
-                                happens via data-attribute + Tailwind data-[]
-                                selectors (no JSX re-render on tier change). */}
+                            {/* Phase 11.2.1 hot-fix — multiplier mutated DIRECTLY in the
+                                DOM via multiplierDomRef (no 60 Hz React re-render).
+                                tier→colour switch is via data-tier + .v-mxbig CSS. */}
                             <div
                                 ref={multiplierDomRef}
                                 data-testid="crash-multiplier-value"
                                 data-tier="low"
-                                className="font-display text-6xl sm:text-8xl font-black tabular-nums
-                                           text-rose-400
-                                           data-[tier=mid]:text-amber-300
-                                           data-[tier=hi]:text-emerald-300
-                                           data-[tier=epic]:text-yellow-300"
+                                className="v-mxbig"
                                 style={{ transform: "translateZ(0)", willChange: "transform, color", contain: "layout paint" }}
                             >
                                 1.00×
                             </div>
-                            <div className="text-[11px] uppercase tracking-[0.32em] text-white/55 font-bold mt-3">
-                                <Rocket className="inline w-3.5 h-3.5 mr-1" /> {t("crash.label.flying")}
-                            </div>
+                            <div className="v-mxsub"><Rocket className="inline w-3.5 h-3.5 mr-1" /> {t("crash.label.flying")}</div>
                         </motion.div>
                     )}
                     {phase === "crashed" && (
@@ -606,19 +540,19 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                             exit={{ opacity: 0 }}
                             transition={{ x: { duration: 0.45 } }}
                             className="text-center">
-                            <div className="text-[11px] uppercase tracking-[0.32em] text-rose-400 font-bold mb-2 flex items-center justify-center gap-1.5">
-                                <AlertTriangle className="w-3.5 h-3.5" /> {t("crash.label.crashed_at")}
+                            <div className="v-mxsub" style={{ marginTop: 0, marginBottom: 10, color: "var(--v-ruby)" }}>
+                                <AlertTriangle className="inline w-3.5 h-3.5 mr-1" /> {t("crash.label.crashed_at")}
                             </div>
-                            <div className="font-display text-6xl sm:text-8xl font-black tabular-nums text-rose-400 drop-shadow-[0_4px_24px_rgba(244,63,94,0.5)]">
+                            <div className="v-mxbig" data-tier="low" style={{ filter: "drop-shadow(0 4px 24px rgba(224,74,107,.45))" }}>
                                 {crashedX?.toFixed(2) ?? "—"}×
                             </div>
                             {myBet?.status === "won" && (
-                                <div className="text-[11px] text-emerald-300 mt-3 font-bold">
+                                <div className="v-mxsub" style={{ color: "var(--v-emerald)" }}>
                                     {t("crash.label.you_won", { x: myBet.cashed_at_x.toFixed(2), payout: formatTON(myBet.payout_ton) })}
                                 </div>
                             )}
                             {myBet?.status === "lost" && (
-                                <div className="text-[11px] text-rose-300 mt-3 font-bold">
+                                <div className="v-mxsub" style={{ color: "var(--v-ruby)" }}>
                                     {t("crash.label.you_lost", { amount: formatTON(myBet.amount_ton) })}
                                 </div>
                             )}
@@ -629,10 +563,10 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
             </section>
 
             {/* Bet / Cashout panel */}
-            <section className="rounded-2xl border border-white/10 bg-cyber-surface/55 p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                    <label className="block text-[10px] uppercase tracking-wider text-white/55 font-bold">
-                        {t("crash.bet_amount_ton")}
+            <section className="v-card v-betpanel">
+                <div className="v-fields">
+                    <label className="v-field">
+                        <span className="lbl">{t("crash.bet_amount_ton")}</span>
                         <input
                             data-testid="crash-bet-amount"
                             type="number" inputMode="decimal" min="0.1" max="200" step="0.1"
@@ -640,20 +574,11 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                             onChange={(e) => setBetAmount(e.target.value)}
                             disabled={phase !== "betting"}
                             aria-invalid={Boolean(betError)}
-                            className={`mt-1 w-full bg-cyber-bg border rounded-lg px-3 py-2 text-base text-white font-bold tabular-nums focus:outline-none disabled:opacity-50 transition ${
-                                betError
-                                    ? "border-rose-500/60 focus:border-rose-400"
-                                    : "border-white/15 focus:border-gold-bright/55"
-                            }`}
                         />
-                        {betError && (
-                            <span data-testid="crash-bet-error" className="block mt-1 text-[10px] text-rose-300 font-bold normal-case">
-                                {t(betError)}
-                            </span>
-                        )}
+                        {betError && <span data-testid="crash-bet-error" className="err">{t(betError)}</span>}
                     </label>
-                    <label className="block text-[10px] uppercase tracking-wider text-white/55 font-bold">
-                        {t("crash.auto_cashout_x")}
+                    <label className="v-field">
+                        <span className="lbl">{t("crash.auto_cashout_x")}</span>
                         <input
                             data-testid="crash-auto-x"
                             type="number" inputMode="decimal" min="1.01" step="0.01" placeholder={t("crash.auto_cashout_placeholder")}
@@ -661,50 +586,28 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                             onChange={(e) => setAutoX(e.target.value)}
                             disabled={phase !== "betting"}
                             aria-invalid={Boolean(autoXError)}
-                            className={`mt-1 w-full bg-cyber-bg border rounded-lg px-3 py-2 text-base text-white font-bold tabular-nums focus:outline-none disabled:opacity-50 transition ${
-                                autoXError
-                                    ? "border-rose-500/60 focus:border-rose-400"
-                                    : "border-white/15 focus:border-gold-bright/55"
-                            }`}
                         />
-                        {autoXError && (
-                            <span data-testid="crash-auto-error" className="block mt-1 text-[10px] text-rose-300 font-bold normal-case">
-                                {t(autoXError)}
-                            </span>
-                        )}
+                        {autoXError && <span data-testid="crash-auto-error" className="err">{t(autoXError)}</span>}
                     </label>
                 </div>
-                <div className="flex items-center gap-2 -mt-1">
+                <div className="v-chips">
                     {[0.5, 1, 5, 25].map((v) => (
-                        <button
-                            key={v}
+                        <button key={v} className="v-chip" data-testid={`crash-quick-${v}`}
                             onClick={() => { selectionChanged(); setBetAmount(v); }}
-                            data-testid={`crash-quick-${v}`}
-                            disabled={phase !== "betting"}
-                            className="text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md border border-white/15 bg-white/[0.04] text-white/65 hover:text-white hover:border-white/30 disabled:opacity-40"
-                        >
-                            {v}
-                        </button>
+                            disabled={phase !== "betting"}>{v}</button>
                     ))}
                 </div>
                 {!canCashout ? (
                     insufficient ? (
-                        <a
-                            href="#deposit"
-                            data-testid="crash-deposit-cta"
-                            onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("lydo:open-deposit")); }}
-                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-b from-gold-300 to-gold-500 hover:brightness-110 text-zinc-950 font-display font-bold text-sm rounded-xl py-3 uppercase tracking-wide shadow-[0_8px_24px_-6px_rgba(212,175,55,0.55)]"
-                        >
+                        <a href="#deposit" data-testid="crash-deposit-cta" className="v-cta v-wide"
+                            onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("lydo:open-deposit")); }}>
                             {t("crash.deposit_cta")}
                         </a>
                     ) : (
-                        <button
-                            data-testid="crash-bet-btn"
+                        <button data-testid="crash-bet-btn" className="v-cta v-wide"
                             onClick={placeBet}
                             disabled={!canBet || placing || Boolean(blockingError)}
-                            title={blockingError ? t(blockingError) : undefined}
-                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-b from-gold-300 to-gold-500 hover:brightness-110 text-zinc-950 font-display font-bold text-sm rounded-xl py-3 uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_8px_24px_-6px_rgba(212,175,55,0.55)]"
-                        >
+                            title={blockingError ? t(blockingError) : undefined}>
                             <Zap className="w-4 h-4" />
                             {placing
                                 ? t("crash.placing")
@@ -714,12 +617,8 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                         </button>
                     )
                 ) : (
-                    <button
-                        data-testid="crash-cashout-btn"
-                        onClick={cashout}
-                        disabled={cashingOut}
-                        className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-display font-bold text-sm rounded-xl py-3 uppercase tracking-wide disabled:opacity-40 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.5)]"
-                    >
+                    <button data-testid="crash-cashout-btn" className="v-cta v-cta--emerald v-wide"
+                        onClick={cashout} disabled={cashingOut}>
                         <TrendingUp className="w-4 h-4" />
                         {t("crash.cashout_now", { x: liveX.toFixed(2), payout: formatTON(myBet.amount_ton * liveX) })}
                     </button>
@@ -727,20 +626,12 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
             </section>
 
             {/* History strip */}
-            <section data-testid="crash-history" className="rounded-2xl border border-white/10 bg-cyber-surface/35 p-3">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                    <History className="w-3.5 h-3.5 text-white/40" />
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-white/55 font-bold">{t("crash.history_label")}</div>
-                </div>
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                    {history.length === 0 && (
-                        <div className="text-[10px] text-white/30 italic px-1 py-1">{t("crash.no_history")}</div>
-                    )}
+            <section data-testid="crash-history" className="v-feed">
+                <div className="hd"><History className="w-3.5 h-3.5" /> {t("crash.history_label")}</div>
+                <div className="v-histrip">
+                    {history.length === 0 && <div className="v-feedempty">{t("crash.no_history")}</div>}
                     {history.map((h, i) => (
-                        <span
-                            key={h.round_id || i}
-                            className={`px-2 py-1 rounded-md text-[10px] font-bold tabular-nums border flex-shrink-0 ${tierBg(h.crash_multiplier)}`}
-                        >
+                        <span key={h.round_id || i} className="v-hpill" data-tier={tierKey(h.crash_multiplier)}>
                             {h.crash_multiplier?.toFixed(2)}×
                         </span>
                     ))}
@@ -748,37 +639,19 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
             </section>
 
             {/* Live bets feed */}
-            <section data-testid="crash-bets-feed" className="rounded-2xl border border-white/10 bg-cyber-surface/35 p-3">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                    <Users className="w-3.5 h-3.5 text-white/40" />
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-white/55 font-bold">
-                        {t("crash.bets_label", { n: bets.length })}
-                    </div>
-                </div>
-                <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                    {bets.length === 0 && (
-                        <div className="text-[10px] text-white/30 italic px-1 py-1">{t("crash.no_bets")}</div>
-                    )}
+            <section data-testid="crash-bets-feed" className="v-feed">
+                <div className="hd"><Users className="w-3.5 h-3.5" /> {t("crash.bets_label", { n: bets.length })}</div>
+                <div style={{ maxHeight: 264, overflowY: "auto" }}>
+                    {bets.length === 0 && <div className="v-feedempty">{t("crash.no_bets")}</div>}
                     {bets.map((b) => (
-                        <div
-                            key={b.bet_id}
-                            className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg bg-white/[0.03] border border-white/10"
-                        >
-                            {b.photo_url ? (
-                                <img src={b.photo_url} alt="" className="w-5 h-5 rounded-full" />
-                            ) : (
-                                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gold-300 to-gold-600" />
-                            )}
-                            <span className="flex-1 truncate text-white/75">{b.username || "anon"}</span>
-                            <span className="font-bold tabular-nums text-white/85">{formatTON(b.amount_ton)} TON</span>
+                        <div key={b.bet_id} className="v-betrow">
+                            {b.photo_url ? <img src={b.photo_url} alt="" className="av" style={{ objectFit: "cover" }} /> : <div className="av" />}
+                            <span className="nm">{b.username || "anon"}</span>
+                            <span className="amt">{formatTON(b.amount_ton)} TON</span>
                             {b.status === "won" ? (
-                                <span className="text-[10px] font-bold tabular-nums text-emerald-300">
-                                    ×{b.cashed_at_x?.toFixed(2)} → +{formatTON(b.payout_ton)}
-                                </span>
+                                <span className="won">×{b.cashed_at_x?.toFixed(2)} → +{formatTON(b.payout_ton)}</span>
                             ) : (b.auto_cashout_x ? (
-                                <span className="text-[10px] font-bold tabular-nums text-gold-bright">
-                                    auto {b.auto_cashout_x.toFixed(2)}×
-                                </span>
+                                <span className="auto">auto {b.auto_cashout_x.toFixed(2)}×</span>
                             ) : null)}
                         </div>
                     ))}

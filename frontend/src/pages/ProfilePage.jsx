@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTonAddress, TonConnectButton } from "@tonconnect/ui-react";
 import {
-    User as UserIcon, ArrowUpRight, Users as UsersIcon,
+    ArrowUpRight, Users as UsersIcon,
     Shield, LogOut, ChevronRight, Diamond, Wallet,
 } from "lucide-react";
 import { formatTON } from "@/lib/rarity";
@@ -25,19 +25,13 @@ import { RollingNumber } from "@/components/RollingNumber";
 
 
 const Row = ({ to, icon: Icon, label, sub, testid }) => (
-    <Link
-        to={to}
-        data-testid={testid}
-        className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-cyber-surface/55 border border-white/10 hover:border-cyber-cyan/40 transition group"
-    >
-        <div className="p-2 rounded-lg bg-white/[0.04] border border-white/10 group-hover:border-cyber-cyan/40 transition">
-            <Icon className="w-4 h-4 text-cyber-cyan" />
+    <Link to={to} data-testid={testid} className="v-prow">
+        <div className="ic"><Icon className="w-4 h-4" /></div>
+        <div className="tx">
+            <b className="truncate">{label}</b>
+            {sub && <span className="truncate">{sub}</span>}
         </div>
-        <div className="flex-1 min-w-0">
-            <div className="font-display text-sm font-bold text-white truncate">{label}</div>
-            {sub && <div className="text-[10px] text-white/45 truncate">{sub}</div>}
-        </div>
-        <ChevronRight className="w-4 h-4 text-white/35 group-hover:text-cyber-cyan group-hover:translate-x-0.5 transition" />
+        <ChevronRight className="w-4 h-4 ch" />
     </Link>
 );
 
@@ -53,81 +47,52 @@ export default function ProfilePage({ user, balance, onLogout }) {
     return (
         <main
             data-testid="profile-page"
-            className="mx-auto px-3 sm:px-6 pt-4 pb-32 lg:pb-6 space-y-5
-                       max-w-[430px] sm:max-w-[560px] lg:max-w-[640px]"
+            className="v-wrap"
+            style={{ minHeight: "var(--app-vh, 100dvh)" }}
         >
             {/* Identity card */}
-            <section
-                data-testid="profile-identity"
-                className="rounded-2xl bg-gradient-to-br from-cyber-purple/15 via-cyber-surface/60 to-cyber-cyan/10 border border-white/10 p-4 flex items-center gap-3"
-            >
-                {/* Phase 6h — Avatar ring: cyan→purple glow PNG sits behind the
-                    avatar (w-14 × 1.45 ≈ w-20). Subtle 4s pulse for life.
-                    Phase 6i: ring asset is opaque dark-bg so we use
-                    mix-blend-mode: screen — dark pixels become transparent and
-                    only the bright ring contributes additively. No black square. */}
-                <div className="relative w-14 h-14 flex-shrink-0">
+            <section data-testid="profile-identity" className="v-idcard" style={{ marginTop: 6 }}>
+                <div className="relative" style={{ width: 54, height: 54, flex: "none" }}>
                     <img
                         src="/banners/profile_avatar_ring.png"
                         alt=""
                         aria-hidden="true"
                         className="absolute top-1/2 left-1/2 w-20 h-20 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none object-contain"
-                        style={{
-                            animation: "lydoRingPulse 4s ease-in-out infinite",
-                            mixBlendMode: "screen",
-                        }}
+                        style={{ animation: "lydoRingPulse 4s ease-in-out infinite", mixBlendMode: "screen" }}
                     />
                     {user?.photo_url ? (
-                        <img
-                            src={user.photo_url}
-                            alt=""
-                            className="relative w-14 h-14 rounded-full object-cover ring-2 ring-cyber-cyan/40"
-                        />
+                        <img src={user.photo_url} alt="" className="relative v-avatar" />
                     ) : (
-                        <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyber-purple to-cyber-cyan flex items-center justify-center font-display text-xl font-black">
+                        <div className="relative v-avatar ph">
                             {(user?.first_name || user?.username || "L").slice(0, 1).toUpperCase()}
                         </div>
                     )}
                 </div>
                 <div className="min-w-0 flex-1">
-                    <div className="font-display text-lg font-black truncate">
-                        {user?.first_name || user?.username || "Player"}
-                    </div>
-                    <div className="text-[11px] text-white/55 font-mono truncate">
+                    <div className="v-idname truncate">{user?.first_name || user?.username || "Player"}</div>
+                    <div className="v-idhandle truncate">
                         {user?.username ? `@${user.username}` : `tg${user?.telegram_id || ""}`}
                     </div>
                 </div>
                 {isAdmin && (
-                    <span
-                        data-testid="profile-admin-badge"
-                        className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-gold-bright/15 text-gold-bright border border-gold-bright/40"
-                    >
+                    <span data-testid="profile-admin-badge" className="v-btag gold">
                         {t("profile.admin_badge")}
                     </span>
                 )}
             </section>
 
             {/* Balance + wallet */}
-            <section className="rounded-2xl bg-cyber-surface/55 border border-white/10 p-4 space-y-3">
-                <div className="flex items-baseline justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">
-                        {t("profile.balance")}
-                    </span>
-                    <span
-                        data-testid="profile-balance"
-                        className="font-display text-2xl font-black tabular-nums text-cyber-cyan"
-                    >
-                        <RollingNumber
-                            value={balance ?? 0}
-                            format={(n) => formatTON(n)}
-                            duration={0.7}
-                        />
-                        {" "}<span className="text-xs text-white/55">TON</span>
+            <section className="v-balcard" style={{ marginTop: 14 }}>
+                <div className="v-balrow">
+                    <span className="v-ballbl">{t("profile.balance")}</span>
+                    <span data-testid="profile-balance" className="v-balval">
+                        <RollingNumber value={balance ?? 0} format={(n) => formatTON(n)} duration={0.7} />
+                        {" "}<span style={{ fontSize: 13, color: "var(--v-muted)" }}>TON</span>
                     </span>
                 </div>
-                <div className="flex items-center gap-2 pt-2 border-t border-white/8">
-                    <Wallet className="w-4 h-4 text-cyber-purple flex-shrink-0" />
-                    <span className="text-[11px] text-white/55 flex-1 truncate">
+                <div className="flex items-center gap-2 pt-3 mt-3" style={{ borderTop: "1px solid var(--v-line-soft)" }}>
+                    <Wallet className="w-4 h-4 flex-shrink-0" style={{ color: "var(--v-gold)" }} />
+                    <span className="flex-1 truncate" style={{ font: "500 11px 'Inter'", color: "var(--v-muted)" }}>
                         {short ? t("profile.wallet_connected", { addr: short }) : t("profile.wallet_disconnected")}
                     </span>
                     <TonConnectButton className="!h-8" />
@@ -135,7 +100,7 @@ export default function ProfilePage({ user, balance, onLogout }) {
             </section>
 
             {/* Shortcuts */}
-            <section className="space-y-2">
+            <section className="space-y-2 mt-4">
                 <Row
                     to="/withdrawals"
                     icon={ArrowUpRight}
@@ -169,25 +134,18 @@ export default function ProfilePage({ user, balance, onLogout }) {
             </section>
 
             {/* Preferences */}
-            <section className="rounded-2xl bg-cyber-surface/55 border border-white/10 p-4 space-y-3">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">
-                    {t("profile.preferences")}
-                </div>
+            <section className="v-balcard mt-4 space-y-3">
+                <div className="v-ballbl">{t("profile.preferences")}</div>
                 <div className="flex items-center gap-3">
                     <LanguageToggle data-testid="profile-language-toggle" />
                     <SoundToggle data-testid="profile-sound-toggle" />
                 </div>
-                {/* Phase 6g · Step 11 — Telegram fullscreen toggle (Bot API 8.0+).
-                    Default ON, persisted in localStorage["lydomania:fullscreen"]. */}
+                {/* Phase 6g · Step 11 — Telegram fullscreen toggle (Bot API 8.0+). */}
                 <FullscreenToggle data-testid="profile-fullscreen-toggle" />
             </section>
 
             {/* Sign out */}
-            <button
-                onClick={() => onLogout?.()}
-                data-testid="profile-logout-btn"
-                className="w-full rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/15 transition px-4 py-3 inline-flex items-center justify-center gap-2 text-rose-200 font-bold text-sm tracking-wider uppercase"
-            >
+            <button onClick={() => onLogout?.()} data-testid="profile-logout-btn" className="v-logout mt-4">
                 <LogOut className="w-4 h-4" /> {t("profile.logout")}
             </button>
         </main>

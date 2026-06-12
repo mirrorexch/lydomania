@@ -22,12 +22,6 @@ const MODE_COLOR = {
     high_wins: "border-emerald-400/40 text-emerald-300 bg-emerald-400/10",
     low_wins:  "border-rose-400/40 text-rose-300 bg-rose-400/10",
 };
-const STATUS_COLOR = {
-    open:    "bg-gold-500/15 text-gold-200 border-gold-500/30",
-    ready:   "bg-yellow-400/15 text-yellow-300 border-yellow-400/30",
-    rolling: "bg-purple-400/15 text-purple-300 border-purple-400/30",
-};
-
 export default function BattlesLobbyPage({ user, refreshBalance }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -58,67 +52,38 @@ export default function BattlesLobbyPage({ user, refreshBalance }) {
     }, [rows, filterMode]);
 
     return (
-        <main className="mx-auto px-4 sm:px-6 pt-4 pb-24 lg:pb-6 space-y-4 max-w-[430px] sm:max-w-[760px] lg:max-w-[1100px]"
-              data-testid="battles-lobby-page">
+        <main className="v-wrap" data-testid="battles-lobby-page">
 
-            {/* Phase 6h — Hero banner: Spartan helmets + plasma swords artwork.
-                Phase 11.2.1: new centered hero artwork — switched to cover/center
-                so the title and Create CTA sit above the composition, not in the
-                empty left strip of the old right-anchored crop. */}
-            <header
-                data-testid="battles-hero"
-                className="relative overflow-hidden rounded-3xl border border-white/10 -mx-1 px-1"
-                style={{
-                    backgroundImage: "url(/banners/battles.png)",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundColor: "#0a0a14",
-                    minHeight: 180,
-                }}
-            >
-                <span
-                    aria-hidden
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                        background:
-                            "linear-gradient(180deg, rgba(10,10,20,0.10) 0%, rgba(10,10,20,0.55) 70%, rgba(10,10,20,0.78) 100%)",
-                    }}
-                />
-                <div className="relative flex items-start justify-between gap-3 p-4 sm:p-5">
+            {/* Hero */}
+            <header data-testid="battles-hero" className="v-gamehead" data-game="battles">
+                <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <div className="text-[10px] uppercase tracking-[0.32em] text-gold-bright font-bold flex items-center gap-1.5">
-                            <Swords className="w-3 h-3" /> {t("battles.tag")}
-                        </div>
-                        <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-white mt-1 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-                            {t("battles.lobby_title")}
-                        </h1>
-                        <p className="text-[11px] sm:text-xs text-white/70 mt-1 max-w-[14rem] leading-snug drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                            {t("battles.lobby_sub", { defaultValue: "Open in sync vs other players. Winner takes the pot." })}
-                        </p>
+                        <div className="v-eyebrow"><Swords className="w-3 h-3" /> {t("battles.tag")}</div>
+                        <h1 className="v-disp">{t("battles.lobby_title")}</h1>
+                        <p>{t("battles.lobby_sub", { defaultValue: "Open in sync vs other players. Winner takes the pot." })}</p>
                     </div>
-                    <Button
+                    <button
                         data-testid="battles-create-btn"
                         onClick={() => setShowCreate(true)}
-                        className="bg-gradient-to-b from-gold-300 to-gold-500 hover:brightness-110 text-zinc-950 font-bold flex-shrink-0 shadow-[0_8px_24px_-6px_rgba(212,175,55,0.55)]"
+                        className="v-cta v-sm flex-shrink-0"
                     >
                         <Plus className="w-4 h-4 mr-1" />{t("battles.create_cta")}
-                    </Button>
+                    </button>
                 </div>
             </header>
 
-            <div className="flex items-center gap-2 flex-wrap" data-testid="battles-filters">
-                <Filter className="w-3.5 h-3.5 text-white/40" />
+            <div className="flex items-center gap-2 flex-wrap mt-4" data-testid="battles-filters">
+                <Filter className="w-3.5 h-3.5" style={{ color: "var(--v-muted-2)" }} />
                 <FilterChip active={filterMode === "any"} onClick={() => setFilterMode("any")}>{t("battles.filter.any")}</FilterChip>
                 <FilterChip active={filterMode === "high_wins"} onClick={() => setFilterMode("high_wins")}>{t("battles.mode.high_wins")}</FilterChip>
                 <FilterChip active={filterMode === "low_wins"} onClick={() => setFilterMode("low_wins")}>{t("battles.mode.low_wins")}</FilterChip>
             </div>
 
-            <div className="space-y-3" data-testid="battles-list">
+            <div className="space-y-3 mt-4" data-testid="battles-list">
                 {filtered.length === 0 && (
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] py-12 text-center">
-                        <Swords className="w-8 h-8 mx-auto text-white/20 mb-2" />
-                        <div className="text-sm text-white/40">{t("battles.empty")}</div>
+                    <div className="v-bempty">
+                        <Swords className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--v-muted-2)" }} />
+                        <div style={{ font: "500 13px 'Inter'" }}>{t("battles.empty")}</div>
                     </div>
                 )}
                 {filtered.map((b) => (
@@ -142,13 +107,7 @@ export default function BattlesLobbyPage({ user, refreshBalance }) {
 
 
 const FilterChip = ({ active, onClick, children }) => (
-    <button
-        onClick={onClick}
-        className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border transition ${
-            active ? "bg-gold-bright/15 text-gold-bright border-gold-bright/45"
-                   : "bg-white/[0.04] text-white/50 border-white/10 hover:text-white/80"
-        }`}
-    >{children}</button>
+    <button onClick={onClick} className={`v-fchip${active ? " on" : ""}`}>{children}</button>
 );
 
 
@@ -177,45 +136,37 @@ function BattleCard({ b, user, refreshBalance }) {
         <Link
             to={`/battles/${b.battle_id}`}
             data-testid={`battle-row-${b.battle_id}`}
-            className="block relative overflow-hidden rounded-2xl border border-white/10 bg-cyber-surface/60 hover:border-gold-bright/55 hover:shadow-gold-glow p-4 transition"
+            className="v-bcard"
         >
             <div className="flex flex-wrap items-center gap-3">
-                <span className={`text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-md border ${MODE_COLOR[b.mode] || ""}`}>
-                    {t(`battles.mode.${b.mode}`)}
-                </span>
-                <span className={`text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-md border ${STATUS_COLOR[b.status] || ""}`}>
-                    {t(`battles.status.${b.status}`)}
-                </span>
-                <div className="flex items-center gap-1 text-xs text-white/60">
+                <span className="v-btag gold">{t(`battles.mode.${b.mode}`)}</span>
+                <span className={`v-btag${b.status === "open" ? " emerald" : ""}`}>{t(`battles.status.${b.status}`)}</span>
+                <div className="flex items-center gap-1 text-xs" style={{ color: "var(--v-muted)" }}>
                     <UsersIcon className="w-3 h-3" />
-                    <span className="font-mono">{filled}/{total}</span>
+                    <span className="v-mono">{filled}/{total}</span>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
                     <div className="text-right">
-                        <div className="text-[9px] uppercase tracking-wider text-white/40">{t("battles.entry")}</div>
-                        <div className="font-display font-bold text-base text-gold-bright tabular-nums">{formatTON(b.entry_ton)} TON</div>
+                        <div style={{ font: "700 9px 'Inter'", letterSpacing: ".08em", textTransform: "uppercase", color: "var(--v-muted-2)" }}>{t("battles.entry")}</div>
+                        <div className="v-mono" style={{ font: "700 15px 'JetBrains Mono'", color: "var(--v-gold-hi)" }}>{formatTON(b.entry_ton)} TON</div>
                     </div>
                     {canJoin && (
-                        <Button onClick={join} data-testid={`battle-join-${b.battle_id}`}
-                                className="bg-gradient-to-b from-gold-300 to-gold-500 hover:brightness-110 text-zinc-950 font-bold">
+                        <button onClick={join} data-testid={`battle-join-${b.battle_id}`} className="v-cta v-sm">
                             {t("battles.join")}
-                        </Button>
+                        </button>
                     )}
                     {mine && (
-                        <Button onClick={(e) => { e.stopPropagation(); navigate(`/battles/${b.battle_id}`); }}
-                                className="bg-white/10 hover:bg-white/20 text-white">
+                        <button onClick={(e) => { e.stopPropagation(); navigate(`/battles/${b.battle_id}`); }} className="v-ghost">
                             {t("battles.open")}<ChevronRight className="w-4 h-4 ml-1" />
-                        </Button>
+                        </button>
                     )}
                 </div>
             </div>
             <div className="flex items-center gap-2 mt-3 overflow-x-auto pb-1" data-testid={`battle-sequence-${b.battle_id}`}>
                 {b.case_sequence.map((slug, i) => (
-                    <div key={i} className="flex-shrink-0 px-2 py-1 rounded-md bg-white/[0.05] border border-white/10 text-[10px] font-mono text-white/70">
-                        #{i + 1} · {slug}
-                    </div>
+                    <div key={i} className="v-seqpill">#{i + 1} · {slug}</div>
                 ))}
-                <div className="ml-auto text-[10px] text-white/40 flex-shrink-0">
+                <div className="ml-auto flex-shrink-0" style={{ font: "500 10px 'Inter'", color: "var(--v-muted-2)" }}>
                     Pot {formatTON(b.pot_ton)} TON · rake {b.house_rake_pct}%
                 </div>
             </div>
@@ -273,7 +224,8 @@ function CreateBattleModal({ onClose, onCreated }) {
              onClick={onClose}>
             <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-cyber-surface border border-gold-500/30 rounded-2xl max-w-lg w-full p-5 max-h-[90vh] overflow-y-auto"
+                className="v-card rounded-2xl max-w-lg w-full p-5 max-h-[90vh] overflow-y-auto"
+                style={{ borderColor: "var(--v-line)" }}
             >
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="font-display font-bold text-lg">{t("battles.create.title")}</h2>

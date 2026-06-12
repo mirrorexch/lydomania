@@ -147,7 +147,7 @@ export default function BattleArenaPage({ user, refreshBalance }) {
         <main className="mx-auto px-3 sm:px-6 pt-3 pb-24 lg:pb-6 space-y-4 max-w-[430px] sm:max-w-[900px] lg:max-w-[1300px]"
               data-testid="battle-arena-page">
 
-            <header className="flex items-center justify-between gap-2 sticky top-[52px] lg:top-0 z-20 -mx-1 px-1 py-2 bg-cyber-bg/90 backdrop-blur-xl">
+            <header className="flex items-center justify-between gap-2 sticky top-[52px] lg:top-0 z-20 -mx-1 px-1 py-2 backdrop-blur-xl" style={{ background: "rgba(11,11,15,0.9)" }}>
                 <Link to="/battles" className="text-white/70 hover:text-white flex items-center gap-1">
                     <ArrowLeft className="w-4 h-4" /><span className="text-xs">{t("battles.lobby_short")}</span>
                 </Link>
@@ -232,11 +232,12 @@ function SeatPane({ seat, won, battleStatus, payoutPerWinner, reveals, activeRev
     return (
         <div
             data-testid={`seat-pane-${seat.seat_index}`}
-            className={`rounded-2xl border bg-cyber-surface/70 p-3 space-y-3 ${
+            className={`rounded-2xl border p-3 space-y-3 ${
                 won ? "border-gold-bright/60 shadow-[0_0_30px_rgba(255,215,0,0.45)]"
                     : isYou ? "border-gold-500/45"
                     : "border-white/10"
             }`}
+            style={{ background: "var(--v-surface)" }}
         >
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -313,7 +314,8 @@ function VerifyModal({ data, onClose }) {
              onClick={onClose} data-testid="battle-verify-modal">
             <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-cyber-surface border border-gold-500/30 rounded-2xl max-w-xl w-full p-5 max-h-[85vh] overflow-y-auto"
+                className="v-card rounded-2xl max-w-xl w-full p-5 max-h-[85vh] overflow-y-auto"
+                style={{ borderColor: "var(--v-line)" }}
             >
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
