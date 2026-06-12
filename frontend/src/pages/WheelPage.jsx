@@ -13,7 +13,6 @@ import {
     tapMedium, tapHeavy, notifySuccess, notifyError, notifyWarning, selectionChanged,
 } from "@/lib/haptics";
 import { RollingNumber } from "@/components/RollingNumber";
-import WheelFairnessModal from "@/components/wheel/WheelFairnessModal";
 import FairnessModal from "@/components/common/FairnessModal";  // generic (Phase 8 refactor)
 import { fireLegendaryBurst } from "@/lib/celebrations";
 
@@ -266,63 +265,19 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
         <main
             data-testid="wheel-page"
             style={{ minHeight: "var(--app-vh, 100dvh)" }}
-            className="mx-auto px-3 sm:px-6 pt-4 pb-28 lg:pb-6 space-y-4 max-w-[430px] sm:max-w-[640px] lg:max-w-[1100px]"
+            className="v-wrap"
         >
-            {/* Hero banner — Phase 11.3.2 cinematic ornate-gold ilustration.
-                Was: 180px-tall strip with `backgroundSize: auto 100%` aligned
-                  to `right center` (works only when the PNG is a narrow
-                  side-positioned illustration with a side gradient mask).
-                Now: full cinematic 16:9 hero with the new ornate gold wheel
-                  artwork centred (cover/center), a bottom-only dark vertical
-                  gradient for footer-pill readability, and the previously
-                  separate "Provably fair / next free spin" pill row pulled
-                  INTO the hero footer so the page opens with a single
-                  poster-like visual block instead of two stacked strips. */}
-            <header
-                data-testid="wheel-hero"
-                className="relative overflow-hidden rounded-3xl border border-white/10 -mx-1 aspect-[16/9]"
-                style={{
-                    backgroundImage: "url(/banners/wheel.png)",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center center",
-                    backgroundRepeat: "no-repeat",
-                    backgroundColor: "#0a0a14",
-                }}
-            >
-                {/* Vertical gradient — transparent at top so the ornate
-                    wheel artwork stays unmuddied, dark at bottom so the
-                    pill row + countdown stay legible. */}
-                <span
-                    aria-hidden
-                    className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/0 via-black/0 to-black/65"
-                />
-                {/* Soft left-side wash so the title/subtitle have enough
-                    contrast against any bright god-ray section of the art. */}
-                <span
-                    aria-hidden
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                        background: "linear-gradient(90deg, rgba(10,10,20,0.55) 0%, rgba(10,10,20,0.15) 35%, rgba(10,10,20,0) 60%)",
-                    }}
-                />
-                {/* Title cluster — left third */}
-                <div className="absolute top-0 left-0 p-4 sm:p-5 max-w-[60%] sm:max-w-[55%]">
-                    <div className="text-[10px] uppercase tracking-[0.32em] text-gold-bright font-bold flex items-center gap-1.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
-                        <Disc3 className="w-3 h-3" /> {t("wheel.tag")}
-                    </div>
-                    <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white mt-1 leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
-                        {t("wheel.title")}
-                    </h1>
-                    <p className="text-[11px] sm:text-xs text-white/85 mt-1.5 max-w-[18rem] leading-snug drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
-                        {t("wheel.subtitle")}
-                    </p>
-                </div>
-                {/* Footer pill row inside the hero — provably-fair + next free spin */}
-                <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 pb-3 sm:pb-4 flex items-center justify-between gap-2">
+            {/* Hero */}
+            <header data-testid="wheel-hero" className="v-gamehead" data-game="wheel">
+                <div className="v-eyebrow"><Disc3 className="w-3 h-3" /> {t("wheel.tag")}</div>
+                <h1 className="v-disp">{t("wheel.title")}</h1>
+                <p>{t("wheel.subtitle")}</p>
+                <div className="flex items-center justify-between gap-2 mt-3">
                     <button
                         type="button"
                         onClick={() => openFairness(null)}
-                        className="text-[10px] uppercase tracking-wider text-white/80 font-bold flex items-center gap-1 hover:text-white transition-colors rounded-full px-2.5 py-1 bg-black/50 backdrop-blur-sm border border-white/10 focus:outline-none focus:ring-1 focus:ring-gold-bright/50"
+                        className="pf"
+                        style={{ background: "none", border: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, color: "var(--v-muted)", font: "600 9px 'Inter'", letterSpacing: ".16em", textTransform: "uppercase" }}
                         data-testid="wheel-provably-fair-pill"
                         aria-label={t("wheel.fair.aria.open")}
                     >
@@ -330,13 +285,13 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                         <ChevronRight className="w-3 h-3 opacity-70" aria-hidden="true" />
                     </button>
                     {hasFreeToken ? (
-                        <div className="text-[10px] uppercase tracking-wider text-emerald-300 font-bold flex items-center gap-1 rounded-full px-2.5 py-1 bg-emerald-500/10 border border-emerald-400/30 backdrop-blur-sm">
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "var(--v-emerald)", font: "700 9px 'Inter'", letterSpacing: ".1em", textTransform: "uppercase", padding: "4px 9px", borderRadius: 999, background: "rgba(47,191,143,.1)", border: "1px solid rgba(47,191,143,.3)" }}>
                             <Ticket className="w-3 h-3" /> {t("wheel.free_token_available")}
                         </div>
                     ) : (
                         <div
                             data-testid="wheel-next-free-countdown"
-                            className="text-[10px] uppercase tracking-wider text-white/80 font-bold tabular-nums rounded-full px-2.5 py-1 bg-black/50 backdrop-blur-sm border border-white/10"
+                            style={{ color: "var(--v-muted)", font: "600 9px 'JetBrains Mono'", letterSpacing: ".08em", textTransform: "uppercase", padding: "4px 9px", borderRadius: 999, background: "var(--v-surface-2)", border: "1px solid var(--v-line-soft)" }}
                         >
                             {t("wheel.next_free_in", { time: countdown ?? "—" })}
                         </div>
@@ -347,7 +302,8 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             {/* Wheel section */}
             <section
                 data-testid="wheel-stage"
-                className="relative overflow-hidden rounded-3xl border border-gold-500/25 bg-[radial-gradient(circle_at_50%_45%,rgba(212,175,55,0.10),transparent_60%)] bg-surface-2 p-3 sm:p-6 flex flex-col items-center"
+                className="v-stage flex flex-col items-center"
+                style={{ padding: "18px 14px", marginTop: 14 }}
             >
                 <div className="relative" style={{ width: "min(320px, 88vw)", maxWidth: 320 }}>
                     {/* Pointer at 12 o'clock — Phase 11.3 premium needle.
@@ -487,37 +443,24 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                 {/* CTAs */}
                 <div className="w-full mt-4 sm:mt-6 space-y-2">
                     {hasFreeToken ? (
-                        <button
-                            data-testid="wheel-free-spin-btn"
-                            onClick={() => spin(true)}
-                            disabled={ctaDisabled}
-                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-b from-gold-300 to-gold-500 hover:brightness-110 text-zinc-950 font-display font-bold text-sm rounded-xl py-3 uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_8px_24px_-6px_rgba(212,175,55,0.55)]"
-                        >
+                        <button data-testid="wheel-free-spin-btn" onClick={() => spin(true)} disabled={ctaDisabled} className="v-cta v-wide">
                             <Ticket className="w-4 h-4" />
                             {spinning ? t("wheel.spinning") : t("wheel.free_spin")}
                         </button>
                     ) : insufficient ? (
-                        <button
-                            data-testid="wheel-deposit-cta"
-                            onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("lydo:open-deposit")); }}
-                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-gold-300 to-gold-500 hover:brightness-110 text-zinc-950 font-display font-bold text-sm rounded-xl py-3 uppercase tracking-wide"
-                        >
+                        <button data-testid="wheel-deposit-cta" className="v-cta v-wide"
+                            onClick={(e) => { e.preventDefault(); window.dispatchEvent(new CustomEvent("lydo:open-deposit")); }}>
                             {t("wheel.deposit_cta")}
                         </button>
                     ) : (
-                        <button
-                            data-testid="wheel-paid-spin-btn"
-                            onClick={() => spin(false)}
-                            disabled={ctaDisabled}
-                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-b from-gold-300 via-gold-bright to-gold-500 hover:brightness-110 text-zinc-950 font-display font-bold text-sm rounded-xl py-3 uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_8px_24px_-6px_rgba(255,215,0,0.55)]"
-                        >
+                        <button data-testid="wheel-paid-spin-btn" onClick={() => spin(false)} disabled={ctaDisabled} className="v-cta v-wide">
                             <Coins className="w-4 h-4" />
                             {spinning
                                 ? t("wheel.spinning")
                                 : t("wheel.paid_spin", { cost: formatTON(paidCost, 0) })}
                         </button>
                     )}
-                    <div className="text-center text-[10px] uppercase tracking-wider text-white/40 font-bold">
+                    <div className="text-center" style={{ font: "700 10px 'Inter'", letterSpacing: ".08em", textTransform: "uppercase", color: "var(--v-muted-2)" }}>
                         {t("wheel.free_tokens_count", { n: config?.free_spin_tokens ?? 0 })}
                     </div>
                 </div>
@@ -552,7 +495,8 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                         <motion.div
                             initial={{ y: 32, scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: 32, scale: 0.95 }}
                             transition={{ type: "spring", damping: 22, stiffness: 220 }}
-                            className="relative w-full max-w-md bg-cyber-surface border border-white/10 rounded-3xl p-5 overflow-hidden"
+                            className="v-card relative w-full max-w-md rounded-3xl p-5 overflow-hidden"
+                            style={{ borderColor: "var(--v-line)" }}
                         >
                             <WheelResultBody result={result} segments={segments} t={t} onClose={() => setResult(null)} />
                         </motion.div>
@@ -561,11 +505,8 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             </AnimatePresence>
 
             {/* Segment legend */}
-            <section data-testid="wheel-legend" className="rounded-2xl border border-white/10 bg-cyber-surface/35 p-3">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                    <Sparkles className="w-3.5 h-3.5 text-white/40" />
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-white/55 font-bold">{t("wheel.legend_title")}</div>
-                </div>
+            <section data-testid="wheel-legend" className="v-feed">
+                <div className="hd"><Sparkles className="w-3.5 h-3.5" /> {t("wheel.legend_title")}</div>
                 {segments.length === 0 ? (
                     <SkeletonRows />
                 ) : (
@@ -576,11 +517,8 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             </section>
 
             {/* Spin history */}
-            <section data-testid="wheel-history" className="rounded-2xl border border-white/10 bg-cyber-surface/35 p-3">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                    <History className="w-3.5 h-3.5 text-white/40" />
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-white/55 font-bold">{t("wheel.history_title")}</div>
-                </div>
+            <section data-testid="wheel-history" className="v-feed">
+                <div className="hd"><History className="w-3.5 h-3.5" /> {t("wheel.history_title")}</div>
                 {history.length === 0 ? (
                     <div className="rounded-xl border border-white/8 p-6 text-center">
                         <Disc3 className="mx-auto mb-2 w-6 h-6 text-white/30" />
