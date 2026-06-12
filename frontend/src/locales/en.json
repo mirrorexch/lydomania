@@ -1043,5 +1043,35 @@
     "gifts": "Gifts",
     "pass": "Pass",
     "more": "More"
+  },
+  "vhome": {
+    "live_jackpot": "Live Jackpot · TON Mainnet",
+    "in_vault": "TON in the vault",
+    "open_the": "Open the",
+    "vault_word": "vault",
+    "subtitle": "Provably-fair cases paid in real Telegram gift NFTs. Withdraw any time.",
+    "open_a_case": "Open a case →",
+    "featured": "Featured cases",
+    "all": "All →",
+    "loading_cases": "Loading cases…",
+    "open_short": "Open",
+    "g_crash": "Crash",
+    "g_mines": "Mines",
+    "g_wheel": "Wheel"
+  },
+  "vcase": {
+    "returns": "Returns ~{{pct}}%",
+    "per_open": "per open",
+    "you_won": "You won · {{mult}}×",
+    "batch_opened": "10× opened",
+    "sell_all": "Sell all",
+    "keep_all": "Keep all",
+    "sold_for": "Sold for {{amount}} TON",
+    "kept": "Kept in your gifts",
+    "kept_all": "Kept all in your gifts",
+    "sold_batch": "Sold 10 for {{amount}} TON",
+    "all_cases": "All cases",
+    "n_cases": "{{count}} cases",
+    "no_cases": "No cases available right now."
   }
 }

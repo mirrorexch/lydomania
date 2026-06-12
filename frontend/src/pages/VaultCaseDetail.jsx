@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
     fetchCase, openCase, openCaseBatch, fetchFairCurrent,
@@ -10,31 +11,32 @@ import { formatTON, rarityRank } from "@/lib/rarity";
 import { VaultReel } from "@/components/VaultReel";
 
 const SORTS = [
-    { v: "rarity_desc", l: "Best first" },
-    { v: "rarity_asc", l: "Worst first" },
-    { v: "prob_desc", l: "Most likely" },
+    { v: "rarity_desc", k: "case_detail.sort_highest" },
+    { v: "rarity_asc", k: "case_detail.sort_lowest" },
+    { v: "prob_desc", k: "case_detail.sort_most_likely" },
 ];
 
 function Coin() { return <span className="coin" />; }
 
 // ── Single-win reveal ────────────────────────────────────────────
 function WinReveal({ roll, casePrice, busy, onSell, onKeep }) {
+    const { t } = useTranslation();
     const item = roll.winning_item;
     const img = resolveImage(item.image_url);
     const mult = casePrice ? roll.payout_ton / casePrice : 0;
     return (
-        <div className="v-reveal" role="dialog" aria-label="You won">
+        <div className="v-reveal" role="dialog" aria-label={t("vcase.you_won", { mult: mult.toFixed(2) })}>
             <div className="v-revealcard" data-rarity={item.rarity}>
-                <div className="won">You won · {mult.toFixed(2)}×</div>
+                <div className="won">{t("vcase.you_won", { mult: mult.toFixed(2) })}</div>
                 {img ? <img className="art" src={img} alt={item.name} />
                     : <div className="art emoji">🎁</div>}
                 <h2 className="v-disp">{item.name}</h2>
                 <div className="pay v-mono"><Coin />{formatTON(roll.payout_ton)}</div>
                 <div className="v-revealacts">
                     <button className="v-cta v-cta--emerald" disabled={busy} onClick={() => onSell(roll.inventory_id)}>
-                        Sell · {formatTON(roll.payout_ton, 0)}
+                        {t("win_modal.sell", { amount: formatTON(roll.payout_ton, 0) })}
                     </button>
-                    <button className="v-ghost" disabled={busy} onClick={onKeep}>Keep</button>
+                    <button className="v-ghost" disabled={busy} onClick={onKeep}>{t("win_modal.keep")}</button>
                 </div>
             </div>
         </div>
@@ -43,12 +45,13 @@ function WinReveal({ roll, casePrice, busy, onSell, onKeep }) {
 
 // ── Batch (x10) summary ──────────────────────────────────────────
 function BatchReveal({ batch, busy, onSellAll, onKeepAll }) {
+    const { t } = useTranslation();
     const rolls = [...batch.rolls].sort((a, b) => rarityRank(b.winning_item.rarity) - rarityRank(a.winning_item.rarity));
     const top = rolls[0]?.winning_item?.rarity || "common";
     return (
-        <div className="v-reveal" role="dialog" aria-label="Batch result">
+        <div className="v-reveal" role="dialog" aria-label={t("vcase.batch_opened")}>
             <div className="v-revealcard wide" data-rarity={top}>
-                <div className="won">10× opened</div>
+                <div className="won">{t("vcase.batch_opened")}</div>
                 <div className="v-batchgrid">
                     {rolls.map((r, i) => {
                         const img = resolveImage(r.winning_item.image_url);
@@ -61,8 +64,8 @@ function BatchReveal({ batch, busy, onSellAll, onKeepAll }) {
                 </div>
                 <div className="v-batchtotal v-mono"><Coin />{formatTON(batch.total_won_ton)}</div>
                 <div className="v-revealacts">
-                    <button className="v-cta v-cta--emerald" disabled={busy} onClick={onSellAll}>Sell all</button>
-                    <button className="v-ghost" disabled={busy} onClick={onKeepAll}>Keep all</button>
+                    <button className="v-cta v-cta--emerald" disabled={busy} onClick={onSellAll}>{t("vcase.sell_all")}</button>
+                    <button className="v-ghost" disabled={busy} onClick={onKeepAll}>{t("vcase.keep_all")}</button>
                 </div>
             </div>
         </div>
@@ -82,6 +85,7 @@ function BasketTile({ e }) {
 }
 
 export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const nav = useNavigate();
     const [data, setData] = useState(null);
@@ -101,7 +105,7 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
                 if (off) return;
                 setData(c); setFair(f);
             } catch (e) {
-                toast.error("Could not load case", { description: e?.response?.data?.detail || e?.message });
+                toast.error(t("case_detail.load_failed"), { description: e?.response?.data?.detail || e?.message });
             }
         })();
         return () => { off = true; };
@@ -121,9 +125,9 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
     const open1 = async () => {
         if (!data || reel || roll) return;
         if (balance < data.price_ton) {
-            toast.error("Not enough TON", {
-                description: `Need ${formatTON(data.price_ton - balance)} more`,
-                action: { label: "Deposit", onClick: openDeposit },
+            toast.error(t("case_detail.not_enough_ton"), {
+                description: t("case_detail.need_more", { amount: formatTON(data.price_ton - balance) }),
+                action: { label: t("common.deposit"), onClick: openDeposit },
             });
             return;
         }
@@ -133,7 +137,7 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
             setReel(res);
             refreshBalance?.();
         } catch (e) {
-            toast.error("Open failed", { description: e?.response?.data?.detail || e?.message });
+            toast.error(t("case_detail.open_failed"), { description: e?.response?.data?.detail || e?.message });
         }
     };
 
@@ -141,9 +145,9 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
         if (!data || reel || batch) return;
         const cost = data.price_ton * 10;
         if (balance < cost) {
-            toast.error("Not enough TON for 10×", {
-                description: `Need ${formatTON(cost - balance)} more`,
-                action: { label: "Deposit", onClick: openDeposit },
+            toast.error(t("case_detail.not_enough_ton_x10"), {
+                description: t("case_detail.need_more_x10", { amount: formatTON(cost - balance) }),
+                action: { label: t("common.deposit"), onClick: openDeposit },
             });
             return;
         }
@@ -153,7 +157,7 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
             setBatch(res);
             refreshBalance?.();
         } catch (e) {
-            toast.error("10× open failed", { description: e?.response?.data?.detail || e?.message });
+            toast.error(t("case_detail.batch_failed"), { description: e?.response?.data?.detail || e?.message });
         }
     };
 
@@ -164,12 +168,12 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
         try {
             const r = await sellInventoryItem(invId);
             refreshBalance?.(r.balance_ton);
-            toast.success(`Sold for ${formatTON(roll.payout_ton)} TON`);
+            toast.success(t("vcase.sold_for", { amount: formatTON(roll.payout_ton) }));
         } catch (e) {
-            toast.error("Sell failed", { description: e?.response?.data?.detail || e?.message });
+            toast.error(t("win_modal.sell_failed"), { description: e?.response?.data?.detail || e?.message });
         } finally { setBusy(false); setRoll(null); refreshFair(); }
     };
-    const keepOne = () => { setRoll(null); refreshFair(); toast.success("Kept in your gifts"); };
+    const keepOne = () => { setRoll(null); refreshFair(); toast.success(t("vcase.kept")); };
 
     const sellAll = async () => {
         if (!batch) return;
@@ -179,13 +183,13 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
             try { last = (await sellInventoryItem(r.inventory_id)).balance_ton; } catch { /* skip */ }
         }
         if (last != null) refreshBalance?.(last);
-        toast.success(`Sold 10 for ${formatTON(batch.total_won_ton)} TON`);
+        toast.success(t("vcase.sold_batch", { amount: formatTON(batch.total_won_ton) }));
         setBusy(false); setBatch(null); refreshFair();
     };
-    const keepAll = () => { setBatch(null); refreshFair(); toast.success("Kept all in your gifts"); };
+    const keepAll = () => { setBatch(null); refreshFair(); toast.success(t("vcase.kept_all")); };
 
     if (!data) {
-        return <main className="v-wrap"><div className="v-empty" style={{ paddingTop: 80 }}>Loading case…</div></main>;
+        return <main className="v-wrap"><div className="v-empty" style={{ paddingTop: 80 }}>{t("case_detail.loading")}</div></main>;
     }
 
     const heroImg = resolveImage(data.image_url);
@@ -193,14 +197,16 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
 
     return (
         <main className="v-wrap">
-            <button className="v-back" onClick={() => nav(-1)}><span className="a">←</span> Back</button>
+            <button className="v-back" onClick={() => nav(-1)}><span className="a">←</span> {t("common.back")}</button>
 
             <section className="v-cdhero" data-rarity={data.basket?.length ? data.basket[0].rarity : "legendary"} style={{ marginTop: 10 }}>
-                {rtp && <div className="rtp">Returns ~{rtp}%</div>}
                 {heroImg ? <img className="art" src={heroImg} alt={data.name} /> : <div className="art emoji">🎁</div>}
-                <h1 className="v-disp">{data.name}</h1>
-                <div className="v-mono" style={{ font: "600 16px 'JetBrains Mono'", color: "var(--v-gold-hi)", display: "inline-flex", alignItems: "center", gap: 7 }}>
-                    <Coin />{formatTON(data.price_ton)} <span style={{ font: "600 10px 'Inter'", color: "var(--v-muted)", letterSpacing: ".1em", textTransform: "uppercase" }}>per open</span>
+                <div className="cd-meta">
+                    {rtp && <div className="rtp">{t("vcase.returns", { pct: rtp })}</div>}
+                    <h1 className="v-disp">{data.name}</h1>
+                    <div className="v-mono" style={{ font: "600 16px 'JetBrains Mono'", color: "var(--v-gold-hi)", display: "inline-flex", alignItems: "center", gap: 7 }}>
+                        <Coin />{formatTON(data.price_ton)} <span style={{ font: "600 10px 'Inter'", color: "var(--v-muted)", letterSpacing: ".1em", textTransform: "uppercase" }}>{t("vcase.per_open")}</span>
+                    </div>
                 </div>
             </section>
 
@@ -208,15 +214,15 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
 
             {!reel && (
                 <div className="v-openbar">
-                    <button className="v-cta" onClick={open1}>Open · {formatTON(data.price_ton, 0)} TON</button>
+                    <button className="v-cta" onClick={open1}>{t("case_detail.open_btn", { price: `${formatTON(data.price_ton, 0)} TON` })}</button>
                     <button className="v-x10" onClick={open10}>10×<small>{formatTON(data.price_ton * 10, 0)} TON</small></button>
                 </div>
             )}
 
             <div className="v-sechead" style={{ marginTop: 26 }}>
-                <h2 className="v-disp">What's inside</h2>
+                <h2 className="v-disp">{t("case_detail.whats_inside")}</h2>
                 <select className="v-select" value={sort} onChange={(e) => setSort(e.target.value)}>
-                    {SORTS.map((s) => <option key={s.v} value={s.v}>{s.l}</option>)}
+                    {SORTS.map((s) => <option key={s.v} value={s.v}>{t(s.k)}</option>)}
                 </select>
             </div>
             <div className="v-basket">
@@ -225,11 +231,11 @@ export const VaultCaseDetail = ({ balance = 0, refreshBalance }) => {
 
             {fair && (
                 <details className="v-fair">
-                    <summary>◆ Provably fair</summary>
+                    <summary>◆ {t("case_detail.fair_title")}</summary>
                     <div className="body">
-                        <div><span className="k">server seed hash</span><br />{fair.server_seed_hash}</div>
-                        <div><span className="k">nonce</span> {fair.nonce} · <span className="k">rotates in</span> {fair.rolls_until_rotation}</div>
-                        <div><span className="k">client seed</span><br />{fair.client_seed_suggestion}</div>
+                        <div><span className="k">{t("case_detail.fair_server_seed")}</span><br />{fair.server_seed_hash}</div>
+                        <div>{t("case_detail.fair_nonce", { nonce: fair.nonce, until: fair.rolls_until_rotation })}</div>
+                        <div><span className="k">{t("case_detail.fair_client_seed")}</span><br />{fair.client_seed_suggestion}</div>
                     </div>
                 </details>
             )}

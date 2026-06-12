@@ -1043,5 +1043,35 @@
     "gifts": "Подарки",
     "pass": "Пропуск",
     "more": "Ещё"
+  },
+  "vhome": {
+    "live_jackpot": "Живой джекпот · TON Mainnet",
+    "in_vault": "TON в хранилище",
+    "open_the": "Открой",
+    "vault_word": "хранилище",
+    "subtitle": "Честные кейсы с настоящими Telegram-подарками NFT. Вывод в любой момент.",
+    "open_a_case": "Открыть кейс →",
+    "featured": "Популярные кейсы",
+    "all": "Все →",
+    "loading_cases": "Загрузка кейсов…",
+    "open_short": "Открыть",
+    "g_crash": "Краш",
+    "g_mines": "Мины",
+    "g_wheel": "Колесо"
+  },
+  "vcase": {
+    "returns": "Возврат ~{{pct}}%",
+    "per_open": "за открытие",
+    "you_won": "Вы выиграли · {{mult}}×",
+    "batch_opened": "Открыто 10×",
+    "sell_all": "Продать всё",
+    "keep_all": "Оставить всё",
+    "sold_for": "Продано за {{amount}} TON",
+    "kept": "Сохранено в подарках",
+    "kept_all": "Всё сохранено в подарках",
+    "sold_batch": "Продано 10 за {{amount}} TON",
+    "all_cases": "Все кейсы",
+    "n_cases": "Кейсов: {{count}}",
+    "no_cases": "Сейчас нет доступных кейсов."
   }
 }
