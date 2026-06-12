@@ -237,83 +237,61 @@ export const InventoryPage = ({ refreshBalance }) => {
     }, [totals]);
 
     return (
-        <main className="mx-auto px-4 sm:px-6 pt-3 pb-24 lg:pb-6
-            max-w-[430px] sm:max-w-[640px] lg:max-w-[860px]" data-testid="inventory-page">
-            <div className="flex items-baseline justify-between mb-3">
-                <h1 className="font-display text-2xl font-black tracking-tight">{t("collection.title")}</h1>
+        <main className="v-wrap" style={{ minHeight: "var(--app-vh, 100dvh)" }} data-testid="inventory-page">
+            <div className="flex items-baseline justify-between mb-3" style={{ marginTop: 6 }}>
+                <h1 className="v-disp" style={{ font: "600 22px 'Space Grotesk'" }}>{t("collection.title")}</h1>
                 <div className="flex items-center gap-2">
                     <Link
                         to="/withdrawals"
                         data-testid="inv-withdrawals-link"
-                        className="text-[10px] font-bold uppercase tracking-wider text-cyber-cyan hover:text-cyber-purple inline-flex items-center gap-1"
+                        className="inline-flex items-center gap-1"
+                        style={{ font: "700 10px 'Inter'", letterSpacing: ".1em", textTransform: "uppercase", color: "var(--v-gold)" }}
                     >
                         {t("collection.withdrawals_link")} <ChevronRight className="w-3 h-3" />
                     </Link>
-                    <button onClick={reload} className="text-white/40 hover:text-cyber-cyan transition p-1" data-testid="inv-refresh-btn" aria-label={t("collection.refresh_aria")}>
+                    <button onClick={reload} className="p-1" style={{ color: "var(--v-muted-2)", background: "none", border: 0, cursor: "pointer" }} data-testid="inv-refresh-btn" aria-label={t("collection.refresh_aria")}>
                         <RefreshCcw className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
-            {/* Phase 6f — Withdraw CTA (replaces the bottom-nav Withdraw entry).
-                Links to the existing /withdrawals history page; the actual
-                withdraw-an-item flow stays in WithdrawModal mounted below. */}
-            <Link
-                to="/withdrawals"
-                data-testid="withdraw-cta"
-                className="group w-full mb-3 rounded-xl bg-gradient-to-r from-cyber-cyan/25 via-cyber-cyan/15 to-cyber-purple/20 border border-cyber-cyan/45 hover:border-cyber-cyan/80 hover:from-cyber-cyan/35 hover:to-cyber-purple/30 transition-all px-4 py-3 flex items-center gap-3"
-            >
-                <div className="p-2 rounded-lg bg-cyber-cyan/25 border border-cyber-cyan/45 group-hover:bg-cyber-cyan/40 transition">
-                    <ArrowUpRight className="w-5 h-5 text-cyber-cyan group-hover:text-white transition" />
+            {/* Withdraw CTA */}
+            <Link to="/withdrawals" data-testid="withdraw-cta" className="v-prow" style={{ marginBottom: 10 }}>
+                <div className="ic"><ArrowUpRight className="w-5 h-5" /></div>
+                <div className="tx">
+                    <b>{t("inventory.withdraw_cta_title")}</b>
+                    <span>{t("inventory.withdraw_cta_subtitle")}</span>
                 </div>
-                <div className="flex-1 text-left min-w-0">
-                    <div className="font-display text-sm font-black tracking-tight text-white">
-                        {t("inventory.withdraw_cta_title")}
-                    </div>
-                    <div className="text-[10px] text-white/55 leading-snug">
-                        {t("inventory.withdraw_cta_subtitle")}
-                    </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-cyber-cyan group-hover:translate-x-0.5 transition" />
+                <ChevronRight className="w-4 h-4 ch" />
             </Link>
 
-            {/* Phase 6e — Telegram Gift Deposit CTA */}
-            <button
-                data-testid="gift-deposit-cta"
-                onClick={() => setGiftDepositOpen(true)}
-                className="group w-full mb-4 rounded-xl bg-gradient-to-r from-cyber-purple/25 via-cyber-purple/15 to-cyber-cyan/25 border border-cyber-purple/45 hover:border-cyber-purple/80 hover:from-cyber-purple/35 hover:to-cyber-cyan/35 transition-all px-4 py-3 flex items-center gap-3"
-            >
-                <div className="p-2 rounded-lg bg-cyber-purple/25 border border-cyber-purple/45 group-hover:bg-cyber-purple/40 transition">
-                    <Gift className="w-5 h-5 text-cyber-purple group-hover:text-white transition" />
+            {/* Telegram Gift Deposit CTA */}
+            <button data-testid="gift-deposit-cta" onClick={() => setGiftDepositOpen(true)} className="v-prow" style={{ width: "100%", marginBottom: 16, cursor: "pointer" }}>
+                <div className="ic" style={{ color: "var(--v-emerald)" }}><Gift className="w-5 h-5" /></div>
+                <div className="tx text-left">
+                    <b>{t("gift_deposit.cta_title")}</b>
+                    <span>{t("gift_deposit.cta_subtitle")}</span>
                 </div>
-                <div className="flex-1 text-left min-w-0">
-                    <div className="font-display text-sm font-black tracking-tight text-white">
-                        {t("gift_deposit.cta_title")}
-                    </div>
-                    <div className="text-[10px] text-white/55 leading-snug">
-                        {t("gift_deposit.cta_subtitle")}
-                    </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-cyber-purple group-hover:translate-x-0.5 transition" />
+                <ChevronRight className="w-4 h-4 ch" />
             </button>
 
             <div className="grid grid-cols-2 gap-2 mb-4" data-testid="inv-totals">
-                <div className="rounded-xl border border-cyber-cyan/30 bg-gradient-to-br from-cyber-cyan/10 to-cyber-purple/10 p-3">
-                    <div className="text-[9px] uppercase font-bold tracking-[0.2em] text-cyber-cyan inline-flex items-center gap-1">
+                <div className="v-balcard" style={{ padding: 12 }}>
+                    <div className="v-ballbl inline-flex items-center gap-1" style={{ color: "var(--v-gold)" }}>
                         <Trophy className="w-3 h-3" /> {t("collection.owned_value")}
                     </div>
-                    <div className="font-display text-xl font-black mt-0.5 tabular-nums">
-                        <span className="text-white">{formatTON(totals?.total_value_unsold_ton)}</span>
-                        <span className="text-[10px] text-white/40 ml-1 font-bold">TON</span>
+                    <div className="v-disp" style={{ font: "800 20px 'Space Grotesk'", marginTop: 2 }}>
+                        {formatTON(totals?.total_value_unsold_ton)}
+                        <span style={{ font: "700 10px 'Inter'", color: "var(--v-muted-2)", marginLeft: 4 }}>TON</span>
                     </div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-cyber-surface/60 p-3">
-                    <div className="text-[9px] uppercase font-bold tracking-[0.2em] text-white/50 inline-flex items-center gap-1">
+                <div className="v-balcard" style={{ padding: 12 }}>
+                    <div className="v-ballbl inline-flex items-center gap-1">
                         <History className="w-3 h-3" /> {t("collection.all_time_won")}
                     </div>
-                    <div className="font-display text-xl font-black mt-0.5 tabular-nums">
-                        <span className="text-white">{formatTON(totals?.total_value_all_time_ton)}</span>
-                        <span className="text-[10px] text-white/40 ml-1 font-bold">TON</span>
+                    <div className="v-disp" style={{ font: "800 20px 'Space Grotesk'", marginTop: 2 }}>
+                        {formatTON(totals?.total_value_all_time_ton)}
+                        <span style={{ font: "700 10px 'Inter'", color: "var(--v-muted-2)", marginLeft: 4 }}>TON</span>
                     </div>
                 </div>
             </div>
@@ -326,17 +304,12 @@ export const InventoryPage = ({ refreshBalance }) => {
                             key={tab.value}
                             data-testid={`inv-tab-${tab.value}`}
                             onClick={() => setStatus(tab.value)}
-                            className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border whitespace-nowrap transition inline-flex items-center gap-1 ${
-                                status === tab.value
-                                    ? "bg-cyber-cyan/15 border-cyber-cyan/50 text-cyber-cyan"
-                                    : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
-                            }`}
+                            className={`v-fchip inline-flex items-center gap-1${status === tab.value ? " on" : ""}`}
+                            style={{ whiteSpace: "nowrap" }}
                         >
                             {tab.label}
                             {totals && n > 0 && (
-                                <span className={status === tab.value ? "text-cyber-cyan/80" : "text-white/40"}>
-                                    {n}
-                                </span>
+                                <span style={{ opacity: status === tab.value ? 0.85 : 0.5 }}>{n}</span>
                             )}
                         </button>
                     );
@@ -348,7 +321,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                     data-testid="inv-rarity-select"
                     value={rarity}
                     onChange={(e) => setRarity(e.target.value)}
-                    className="bg-cyber-surface border border-white/10 rounded-md px-2 py-1 text-white/80 focus:border-cyber-cyan outline-none"
+                    className="v-select"
                 >
                     <option value="all">{t("collection.all_rarities")}</option>
                     {rarityChips.map((r) => (
@@ -361,7 +334,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                     data-testid="inv-case-select"
                     value={caseId}
                     onChange={(e) => setCaseId(e.target.value)}
-                    className="bg-cyber-surface border border-white/10 rounded-md px-2 py-1 text-white/80 focus:border-cyber-cyan outline-none"
+                    className="v-select"
                 >
                     <option value="all">{t("collection.all_cases")}</option>
                     {cases.map((c) => (
@@ -372,7 +345,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                     data-testid="inv-sort-select"
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
-                    className="bg-cyber-surface border border-white/10 rounded-md px-2 py-1 text-white/80 focus:border-cyber-cyan outline-none ml-auto"
+                    className="v-select ml-auto"
                 >
                     {SORT_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -385,7 +358,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                     data-testid="inv-sell-all-btn"
                     onClick={handleSellAllVisible}
                     disabled={busy === "all"}
-                    className="w-full text-[11px] font-bold uppercase tracking-wider bg-gradient-to-r from-cyber-cyan/20 to-cyber-purple/20 border border-cyber-cyan/40 hover:border-cyber-cyan/70 text-cyber-cyan rounded-lg py-2 mb-3 transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                    className="v-cta v-wide v-sm mb-3"
                 >
                     <Wallet className="w-3 h-3" /> {t("collection.sell_all_visible", { count: items.length })}
                 </button>

@@ -62,13 +62,13 @@ const Row = ({ w, onCancel, busy }) => {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             data-testid={`withdrawal-row-${w.id}`}
-            className="rounded-xl bg-cyber-surface border border-white/10 p-3"
+            className="v-card rounded-xl p-3"
             style={{ boxShadow: `inset 0 0 14px ${color}11` }}
         >
             <div className="flex items-start gap-3">
                 <div
-                    className="w-14 h-14 rounded-lg bg-cyber-bg flex items-center justify-center flex-shrink-0"
-                    style={{ boxShadow: `inset 0 0 12px ${color}33`, border: `1px solid ${color}44` }}
+                    className="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: "var(--v-surface-2)", boxShadow: `inset 0 0 12px ${color}33`, border: `1px solid ${color}44` }}
                 >
                     <img
                         src={resolveImage(w.item_image_url)}
@@ -85,7 +85,7 @@ const Row = ({ w, onCancel, busy }) => {
                             </div>
                             <div className="font-bold text-sm truncate">{w.item_name}</div>
                             <div className="inline-flex items-center gap-1 text-xs font-mono font-bold mt-0.5">
-                                <Diamond className="w-3 h-3 text-cyber-cyan" />
+                                <Diamond className="w-3 h-3" style={{ color: "var(--v-gold)" }} />
                                 {formatTON(w.payout_ton)}
                                 <span className="text-[9px] text-white/40 ml-0.5">TON</span>
                             </div>
@@ -116,7 +116,8 @@ const Row = ({ w, onCancel, busy }) => {
                             target="_blank"
                             rel="noreferrer"
                             data-testid={`withdrawal-tonscan-${w.id}`}
-                            className="inline-flex items-center gap-1 text-[10px] font-bold text-cyber-cyan hover:text-cyber-purple px-2 py-1 rounded-md bg-white/5 border border-white/10"
+                            className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md bg-white/5 border border-white/10"
+                            style={{ color: "var(--v-gold)" }}
                         >
                             <ExternalLink className="w-2.5 h-2.5" /> {t("withdrawals.view_tx")}
                         </a>
@@ -192,22 +193,22 @@ export const WithdrawalsPage = () => {
     };
 
     return (
-        <main className="mx-auto px-4 sm:px-6 pt-3 pb-24 lg:pb-6
-            max-w-[430px] sm:max-w-[640px] lg:max-w-[760px]" data-testid="withdrawals-page">
-            <div className="flex items-baseline justify-between mb-3">
+        <main className="v-wrap" style={{ minHeight: "var(--app-vh, 100dvh)" }} data-testid="withdrawals-page">
+            <div className="flex items-baseline justify-between mb-3" style={{ marginTop: 6 }}>
                 <div>
-                    <h1 className="font-display text-2xl font-black tracking-tight inline-flex items-center gap-2">
+                    <h1 className="v-disp inline-flex items-center gap-2" style={{ font: "600 22px 'Space Grotesk'" }}>
                         {t("withdrawals.title")}
-                        <ArrowUpRight className="w-5 h-5 text-cyber-cyan" />
+                        <ArrowUpRight className="w-5 h-5" style={{ color: "var(--v-gold)" }} />
                     </h1>
-                    <div className="text-[11px] text-white/45 mt-0.5">
+                    <div style={{ font: "500 11px 'Inter'", color: "var(--v-muted)", marginTop: 2 }}>
                         {t("withdrawals.subtitle")}
                     </div>
                 </div>
                 <button
                     onClick={reload}
                     data-testid="withdrawals-refresh-btn"
-                    className="text-white/40 hover:text-cyber-cyan transition p-1"
+                    className="p-1"
+                    style={{ color: "var(--v-muted-2)", background: "none", border: 0, cursor: "pointer" }}
                     aria-label={t("collection.refresh_aria")}
                 >
                     <RefreshCcw className="w-4 h-4" />
@@ -220,11 +221,8 @@ export const WithdrawalsPage = () => {
                         key={tab.value}
                         onClick={() => setStatus(tab.value)}
                         data-testid={`withdrawals-tab-${tab.value}`}
-                        className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border whitespace-nowrap transition ${
-                            status === tab.value
-                                ? "bg-cyber-cyan/15 border-cyber-cyan/50 text-cyber-cyan"
-                                : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
-                        }`}
+                        className={`v-fchip${status === tab.value ? " on" : ""}`}
+                        style={{ whiteSpace: "nowrap" }}
                     >
                         {tab.label}
                     </button>
@@ -232,13 +230,13 @@ export const WithdrawalsPage = () => {
             </div>
 
             {loading ? (
-                <div className="flex items-center justify-center py-16 text-white/40">
+                <div className="flex items-center justify-center py-16" style={{ color: "var(--v-muted-2)" }}>
                     <Loader2 className="w-5 h-5 animate-spin" />
                 </div>
             ) : items.length === 0 ? (
-                <div className="rounded-2xl border border-white/8 bg-cyber-surface/40 p-8 text-center">
-                    <div className="text-sm text-white/50">{t("withdrawals.empty_title")}</div>
-                    <div className="text-xs text-white/35 mt-1">
+                <div className="v-bempty">
+                    <div style={{ font: "500 13px 'Inter'", color: "var(--v-muted)" }}>{t("withdrawals.empty_title")}</div>
+                    <div style={{ font: "500 11px 'Inter'", color: "var(--v-muted-2)", marginTop: 4 }}>
                         {t("withdrawals.empty_subtitle")}
                     </div>
                 </div>
