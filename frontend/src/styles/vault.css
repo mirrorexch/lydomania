@@ -127,6 +127,21 @@
 .v-gamehead[data-game="mines"]{--g-tint:rgba(47,191,143,.18);--g-accent:var(--v-emerald)}
 .v-gamehead[data-game="wheel"]{--g-tint:rgba(168,119,230,.20);--g-accent:var(--v-amethyst)}
 .v-gamehead[data-game="plinko"]{--g-tint:rgba(74,143,231,.20);--g-accent:var(--v-sapphire)}
+.v-gamehead[data-game="battles"]{--g-tint:rgba(232,184,75,.2);--g-accent:var(--v-gold)}
+.v-cta.v-sm{padding:8px 13px;font-size:11px;border-radius:11px}
+
+/* ── Battles ────────────────────────────────────────────────────── */
+.v-fchip{padding:6px 12px;border-radius:999px;font:700 10px 'Inter';letter-spacing:.1em;text-transform:uppercase;
+  background:var(--v-surface-2);border:1px solid var(--v-line-soft);color:var(--v-muted);cursor:pointer;transition:color .12s,border-color .12s}
+.v-fchip:hover{color:var(--v-text)} .v-fchip.on{background:rgba(232,184,75,.12);border-color:var(--v-gold);color:var(--v-gold-hi)}
+.v-bcard{display:block;position:relative;border-radius:18px;border:1px solid var(--v-line-soft);background:var(--v-surface);
+  padding:14px;transition:border-color .15s,transform .12s}
+.v-bcard:hover{border-color:var(--v-line);transform:translateY(-1px)}
+.v-btag{font:700 9px 'Inter';letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:8px;border:1px solid var(--v-line-soft);color:var(--v-muted)}
+.v-btag.gold{color:var(--v-gold-hi);background:rgba(232,184,75,.12);border-color:var(--v-line)}
+.v-btag.emerald{color:var(--v-emerald);background:rgba(47,191,143,.1);border-color:rgba(47,191,143,.3)}
+.v-bempty{border-radius:18px;border:1px solid var(--v-line-soft);background:var(--v-surface);padding:46px 0;text-align:center;color:var(--v-muted-2)}
+.v-seqpill{flex:none;padding:4px 8px;border-radius:8px;background:var(--v-surface-2);border:1px solid var(--v-line-soft);font:600 10px 'JetBrains Mono';color:var(--v-muted)}
 
 .v-phaserow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px;margin-top:14px}
 .v-phaserow .ph{font:700 13px 'JetBrains Mono';color:var(--v-text)}

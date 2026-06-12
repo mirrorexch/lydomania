@@ -22,7 +22,7 @@ export const VaultHeader = ({ balance = 0 }) => {
 
 const NAV = [
     { to: "/", gi: "◈", label: "Vault", match: (p) => p === "/" || p.startsWith("/case") },
-    { to: "/crash", gi: "🚀", label: "Games", match: (p) => ["/crash", "/mines", "/wheel", "/plinko", "/roulette"].some((g) => p.startsWith(g)) },
+    { to: "/crash", gi: "🚀", label: "Games", match: (p) => ["/crash", "/mines", "/wheel", "/battles", "/battle"].some((g) => p.startsWith(g)) },
     { to: "/inventory", gi: "🎁", label: "Gifts", match: (p) => p.startsWith("/inventory") },
     { to: "/withdrawals", gi: "◷", label: "History", match: (p) => p.startsWith("/withdrawals") },
     { to: "/profile", gi: "☰", label: "More", match: (p) => p.startsWith("/profile") },

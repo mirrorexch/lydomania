@@ -8,7 +8,7 @@ const GAMES = [
     { to: "/crash", ic: "🚀", label: "Crash" },
     { to: "/mines", ic: "💣", label: "Mines" },
     { to: "/wheel", ic: "🎡", label: "Wheel" },
-    { to: "/plinko", ic: "🎰", label: "Plinko" },
+    { to: "/battles", ic: "⚔️", label: "Battles" },
 ];
 
 // Map a case price to a rarity tier for the jewel tint (cheap→legendary).
