@@ -14,10 +14,10 @@ from core.wheel_engine import (
 
 
 def test_segment_table_shape():
-    assert len(SEGMENT_DEFS) == SEGMENT_COUNT == 24
-    # indexes 0..23 contiguous
+    assert len(SEGMENT_DEFS) == SEGMENT_COUNT
+    # indexes 0..N-1 contiguous
     idxs = sorted(int(s["segment_index"]) for s in SEGMENT_DEFS)
-    assert idxs == list(range(24))
+    assert idxs == list(range(SEGMENT_COUNT))
 
 
 def test_segment_type_breakdown_matches_brief():
@@ -25,16 +25,16 @@ def test_segment_type_breakdown_matches_brief():
     for s in SEGMENT_DEFS:
         counts[s["segment_type"]] = counts.get(s["segment_type"], 0) + 1
     assert counts == {
-        "ton_multi": 12,
-        "low_gift":   6,
-        "mid_gift":   3,
-        "high_gift":  2,
+        "ton_multi": 6,
+        "low_gift":   2,
+        "mid_gift":   2,
+        "high_gift":  1,
         "jackpot":    1,
     }
 
 
 def test_ton_multi_values_in_locked_set():
-    allowed = {0.5, 0.75, 1.0, 1.25}
+    allowed = {0.5, 0.75, 1.0, 1.5}
     for s in SEGMENT_DEFS:
         if s["segment_type"] == "ton_multi":
             assert s["multiplier"] in allowed, s
@@ -69,7 +69,7 @@ def test_derive_segment_uniform_ish():
         seen.add(derive_segment(secrets.token_hex(32), secrets.token_hex(12)))
     # The lowest-weight segment is JACKPOT at 1/251 ≈ 0.4%, so 5k spins
     # should hit it with overwhelming probability (P(miss) ≈ exp(-20) ≈ 0).
-    assert len(seen) == SEGMENT_COUNT, f"missed segments: {set(range(24)) - seen}"
+    assert len(seen) == SEGMENT_COUNT, f"missed segments: {set(range(SEGMENT_COUNT)) - seen}"
 
 
 def test_derive_segment_known_vectors():

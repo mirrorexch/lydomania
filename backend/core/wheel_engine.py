@@ -22,57 +22,39 @@ import hmac
 from typing import Any, Final
 
 PAID_SPIN_COST_TON: Final[float] = 5.0
-SEGMENT_COUNT: Final[int] = 24
+SEGMENT_COUNT: Final[int] = 12
 FREE_TOKEN_REFRESH_SEC: Final[int] = 24 * 60 * 60
 
 # Order matters: wheel_index 0 is "top" (under the pointer at 12 o'clock).
-# Visually rotating clockwise, segments are laid out 0..23 in 15°-wide slices.
+# Visually rotating clockwise, segments are laid out 0..11 in 30°-wide slices.
 #
-# Phase 11.3 reconfiguration ─────────────────────────────────────────────────
-#   • Layout: alternating ton_multi / item — 12 ton_multi + 12 item = 50/50
-#   • Item pool (12): 6 LOW + 3 MID + 2 HI + 1 JACKPOT
-#   • Removed from wheel: token_dust (0.1 T) and coin_flip (0.3 T) — they
-#     felt like a slap in the face on a 5 T paid spin. They still exist in
-#     items collection for Battle Pass tier rewards (see season_engine.py),
-#     just not in the wheel anymore.
-#   • Renamed: daily_jackpot → lucky_coin (the name "Daily Jackpot" with a
-#     2 T floor was actively misleading users into thinking they'd hit
-#     a jackpot when they got a low-tier consolation item).
-#   • lucky_ticket floor bumped 0.75 → 1.5 T in items collection — anything
-#     below 1 T on a 5 T spin reads as "rigged" even when math is fair.
-#   • Total weight = 192 (96 item / 96 ton_multi exactly = 50/50 by prob).
-#   • ton_multi mix: 5×0.5 + 3×0.75 + 4×1.0 → avg = 0.7292 ⇒
-#     ton_multi EV per spin = 1.823 T
-#     (Phase: dropped the lone 1.25× on seg 10 to 1.00× to pull RTP into the
-#      90-92% band — was 92.4%, now ~91.4%.)
-#   • Item EV per spin = 2.745 T   (LOW 0.760 + MID 0.8125 + HI 0.625 + JACK 0.547)
-#   • Total EV ≈ 4.568 T  ⇒  RTP ≈ 4.568 / 5.0 ≈ 91.4 %   (target 90-92% ✓)
+# Phase 12 reconfiguration ───────────────────────────────────────────────────
+#   • Reduced 24 → 12 segments. The old 24-slice wheel crammed an icon + label
+#     into each 15° wedge, so prizes overlapped and were unreadable. 12 slices
+#     at 30° each are clean and legible.
+#   • Layout: strict alternation ton_multi / gift — 6 ton_multi + 6 gift.
+#   • Fresh gift set (was candy_cane/top_hat/lol_pop/…): 2 LOW · 2 MID · 1 HI ·
+#     1 JACKPOT, all drawn from the live items collection (valid floor prices).
+#   • Probability is weight-based (not equal slices); the auto-recalibration
+#     service (services/wheel_recalibration.py) re-weights the *gift* segments
+#     each hour to hold RTP at TARGET_RTP=0.91 as live floors drift. These
+#     design weights are the safe fallback baseline (≈94% RTP if ever frozen).
+#   • ton_multi mix: 2×0.5 + 1×0.75 + 2×1.0 + 1×1.5 — adds a 1.5× "near-miss
+#     win" slice the old wheel lacked, without breaking the 90-92% band.
 SEGMENT_DEFS: Final[list[dict[str, Any]]] = [
-    # 0..23 — interleave multis and gifts so the wheel looks visually balanced.
-    {"segment_index":  0, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
-    {"segment_index":  1, "segment_type": "low_gift",  "multiplier": None, "item_slug": "candy_cane",     "weight": 13},
-    {"segment_index":  2, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 8},
-    {"segment_index":  3, "segment_type": "low_gift",  "multiplier": None, "item_slug": "candy_cane",     "weight": 12},
-    {"segment_index":  4, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
-    {"segment_index":  5, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "top_hat",        "weight": 6},
-    {"segment_index":  6, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
-    {"segment_index":  7, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lol_pop",        "weight": 12},
-    {"segment_index":  8, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 8},
-    {"segment_index":  9, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_coin",     "weight": 12},
-    {"segment_index": 10, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
-    {"segment_index": 11, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "flying_broom",   "weight": 6},
-    {"segment_index": 12, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
-    {"segment_index": 13, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_ticket",   "weight": 12},
-    {"segment_index": 14, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 8},
-    {"segment_index": 15, "segment_type": "low_gift",  "multiplier": None, "item_slug": "lucky_ticket",   "weight": 12},
-    {"segment_index": 16, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
-    {"segment_index": 17, "segment_type": "high_gift", "multiplier": None, "item_slug": "electric_skull", "weight": 2},
-    {"segment_index": 18, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
-    {"segment_index": 19, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "trapped_heart",  "weight": 6},
-    {"segment_index": 20, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 8},
-    {"segment_index": 21, "segment_type": "high_gift", "multiplier": None, "item_slug": "bonded_ring",    "weight": 2},
-    {"segment_index": 22, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 8},
-    {"segment_index": 23, "segment_type": "jackpot",   "multiplier": None, "item_slug": "durov_cap",      "weight": 1},
+    # 0..11 — interleave multis and gifts so the wheel looks visually balanced.
+    {"segment_index":  0, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 14},
+    {"segment_index":  1, "segment_type": "low_gift",  "multiplier": None, "item_slug": "snow_globe",     "weight": 7},
+    {"segment_index":  2, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 9},
+    {"segment_index":  3, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "sakura_flower",  "weight": 2},
+    {"segment_index":  4, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 12},
+    {"segment_index":  5, "segment_type": "low_gift",  "multiplier": None, "item_slug": "party_sparkler", "weight": 7},
+    {"segment_index":  6, "segment_type": "ton_multi", "multiplier": 1.50, "item_slug": None, "weight": 4},
+    {"segment_index":  7, "segment_type": "high_gift", "multiplier": None, "item_slug": "diamond_ring",   "weight": 1},
+    {"segment_index":  8, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 14},
+    {"segment_index":  9, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "crystal_ball",   "weight": 2},
+    {"segment_index": 10, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 9},
+    {"segment_index": 11, "segment_type": "jackpot",   "multiplier": None, "item_slug": "genie_lamp",     "weight": 1},
 ]
 assert len(SEGMENT_DEFS) == SEGMENT_COUNT
 
