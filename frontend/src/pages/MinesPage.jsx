@@ -2,6 +2,7 @@
  * Phase 8 — Mines page. 5×5 grid with start/reveal/cashout flow.
  */
 import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Bomb, Coins, Shield, Loader2, X, Gem, Wallet, History } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ function MinesGridPreview({ mines, gridSize = 25 }) {
 }
 
 export default function MinesPage({ user, balance, refreshBalance }) {
+    const { t } = useTranslation();
     const [game, setGame] = useState(null);
     const [bet, setBet] = useState("1");
     const [minesCount, setMinesCount] = useState(3);

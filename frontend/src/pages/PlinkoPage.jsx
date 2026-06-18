@@ -7,6 +7,7 @@
  * haptics + sfx, framer-motion + PRM, no native alert).
  */
 import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { CircleDot, Shield, Loader2, History } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ function bucketTier(mult) {
 
 
 export default function PlinkoPage({ user, balance, refreshBalance }) {
+    const { t } = useTranslation();
     const [config, setConfig] = useState(null);
     const [rows, setRows] = useState(8);
     const [risk, setRisk] = useState("medium");
