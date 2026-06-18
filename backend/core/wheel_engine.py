@@ -44,17 +44,17 @@ FREE_TOKEN_REFRESH_SEC: Final[int] = 24 * 60 * 60
 SEGMENT_DEFS: Final[list[dict[str, Any]]] = [
     # 0..11 — interleave multis and gifts so the wheel looks visually balanced.
     {"segment_index":  0, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 14},
-    {"segment_index":  1, "segment_type": "low_gift",  "multiplier": None, "item_slug": "snow_globe",     "weight": 8},
+    {"segment_index":  1, "segment_type": "low_gift",  "multiplier": None, "item_slug": "snow_globe",     "weight": 6},
     {"segment_index":  2, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 10},
-    {"segment_index":  3, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "magic_potion",   "weight": 4},
+    {"segment_index":  3, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "magic_potion",   "weight": 5},
     {"segment_index":  4, "segment_type": "ton_multi", "multiplier": 0.75, "item_slug": None, "weight": 12},
-    {"segment_index":  5, "segment_type": "low_gift",  "multiplier": None, "item_slug": "party_sparkler", "weight": 8},
+    {"segment_index":  5, "segment_type": "low_gift",  "multiplier": None, "item_slug": "party_sparkler", "weight": 6},
     {"segment_index":  6, "segment_type": "ton_multi", "multiplier": 1.50, "item_slug": None, "weight": 4},
-    {"segment_index":  7, "segment_type": "high_gift", "multiplier": None, "item_slug": "love_potion",    "weight": 2},
+    {"segment_index":  7, "segment_type": "high_gift", "multiplier": None, "item_slug": "love_potion",    "weight": 3},
     {"segment_index":  8, "segment_type": "ton_multi", "multiplier": 0.50, "item_slug": None, "weight": 14},
-    {"segment_index":  9, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "heart_locket",   "weight": 3},
+    {"segment_index":  9, "segment_type": "mid_gift",  "multiplier": None, "item_slug": "heart_locket",   "weight": 5},
     {"segment_index": 10, "segment_type": "ton_multi", "multiplier": 1.00, "item_slug": None, "weight": 10},
-    {"segment_index": 11, "segment_type": "jackpot",   "multiplier": None, "item_slug": "electric_skull", "weight": 1},
+    {"segment_index": 11, "segment_type": "jackpot",   "multiplier": None, "item_slug": "electric_skull", "weight": 2},
 ]
 assert len(SEGMENT_DEFS) == SEGMENT_COUNT
 
