@@ -40,6 +40,7 @@ def user_doc_to_out(doc: dict) -> UserOut:
         photo_url=doc.get("photo_url"),
         balance_ton=float(doc.get("balance_ton", 0.0)),
         is_admin=is_admin_tid(doc.get("telegram_id")),
+        is_support=is_support_tid(doc.get("telegram_id")),
     )
 
 

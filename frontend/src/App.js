@@ -23,7 +23,7 @@ import { AdminItemsPage } from "@/pages/AdminItemsPage";
 import { AdminSettingsPage } from "@/pages/AdminSettingsPage";
 import { AdminPromosPage } from "@/pages/AdminPromosPage";
 import { AdminDigestPage } from "@/pages/AdminDigestPage";
-import AdminUsersPage from "@/pages/AdminUsersPage";
+import AdminUserDetailPage from "@/pages/AdminUserDetailPage";
 import { AdminSellReviewsPage } from "@/pages/AdminSellReviewsPage";
 import { AdminRouletteConfigPage } from "@/pages/AdminRouletteConfigPage";
 import { LeaderboardPage } from "@/pages/LeaderboardPage";
@@ -266,14 +266,14 @@ function App() {
                         {/* Phase 6e bug-fix — admin routes registered unconditionally; AdminLayout itself
                             gates content rendering on user.is_admin so non-admins see a clear notice
                             instead of "No routes matched" → blank page. */}
-                        <Route path="/admin" element={<AdminLayout isAdmin={!!user?.is_admin} />}>
+                        <Route path="/admin" element={<AdminLayout isAdmin={!!user?.is_admin} isSupport={!!user?.is_support} />}>
                             <Route index element={<AdminWithdrawalsPage />} />
                             <Route path="cases" element={<AdminCasesPage />} />
                             <Route path="items" element={<AdminItemsPage />} />
                             <Route path="settings" element={<AdminSettingsPage />} />
                             <Route path="promos" element={<AdminPromosPage />} />
                             <Route path="digest" element={<AdminDigestPage />} />
-                            <Route path="users" element={<AdminUsersPage />} />
+                            <Route path="users" element={<AdminUserDetailPage isAdmin={!!user?.is_admin} />} />
                             <Route path="sell-reviews" element={<AdminSellReviewsPage />} />
                             <Route path="roulette-config" element={<AdminRouletteConfigPage />} />
                             <Route path="tonapi-mappings" element={<AdminTonapiMappingsPage />} />
