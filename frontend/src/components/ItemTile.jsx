@@ -47,19 +47,27 @@ export const ItemTile = ({
             }}
         >
             <div
-                className="relative aspect-square"
-                style={{ background: `radial-gradient(72% 72% at 50% 42%, ${ringColor}26, transparent 72%), linear-gradient(180deg,#17161d,#0d0c11)` }}
+                className="relative aspect-square overflow-hidden"
+                style={{ background: `radial-gradient(62% 56% at 50% 44%, ${ringColor}26, #0d0c11 78%)` }}
             >
+                {/* Full-bleed gift art — same treatment as the case tiles: the
+                    asset carries its own atmosphere, so showing it edge-to-edge
+                    reads as a polished product shot (was a small padded icon). */}
                 <img
                     src={resolveImage(url)}
                     alt={name}
-                    className="absolute inset-0 w-full h-full object-contain"
-                    style={{ padding: "17%", filter: `drop-shadow(0 4px 12px ${ringColor}66)` }}
+                    className="absolute inset-0 w-full h-full object-cover"
                     draggable={false}
                     loading="lazy"
                 />
+                {/* readability scrim for the rarity badge + bottom fade into meta */}
                 <span
-                    className={`absolute top-1.5 left-1.5 text-[8px] font-black uppercase tracking-[0.15em] px-1.5 py-0.5 rounded backdrop-blur-sm`}
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: "linear-gradient(180deg, rgba(11,11,15,.34) 0%, transparent 26%, transparent 74%, rgba(11,11,15,.5) 100%)" }}
+                />
+                <span
+                    className={`absolute top-1.5 left-1.5 z-10 text-[8px] font-black uppercase tracking-[0.15em] px-1.5 py-0.5 rounded backdrop-blur-sm`}
                     style={{
                         color: ringColor,
                         background: `${ringColor}33`,

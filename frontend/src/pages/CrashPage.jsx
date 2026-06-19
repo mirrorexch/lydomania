@@ -143,8 +143,6 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
                 // RAF closure can self-terminate even if React state batch is
                 // delayed in mobile WebView. Also dev log for WebView Inspector.
                 phaseRef.current = msg.phase;
-                // eslint-disable-next-line no-console
-                console.warn("[crash] WS phase →", msg.phase, "round_id=", msg.round_id || "—");
                 setState((prev) => ({ ...(prev || {}), ...msg }));
                 if (msg.phase === "betting") {
                     resetForNewRound();
@@ -254,8 +252,6 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
     // Inspector / Eruda overlay.
     useEffect(() => {
         phaseRef.current = phase;
-        // eslint-disable-next-line no-console
-        console.warn("[crash] phase state →", phase);
     }, [phase]);
 
     // Phase 11.2.5 — betting countdown ticker.  The countdown number in
@@ -321,7 +317,6 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
         const MAX_ROUND_MS = 15_000;            // Phase 11.2.4: was 90_000
         const STALE_TICK_MS = 3_000;            // Phase 11.2.4: freeze threshold
         const MAX_PREDICT_FACTOR = 2.0;         // Phase 11.2.4: predicted ≤ 2× last server tick
-        let lastStaleWarnAt = 0;
         const step = () => {
             // Guard 1 — phase changed under us.
             if (phaseRef.current !== "running") {
@@ -331,8 +326,6 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
             // Guard 2 — watchdog (15s).
             const elapsedMs = performance.now() - roundStartRef.current;
             if (elapsedMs > MAX_ROUND_MS) {
-                // eslint-disable-next-line no-console
-                console.warn("[crash] watchdog stopping RAF after", Math.round(elapsedMs), "ms — no phase=crashed received");
                 rafIdRef.current = null;
                 phaseRef.current = "crashed";
                 setState((prev) => ({ ...(prev || {}), phase: "crashed" }));
@@ -345,11 +338,6 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
             const last = lastTickRef.current;
             const sinceTick = performance.now() - last.t;
             if (sinceTick > STALE_TICK_MS) {
-                if (performance.now() - lastStaleWarnAt > 1000) {
-                    // eslint-disable-next-line no-console
-                    console.warn("[crash] stale tick — freeze at", last.x.toFixed(2), "× for", Math.round(sinceTick), "ms");
-                    lastStaleWarnAt = performance.now();
-                }
                 rafIdRef.current = requestAnimationFrame(step);
                 return;
             }
@@ -362,8 +350,6 @@ export const CrashPage = ({ user, balance, refreshBalance }) => {
             // (we should get a fresh tick every 100ms; if not, see Guard 3).
             const cap = last.x * MAX_PREDICT_FACTOR;
             if (predicted > cap) {
-                // eslint-disable-next-line no-console
-                console.warn("[crash] predict clamp", predicted.toFixed(2), "→", cap.toFixed(2), "(last server", last.x.toFixed(2), ")");
                 predicted = cap;
             }
             writeMultiplier(predicted);

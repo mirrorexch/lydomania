@@ -54,6 +54,10 @@ services:
     environment:
       MONGO_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin&replicaSet=rs0
       DB_NAME: ${DB_NAME:-lydomania}
+      # Telegram NFT gift deposits — watcher polls Tonapi for inbound NFTs to the
+      # vault and credits them (free Tonapi tier, no key required). Override in
+      # .env if needed; defaults ON here so the feature is live.
+      ENABLE_GIFT_DEPOSITS: ${ENABLE_GIFT_DEPOSITS:-true}
     volumes:
       - backend-static:/app/backend/static
     healthcheck:
