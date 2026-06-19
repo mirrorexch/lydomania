@@ -70,7 +70,14 @@ export const GiftCard = ({
     const rarity = (rarityOverride || item?.rarity || "common").toLowerCase();
     const r = RARITY[rarity] || RARITY.common;
     const reduce = PRM();
-    const img = resolveImage(item?.image_url || item?.image_path);
+    // Prefer an explicit image_url; otherwise build the canonical item path from
+    // the slug (/api/static/items/<slug>.png). A bare "items/<slug>.png" path
+    // resolves RELATIVE → 404, so never feed image_path straight to resolveImage.
+    const img = resolveImage(
+        item?.image_url
+        || (item?.item_slug ? `/api/static/items/${item.item_slug}.png` : "")
+        || (item?.image_path ? `/api/static/${item.image_path}` : ""),
+    );
     const stateBadge = STATE_BADGES[state];
     const ItemCrown = rarity === "legendary" ? Crown : null;
 
@@ -143,15 +150,20 @@ export const GiftCard = ({
                 Phase 11.2 Final Polish: grid place-items-center for math-perfect centering;
                 size-token-driven max-w/max-h; subtle transform-origin for hover/zoom hooks. */}
             <div
-                className={`relative ${s.h} grid place-items-center bg-gradient-to-br from-[var(--surface-2)] via-[var(--surface-1)] to-[var(--surface-2)] overflow-hidden`}
-                style={{ transformOrigin: "center" }}
+                className={`relative ${s.h} overflow-hidden`}
+                style={{ transformOrigin: "center", background: "radial-gradient(62% 56% at 50% 44%, rgba(232,184,75,.14), #0d0c11 80%)" }}
             >
+                {/* Full-bleed item art — same treatment as the case tiles: the
+                    asset carries its own atmosphere, so showing it edge-to-edge
+                    reads as a polished product shot (was a small contained icon). */}
                 <ImageWithFallback
                     src={img}
                     alt={item?.item_name || "Gift"}
-                    objectFit="contain"
-                    className={`${s.img} drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)] transition-transform duration-200`}
+                    objectFit="cover"
+                    className="absolute inset-0 w-full h-full transition-transform duration-200"
                 />
+                <span aria-hidden className="absolute inset-0 pointer-events-none"
+                    style={{ background: "linear-gradient(180deg, rgba(11,11,15,.3) 0%, transparent 24%, transparent 76%, rgba(11,11,15,.45) 100%)" }} />
             </div>
 
             {/* Bottom strip */}
