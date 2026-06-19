@@ -59,18 +59,15 @@ export const VaultReel = ({ basket, winner, onSettled }) => {
         const jitter = (Math.random() - 0.5) * (TILE_W * 0.5);
         const target = WIN_INDEX * step - viewport / 2 + TILE_W / 2 + jitter;
 
-        const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        // NOTE: intentionally ignore prefers-reduced-motion for the reel spin.
+        // iOS Telegram WebView often forces Reduce Motion on at the system level,
+        // which used to make the reel "teleport" straight to the prize with no
+        // spin — killing the core open animation (same fix the wheel uses).
         // start offset (reset), then animate to target on next frame
         el.style.transition = "none";
         el.style.transform = "translateX(0px)";
         // force reflow so the transition applies
         void el.offsetWidth;
-        if (reduce) {
-            el.style.transform = `translateX(${-target}px)`;
-            setDone(true);
-            onSettled?.();
-            return;
-        }
         el.style.transition = `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.62, 0.16, 1)`;
         el.style.transform = `translateX(${-target}px)`;
         const onEnd = () => { setDone(true); onSettled?.(); };

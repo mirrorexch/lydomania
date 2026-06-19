@@ -77,10 +77,11 @@ function Hero({ season, progress, onOpenPremium }) {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: PRM() ? 0 : 0.4 }}
-            className="relative rounded-2xl overflow-hidden border border-amber-400/25"
+            className="relative rounded-2xl overflow-hidden"
             style={{
-                minHeight: 180,
-                background: "linear-gradient(90deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.6) 50%, rgba(15,23,42,0.05) 100%), url('/banners/battlepass.png') right center / auto 100% no-repeat, #111",
+                minHeight: 170,
+                border: "1px solid var(--v-line)",
+                background: "radial-gradient(120% 130% at 100% 0, rgba(232,184,75,.20), transparent 56%), linear-gradient(180deg,#16151b,#0c0b10)",
             }}
             data-testid="bp-hero"
         >

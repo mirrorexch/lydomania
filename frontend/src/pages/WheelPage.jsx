@@ -31,32 +31,33 @@ const PRM = () =>
 // Loss wedges are intentionally darkest so a paying player can SEE the
 // stripe of "bad" segments at a glance — informed expectations build
 // trust even when the math is against you.
+// Phase 12 — Obsidian Vault jewel palette (was cyber cyan/violet/pink).
 const SEG_FILL = {
-    ton_multi:      "#13110C",           // base — overridden below for win/loss
-    ton_multi_loss: "#0B0905",           // near-black
-    ton_multi_win:  "#2A2009",           // warm gold-tint
-    low_gift:       "#0E1B2E",           // deep navy
-    mid_gift:       "#1F0F3A",           // royal violet
-    high_gift:      "#3A0E2A",           // dark magenta
-    jackpot:        "#5C4406",           // gold-bright base (rim glows over it)
+    ton_multi:      "#14131A",           // base — overridden below for win/loss
+    ton_multi_loss: "#0E0D12",           // obsidian "dud" wedge
+    ton_multi_win:  "#221B0C",           // warm gold-tint
+    low_gift:       "#11202E",           // deep sapphire
+    mid_gift:       "#1D1330",           // amethyst
+    high_gift:      "#2E1018",           // ruby
+    jackpot:        "#4A3608",           // gold base (rim glows over it)
 };
 const SEG_STROKE = {
-    ton_multi:      "rgba(212,175,55,0.30)",
-    ton_multi_loss: "rgba(120,80,30,0.35)",
-    ton_multi_win:  "rgba(255,215,0,0.55)",
-    low_gift:       "rgba(56,189,248,0.55)",   // cyan rim
-    mid_gift:       "rgba(167,139,250,0.65)",  // violet rim
-    high_gift:      "rgba(244,114,182,0.85)",  // pink rim
-    jackpot:        "rgba(255,215,0,1.0)",
+    ton_multi:      "rgba(232,184,75,0.30)",
+    ton_multi_loss: "rgba(140,140,151,0.40)",
+    ton_multi_win:  "rgba(232,184,75,0.55)",
+    low_gift:       "rgba(74,143,231,0.60)",   // sapphire rim
+    mid_gift:       "rgba(168,119,230,0.65)",  // amethyst rim
+    high_gift:      "rgba(224,74,107,0.85)",   // ruby rim
+    jackpot:        "rgba(247,227,161,1.0)",   // gold-hi
 };
 const SEG_LABEL_FILL = {
-    ton_multi:      "#FFEB99",
-    ton_multi_loss: "#9A5C4A",            // muted rose — clearly a "loss" hue
-    ton_multi_win:  "#FFD700",            // gold-bright
-    low_gift:       "#7DD3FC",            // cyan
-    mid_gift:       "#C4B5FD",            // violet
-    high_gift:      "#F9A8D4",            // pink
-    jackpot:        "#0B0905",            // near-black on gold-bright
+    ton_multi:      "#F7E3A1",
+    ton_multi_loss: "#8C8C97",            // muted — clearly a "loss" hue
+    ton_multi_win:  "#F7E3A1",            // gold-hi
+    low_gift:       "#8FC0F5",            // light sapphire
+    mid_gift:       "#C9AEF0",            // light amethyst
+    high_gift:      "#F08FA6",            // light ruby
+    jackpot:        "#0B0B0F",            // near-black on gold
 };
 // Resolve the effective tier key for a segment (splits ton_multi by win/loss).
 function tierKey(s) {
@@ -69,8 +70,7 @@ const R_OUTER = 150;
 const R_INNER = 50;     // Phase 11.2.1 — larger hub so labels live near the rim only
 const CX = VIEW / 2;
 const CY = VIEW / 2;
-const SEG_COUNT = 24;
-const SEG_DEG = 360 / SEG_COUNT;
+const SEG_COUNT_FALLBACK = 12;   // used only before /wheel/config loads
 
 
 function polarPoint(cx, cy, r, deg) {
@@ -191,7 +191,7 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
             //   in the CCW direction, == half-segment offset under pointer).
             //   After this flip the pointer lands inside wedge i (not on its
             //   23-side border) for every spin.
-            const targetMod = -((data.segment_index + 0.5) * SEG_DEG) + wobble;
+            const targetMod = -((data.segment_index + 0.5) * segDeg) + wobble;
             // Keep rotation increasing so framer-motion always animates forward.
             const fullTurns = 5 * 360;
             const next = rotation + fullTurns + ((targetMod - (rotation % 360)) + 720) % 360;
@@ -246,6 +246,9 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
 
     // ─── Derived ───────────────────────────────────────────────────────────
     const segments = config?.segments || [];
+    // Slice width adapts to however many segments the backend defines (12 now,
+    // was 24) so the wheel geometry is never hardcoded to a specific count.
+    const segDeg = 360 / Math.max(segments.length || SEG_COUNT_FALLBACK, 1);
     const hasFreeToken = (config?.free_spin_tokens ?? 0) > 0;
     const paidCost = config?.paid_spin_cost_ton ?? 5;
     const insufficient = (balance ?? 0) < paidCost;
@@ -355,8 +358,8 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                                     <circle cx={CX} cy={CY} r={R_OUTER} fill="rgba(255,255,255,0.04)" />
                                 )
                                 : segments.map((s) => {
-                                    const start = s.segment_index * SEG_DEG;
-                                    const end = start + SEG_DEG;
+                                    const start = s.segment_index * segDeg;
+                                    const end = start + segDeg;
                                     const d = arcPath(CX, CY, R_INNER, R_OUTER, start, end);
                                     const tk = tierKey(s);
                                     const isItem = s.segment_type !== "ton_multi";
@@ -365,7 +368,7 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                                     // push the small tier-tag label closer to the hub
                                     // so it doesn't collide with the icon.
                                     const labelRadius = isItem ? (R_INNER + 14) : (R_OUTER - 22);
-                                    const [lx, ly] = polarPoint(CX, CY, labelRadius, start + SEG_DEG / 2);
+                                    const [lx, ly] = polarPoint(CX, CY, labelRadius, start + segDeg / 2);
                                     // For ton_multi we ALWAYS show the multiplier
                                     // (Phase 11.3 change — was hidden for losses,
                                     // but post-wobble-fix users want to know that
@@ -382,8 +385,8 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                                                     ? "MID"
                                                     : "LOW";
                                     // Icon position (item segments only) — outer band.
-                                    const [ix, iy] = polarPoint(CX, CY, R_OUTER - 28, start + SEG_DEG / 2);
-                                    const iconRotate = start + SEG_DEG / 2;          // straighten icon along radius
+                                    const [ix, iy] = polarPoint(CX, CY, R_OUTER - 28, start + segDeg / 2);
+                                    const iconRotate = start + segDeg / 2;          // straighten icon along radius
                                     const iconSize = 22;
                                     const itemIcon = isItem && s.image_path ? resolveImage(s.image_path) : null;
                                     return (
@@ -411,7 +414,7 @@ export const WheelPage = ({ user, balance, refreshBalance }) => {
                                                     fill={SEG_LABEL_FILL[tk] || SEG_LABEL_FILL[s.segment_type]}
                                                     fontSize={isItem ? "8" : "10"} fontWeight="800"
                                                     textAnchor="middle" dominantBaseline="middle"
-                                                    transform={`rotate(${start + SEG_DEG / 2 + 90}, ${lx}, ${ly})`}
+                                                    transform={`rotate(${start + segDeg / 2 + 90}, ${lx}, ${ly})`}
                                                     style={{ filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.85))" }}
                                                     pointerEvents="none"
                                                 >

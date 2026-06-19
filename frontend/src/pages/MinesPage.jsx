@@ -2,6 +2,7 @@
  * Phase 8 — Mines page. 5×5 grid with start/reveal/cashout flow.
  */
 import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { Bomb, Coins, Shield, Loader2, X, Gem, Wallet, History } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ function MinesGridPreview({ mines, gridSize = 25 }) {
 }
 
 export default function MinesPage({ user, balance, refreshBalance }) {
+    const { t } = useTranslation();
     const [game, setGame] = useState(null);
     const [bet, setBet] = useState("1");
     const [minesCount, setMinesCount] = useState(3);
@@ -156,22 +158,22 @@ export default function MinesPage({ user, balance, refreshBalance }) {
             data-testid="mines-page"
         >
             <header className="v-gamehead" data-game="mines" data-testid="mines-hero">
-                <div className="v-eyebrow"><Bomb className="w-3 h-3" /> Provably fair</div>
-                <h1 className="v-disp">Mines</h1>
-                <p>Reveal safe cells. Cash out before you hit a bomb.</p>
+                <div className="v-eyebrow"><Bomb className="w-3 h-3" /> {t("vg.provably_fair")}</div>
+                <h1 className="v-disp">{t("vg.mines_title")}</h1>
+                <p>{t("vg.mines_sub")}</p>
             </header>
 
             {!game && (
                 <section className="v-card v-betpanel" data-testid="mines-controls">
                     <div className="v-fields">
                         <label className="v-field">
-                            <span className="lbl">Bet (TON)</span>
+                            <span className="lbl">{t("vg.bet_ton")}</span>
                             <input type="number" step="0.1" min="0.1" max="100" value={bet} onChange={(e) => setBet(e.target.value)}
                                 inputMode="decimal" data-testid="mines-bet-input"
                             />
                         </label>
                         <label className="v-field">
-                            <span className="lbl">Mines · {minesCount}</span>
+                            <span className="lbl">{t("vg.mines_word")} · {minesCount}</span>
                             <input type="range" min="1" max="24" value={minesCount}
                                 onChange={(e) => setMinesCount(parseInt(e.target.value))}
                                 className="v-range" data-testid="mines-count-slider"
@@ -179,7 +181,7 @@ export default function MinesPage({ user, balance, refreshBalance }) {
                         </label>
                     </div>
                     <button type="button" onClick={start} disabled={busy} className="v-cta v-wide" data-testid="mines-start-btn">
-                        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Starting…</> : <><Bomb className="w-4 h-4" /> Start round</>}
+                        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("vg.starting")}</> : <><Bomb className="w-4 h-4" /> {t("vg.start_round")}</>}
                     </button>
                 </section>
             )}
@@ -187,7 +189,7 @@ export default function MinesPage({ user, balance, refreshBalance }) {
             {game && (
                 <section className="v-card v-betpanel" data-testid="mines-grid-section">
                     <div className="v-minetop">
-                        <div className="meta"><span className="v-muted">Mines</span> <b>{game.mines_count}</b> · <span className="v-muted">Bet</span> <b>{formatTON(game.bet_ton)}</b> TON</div>
+                        <div className="meta"><span className="v-muted">{t("vg.mines_word")}</span> <b>{game.mines_count}</b> · <span className="v-muted">{t("vg.bet_word")}</span> <b>{formatTON(game.bet_ton)}</b> TON</div>
                         <div className="v-mult" data-testid="mines-current-mult">{mult}×</div>
                     </div>
                     <div className="v-minesgrid" data-testid="mines-grid">
@@ -210,7 +212,7 @@ export default function MinesPage({ user, balance, refreshBalance }) {
                     </div>
                     <button type="button" onClick={cashout} disabled={busy || revealed.length === 0}
                         className="v-cta v-wide" data-testid="mines-cashout-btn">
-                        <Wallet className="w-4 h-4" /> Cashout · {formatTON(game.bet_ton * mult)} TON
+                        <Wallet className="w-4 h-4" /> {t("vg.cashout", { x: formatTON(game.bet_ton * mult) })}
                     </button>
                 </section>
             )}
@@ -223,7 +225,7 @@ export default function MinesPage({ user, balance, refreshBalance }) {
                 >
                     <div className="top">
                         {outcome.hit_mine ? <X className="w-4 h-4" /> : <Coins className="w-4 h-4" />}
-                        <span>{outcome.hit_mine ? "Boom — better luck next time" : `Cashed out · ${formatTON(outcome.payout_ton)} TON`}</span>
+                        <span>{outcome.hit_mine ? t("vg.boom") : t("vg.cashed_out", { x: formatTON(outcome.payout_ton) })}</span>
                         <button
                             type="button"
                             onClick={() => setVerifyGame({
@@ -236,23 +238,23 @@ export default function MinesPage({ user, balance, refreshBalance }) {
                             className="v-verify"
                             data-testid="mines-outcome-verify-btn"
                         >
-                            <Shield className="w-3 h-3" /> Verify
+                            <Shield className="w-3 h-3" /> {t("vg.verify")}
                         </button>
                     </div>
-                    <div className="mines">Mines: [{outcome.mines.join(", ")}]</div>
+                    <div className="mines">{t("vg.mines_list", { list: outcome.mines.join(", ") })}</div>
                 </motion.section>
             )}
 
             {/* History with VERIFY chips */}
             <section className="v-feed" data-testid="mines-history">
-                <div className="hd"><History className="w-3.5 h-3.5" /> History</div>
+                <div className="hd"><History className="w-3.5 h-3.5" /> {t("vg.history")}</div>
                 {history.length === 0 && (
-                    <p className="v-feedempty" style={{ textAlign: "center", padding: "14px 0" }} data-testid="mines-history-empty">No previous games.</p>
+                    <p className="v-feedempty" style={{ textAlign: "center", padding: "14px 0" }} data-testid="mines-history-empty">{t("vg.no_games")}</p>
                 )}
                 {history.map((h) => (
                     <div key={h.game_id} className="v-hrow" data-testid={`mines-history-row-${h.game_id}`}>
                         <span className={`tag ${h.status === "cashed_out" ? "win" : "bust"}`}>
-                            {h.status === "cashed_out" ? "WIN" : "BUST"}
+                            {h.status === "cashed_out" ? t("vg.win") : t("vg.bust")}
                         </span>
                         <span className="amt">{formatTON(h.bet_ton)}→{formatTON(h.payout_ton || 0)} TON</span>
                         <span className="mx">×{h.current_multiplier ?? 1.0}</span>
