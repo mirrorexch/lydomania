@@ -215,15 +215,37 @@ async def recalibrate_case(
     return report
 
 
+# Catalog rarity is DERIVED from the live Fragment floor so the tier always
+# tracks real market value (the old static seed labels were uncorrelated — e.g.
+# a 1.5-TON gift tagged "rare", a 58-TON gift tagged "common"). Bands in TON:
+_RARITY_BANDS = [
+    (4.0, "common"),
+    (10.0, "rare"),
+    (30.0, "epic"),
+    (120.0, "legendary"),
+    (600.0, "mythic"),
+]
+
+
+def rarity_for_floor(floor_ton: float) -> str:
+    """Map a Fragment floor price (TON) to a catalog rarity tier."""
+    f = float(floor_ton or 0)
+    for hi, name in _RARITY_BANDS:
+        if f < hi:
+            return name
+    return "jackpot"
+
+
 async def sync_floors_to_items(*, apply: bool = True) -> dict[str, Any]:
-    """Copy gift_floor_prices.floor_ton (absolute) onto items.floor_price_ton.
+    """Copy gift_floor_prices.floor_ton (absolute) onto items.floor_price_ton AND
+    re-derive items.rarity from that floor (tier tracks market value).
 
     Inventory rows are NOT touched (Phase 3c data integrity).
     """
     floors = await _load_live_floors()
     diffs: list[dict[str, Any]] = []
     updated = 0
-    async for d in items_col.find({}, {"_id": 0, "slug": 1, "floor_price_ton": 1}):
+    async for d in items_col.find({}, {"_id": 0, "slug": 1, "floor_price_ton": 1, "rarity": 1}):
         slug = d["slug"]
         f = floors.get(slug)
         if not f:
@@ -232,13 +254,19 @@ async def sync_floors_to_items(*, apply: bool = True) -> dict[str, Any]:
         if new_val is None or new_val <= 0:
             continue
         old_val = float(d.get("floor_price_ton") or 0)
-        if abs(old_val - float(new_val)) < 1e-9:
+        new_rarity = rarity_for_floor(new_val)
+        old_rarity = d.get("rarity")
+        floor_changed = abs(old_val - float(new_val)) >= 1e-9
+        rarity_changed = new_rarity != old_rarity
+        if not floor_changed and not rarity_changed:
             continue
-        diffs.append({"slug": slug, "old": round(old_val, 4), "new": round(float(new_val), 4)})
+        diffs.append({"slug": slug, "old": round(old_val, 4), "new": round(float(new_val), 4),
+                      "old_rarity": old_rarity, "new_rarity": new_rarity})
         if apply:
             await items_col.update_one(
                 {"slug": slug},
-                {"$set": {"floor_price_ton": float(new_val), "floor_updated_at": iso(now())}},
+                {"$set": {"floor_price_ton": float(new_val), "rarity": new_rarity,
+                          "floor_updated_at": iso(now())}},
             )
             updated += 1
     return {"items_updated": updated, "applied": apply, "diffs": diffs}
