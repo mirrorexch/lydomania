@@ -247,27 +247,28 @@ async def sync_floors_to_items(*, apply: bool = True) -> dict[str, Any]:
     updated = 0
     async for d in items_col.find({}, {"_id": 0, "slug": 1, "floor_price_ton": 1, "rarity": 1}):
         slug = d["slug"]
-        f = floors.get(slug)
-        if not f:
-            continue
-        new_val = f.get("floor_ton")
-        if new_val is None or new_val <= 0:
-            continue
         old_val = float(d.get("floor_price_ton") or 0)
-        new_rarity = rarity_for_floor(new_val)
         old_rarity = d.get("rarity")
-        floor_changed = abs(old_val - float(new_val)) >= 1e-9
+        f = floors.get(slug)
+        live = f.get("floor_ton") if f else None
+        # New stored floor: the live Fragment floor when available, else keep the
+        # existing stored value (synthetic / "unavailable" items have no live floor).
+        new_val = float(live) if (live is not None and live > 0) else old_val
+        # Rarity tracks whatever floor we have — so even items without a live
+        # Fragment floor (coin_flip, lucky_ticket, …) get a sensible tier.
+        new_rarity = rarity_for_floor(new_val)
+        floor_changed = abs(old_val - new_val) >= 1e-9
         rarity_changed = new_rarity != old_rarity
         if not floor_changed and not rarity_changed:
             continue
-        diffs.append({"slug": slug, "old": round(old_val, 4), "new": round(float(new_val), 4),
+        diffs.append({"slug": slug, "old": round(old_val, 4), "new": round(new_val, 4),
                       "old_rarity": old_rarity, "new_rarity": new_rarity})
         if apply:
-            await items_col.update_one(
-                {"slug": slug},
-                {"$set": {"floor_price_ton": float(new_val), "rarity": new_rarity,
-                          "floor_updated_at": iso(now())}},
-            )
+            set_doc: dict[str, Any] = {"rarity": new_rarity}
+            if floor_changed:
+                set_doc["floor_price_ton"] = new_val
+                set_doc["floor_updated_at"] = iso(now())
+            await items_col.update_one({"slug": slug}, {"$set": set_doc})
             updated += 1
     return {"items_updated": updated, "applied": apply, "diffs": diffs}
 

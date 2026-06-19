@@ -459,3 +459,17 @@ export async function adminCreditGiftDeposit(intentId, payload) {
     const { data } = await http.post(`/admin/gift-deposits/${intentId}/credit`, payload);
     return data;
 }
+
+// ── Admin: user search + comprehensive overview (admins + read-only support) ──
+export async function adminSearchUsers(q, limit = 12) {
+    const { data } = await http.get("/admin/users/search", { params: { q, limit } });
+    return data; // { rows: [...] }
+}
+export async function adminUserOverview(telegramId) {
+    const { data } = await http.get(`/admin/users/${telegramId}/overview`);
+    return data; // { found, profile, money, inventory, games, referrals }
+}
+export async function adminCreditUser(telegramId, amountTon, reason) {
+    const { data } = await http.post(`/admin/users/${telegramId}/credit`, { amount_ton: amountTon, reason });
+    return data;
+}
