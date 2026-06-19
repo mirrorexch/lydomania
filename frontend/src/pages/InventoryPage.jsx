@@ -23,6 +23,11 @@ import { GiftCard } from "@/components/common/GiftCard";
 
 const PRM = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+// Marketplace (peer listing of inventory items) is hidden for now per product
+// decision. Existing listings can still be cancelled; no new listings can be
+// created. Flip back to `true` to re-enable the List-on-Market flow.
+const MARKETPLACE_ENABLED = false;
+
 export const InventoryPage = ({ refreshBalance }) => {
     const { t } = useTranslation();
 
@@ -398,7 +403,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                                 </button>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-3 gap-1">
+                            <div className={MARKETPLACE_ENABLED ? "grid grid-cols-3 gap-1" : "grid grid-cols-2 gap-1"}>
                                 <button
                                     data-testid={`inv-quicksell-${it.id}`}
                                     disabled={busy === it.id}
@@ -407,6 +412,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                                 >
                                     {t("inventory.list.quick_sell")}
                                 </button>
+                                {MARKETPLACE_ENABLED && (
                                 <button
                                     data-testid={`inv-list-market-${it.id}`}
                                     disabled={busy === it.id}
@@ -415,6 +421,7 @@ export const InventoryPage = ({ refreshBalance }) => {
                                 >
                                     {t("inventory.list.list_market")}
                                 </button>
+                                )}
                                 <button
                                     data-testid={`inv-withdraw-${it.id}`}
                                     disabled={busy === it.id}
@@ -459,7 +466,7 @@ export const InventoryPage = ({ refreshBalance }) => {
             />
             {/* Fix-F: List on Market modal */}
             <AnimatePresence>
-                {listTarget && (
+                {MARKETPLACE_ENABLED && listTarget && (
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         onClick={closeListModal}

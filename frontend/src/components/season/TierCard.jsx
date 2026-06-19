@@ -1,220 +1,151 @@
 /**
- * Phase 7c — Tier Card for the Battle Pass track.
- *
- * Each card shows free + premium rewards for a single tier with claim
- * buttons. Locked tiers are dimmed; claimed tiers have a check overlay.
- *
- * Polish:
- *  - flush-image reward thumbs (absolute inset-0 object-cover)
- *  - data-testid per actionable element
- *  - haptics + sfx on claim
- *  - sonner toast for errors
+ * Battle Pass tier card (Obsidian Vault) — free + premium reward with claim
+ * buttons. Reward thumbs carry a periodic gold shine sweep; the next-up tier
+ * pulses; claims pop. Locked tiers dim, claimed tiers show a check pill.
  */
 import React, { useCallback } from "react";
 import { motion } from "framer-motion";
-import { Check, Lock, Coins, Gift, Sparkles, Trophy } from "lucide-react";
+import { Check, Lock, Gift, Sparkles, Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { resolveImage } from "@/lib/api";
 import { formatTON } from "@/lib/rarity";
-import { sfx } from "@/lib/sound";
-import { tapMedium, notifySuccess, notifyError } from "@/lib/haptics";
-import { GiftCard } from "@/components/common/GiftCard";
+import { tapMedium, notifyError } from "@/lib/haptics";
 
+const RARITY_TINT = {
+    common: "rgba(140,140,151,.16)", rare: "rgba(74,143,231,.2)", epic: "rgba(47,191,143,.2)",
+    legendary: "rgba(232,184,75,.22)", mythic: "rgba(224,74,107,.2)", jackpot: "rgba(168,119,230,.24)",
+};
 
-const RewardThumb = ({ reward }) => {
+const RewardThumb = ({ reward, premium }) => {
     const { t } = useTranslation();
-    if (!reward) return null;
+    if (!reward) return <div className={`v-bpthumb${premium ? " prem" : ""}`} />;
+
     if (reward.type === "ton") {
         return (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-amber-400/15 to-amber-600/30">
-                <Coins className="w-7 h-7 text-amber-300 mb-1" aria-hidden="true" />
-                <span className="text-xs font-semibold text-amber-100">{formatTON(reward.amount_ton)}</span>
+            <div className={`v-bpthumb${premium ? " prem" : ""}`}>
+                <div className="ton"><span className="coin" /><b>{formatTON(reward.amount_ton)} TON</b></div>
             </div>
         );
     }
     if (reward.type === "free_spin") {
         return (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-cyan-400/15 to-cyan-600/30">
-                <Sparkles className="w-7 h-7 text-cyan-300 mb-1" aria-hidden="true" />
-                <span className="text-xs font-semibold text-cyan-100">×{reward.count}</span>
-                <span className="text-[10px] leading-none mt-0.5 text-cyan-200/80">
-                    {t("season.reward.free_spin_label")}
-                </span>
+            <div className={`v-bpthumb${premium ? " prem" : ""}`}>
+                <div className="spin">
+                    <Sparkles className="w-6 h-6" aria-hidden="true" />
+                    <b style={{ font: "700 13px 'JetBrains Mono'" }}>×{reward.count}</b>
+                    <span style={{ font: "600 9px 'Inter'", opacity: 0.85 }}>{t("season.reward.free_spin_label")}</span>
+                </div>
             </div>
         );
     }
     if (reward.type === "item") {
-        // Phase 11.1 — Unified <GiftCard size="sm"> as the source of truth.
-        const itemForCard = {
-            id: `tier-reward-${reward.item_slug}`,
-            item_name: reward.item_name || reward.item_slug,
-            item_slug: reward.item_slug,
-            image_url: `items/${reward.item_slug}.png`,
-            rarity: reward.rarity || "rare",
-            payout_ton: reward.floor_ton || 0,
-        };
+        const img = resolveImage(reward.image_url || `items/${reward.item_slug}.png`);
+        const tint = RARITY_TINT[reward.rarity] || RARITY_TINT.rare;
         return (
-            <div className="absolute inset-0 flex items-center justify-center">
-                <GiftCard
-                    item={itemForCard}
-                    size="sm"
-                    className="!w-full !h-full"
-                />
+            <div className={`v-bpthumb${premium ? " prem" : ""}`} style={{ "--tint": tint }}>
+                {img
+                    ? <img src={img} alt={reward.item_name || reward.item_slug} className="absolute inset-0 w-full h-full object-cover" draggable={false} loading="lazy" />
+                    : <Gift className="w-7 h-7" style={{ position: "absolute", inset: 0, margin: "auto", color: "var(--v-muted)" }} aria-hidden="true" />}
             </div>
         );
     }
-    return null;
+    return <div className={`v-bpthumb${premium ? " prem" : ""}`} />;
 };
 
-
-const ClaimButton = ({ tier, track, label, onClaim, disabled, claimed, locked }) => {
+const ClaimRow = ({ tier, track, labels, onClaim, disabled, claimed, locked }) => {
     const handle = useCallback(async () => {
         tapMedium();
-        try {
-            await onClaim();
-        } catch (_e) {
-            notifyError();
-        }
+        try { await onClaim(); } catch (_e) { notifyError(); }
     }, [onClaim]);
 
     if (claimed) {
         return (
-            <div
-                className="flex items-center justify-center w-full py-1 rounded-md bg-emerald-500/15 border border-emerald-400/40 text-[11px] font-semibold text-emerald-200"
-                data-testid={`tier-${tier}-${track}-claimed-pill`}
-            >
-                <Check className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                {label.claimed}
+            <div className="v-bppill done" data-testid={`tier-${tier}-${track}-claimed-pill`}>
+                <Check className="w-3.5 h-3.5" aria-hidden="true" /> {labels.claimed}
             </div>
         );
     }
     if (locked) {
         return (
-            <div
-                className="flex items-center justify-center w-full py-1 rounded-md bg-white/5 border border-white/10 text-[11px] font-medium text-zinc-500"
-                data-testid={`tier-${tier}-${track}-locked-pill`}
-            >
-                <Lock className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                {label.locked}
+            <div className="v-bppill lock" data-testid={`tier-${tier}-${track}-locked-pill`}>
+                <Lock className="w-3.5 h-3.5" aria-hidden="true" /> {labels.locked}
             </div>
         );
     }
     return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={handle}
-            className="w-full py-1 rounded-md bg-gradient-to-r from-emerald-400 to-emerald-500 text-[11px] font-semibold text-emerald-950 hover:from-emerald-300 hover:to-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            data-testid={`tier-${tier}-${track}-claim-btn`}
+        <motion.button
+            type="button" disabled={disabled} onClick={handle}
+            whileTap={{ scale: 0.94 }}
+            className="v-bpclaim" data-testid={`tier-${tier}-${track}-claim-btn`}
         >
-            {label.claim}
-        </button>
+            {labels.claim}
+        </motion.button>
     );
 };
 
 
 export default function TierCard({
-    tier,
-    xpRequired,
-    freeReward,
-    premiumReward,
-    userXp,
-    currentTier,
-    premiumUnlocked,
-    claimedFree,
-    claimedPremium,
-    busy,
-    onClaim,
+    tier, xpRequired, freeReward, premiumReward, userXp, currentTier,
+    premiumUnlocked, claimedFree, claimedPremium, busy, onClaim,
 }) {
     const { t } = useTranslation();
     const isUnlocked = userXp >= xpRequired;
-    const isCurrent  = tier === currentTier + 1;   // next-up tier glow
+    const isCurrent = tier === currentTier + 1;   // next-up tier glow
 
-    const buttonLabels = {
-        claim:   t("season.tier.claim"),
+    const labels = {
+        claim: t("season.tier.claim"),
         claimed: t("season.tier.claimed"),
-        locked:  t("season.tier.locked"),
+        locked: t("season.tier.locked"),
     };
+    const cls = `v-bpcard ${isCurrent ? "current" : isUnlocked ? "unlocked" : "locked"}`;
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            className={`relative shrink-0 w-[260px] sm:w-[280px] rounded-xl border overflow-hidden snap-start ${
-                isCurrent
-                    ? "border-amber-300/60 shadow-[0_0_24px_-8px_rgba(251,191,36,0.45)]"
-                    : isUnlocked
-                        ? "border-white/15"
-                        : "border-white/5 opacity-70"
-            } bg-zinc-900/80 backdrop-blur-sm`}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "0px 200px" }}
+            transition={{ duration: 0.3 }}
+            className={cls}
             data-testid={`tier-card-${tier}`}
         >
-            {/* Tier header */}
-            <div className="flex items-center justify-between px-3 py-1.5 bg-black/40 border-b border-white/5">
-                <span className="text-[11px] font-mono tracking-widest text-zinc-400">
-                    {t("season.tier.label_prefix")}
-                </span>
-                <span
-                    className={`text-sm font-bold ${
-                        isCurrent ? "text-amber-300" : "text-white"
-                    }`}
-                    data-testid={`tier-${tier}-number`}
-                >
-                    {tier}
-                </span>
+            <div className="v-bphead">
+                <span className="lbl">{t("season.tier.label_prefix")}</span>
+                <span className="n" data-testid={`tier-${tier}-number`}>{tier}</span>
             </div>
 
             {/* Free track */}
-            <div className="px-2 pt-2 pb-1.5">
-                <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1.5 flex items-center gap-1">
-                    <Gift className="w-3 h-3" aria-hidden="true" />
-                    {t("season.tier.track_free")}
-                </div>
-                <div className="relative aspect-square rounded-md overflow-hidden border border-white/10 bg-zinc-950 mb-1.5">
-                    <RewardThumb reward={freeReward} />
-                </div>
-                <ClaimButton
-                    tier={tier} track="free"
-                    label={buttonLabels}
-                    claimed={claimedFree}
-                    locked={!isUnlocked}
+            <div className="v-bptrack free">
+                <div className="cap"><Gift className="w-3 h-3" aria-hidden="true" /> {t("season.tier.track_free")}</div>
+                <RewardThumb reward={freeReward} />
+                <ClaimRow
+                    tier={tier} track="free" labels={labels}
+                    claimed={claimedFree} locked={!isUnlocked}
                     disabled={busy || !freeReward}
                     onClaim={() => onClaim(tier, "free")}
                 />
             </div>
 
             {/* Premium track */}
-            <div className="px-2 pb-2 pt-1 border-t border-white/5">
-                <div className="text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1 text-amber-300/90">
-                    <Trophy className="w-3 h-3" aria-hidden="true" />
-                    {t("season.tier.track_premium")}
-                </div>
-                <div className="relative aspect-square rounded-md overflow-hidden border border-amber-400/20 bg-gradient-to-br from-zinc-950 to-zinc-900 mb-1.5">
-                    <RewardThumb reward={premiumReward} />
+            <div className="v-bptrack prem">
+                <div className="cap"><Trophy className="w-3 h-3" aria-hidden="true" /> {t("season.tier.track_premium")}</div>
+                <div className="relative">
+                    <RewardThumb reward={premiumReward} premium />
                     {!premiumUnlocked && (
-                        <div className="absolute inset-0 bg-zinc-950/70 backdrop-blur-[2px] flex items-center justify-center">
-                            <Lock className="w-5 h-5 text-amber-300/70" aria-hidden="true" />
+                        <div className="lockveil" style={{ position: "absolute", inset: 0, top: 0, bottom: 7, borderRadius: 11, display: "grid", placeItems: "center", background: "rgba(11,11,15,.66)", backdropFilter: "blur(2px)" }}>
+                            <Lock className="w-5 h-5" style={{ color: "var(--v-gold)" }} aria-hidden="true" />
                         </div>
                     )}
                 </div>
-                <ClaimButton
-                    tier={tier} track="premium"
-                    label={buttonLabels}
-                    claimed={claimedPremium}
-                    locked={!isUnlocked || !premiumUnlocked}
+                <ClaimRow
+                    tier={tier} track="premium" labels={labels}
+                    claimed={claimedPremium} locked={!isUnlocked || !premiumUnlocked}
                     disabled={busy || !premiumReward}
                     onClaim={() => onClaim(tier, "premium")}
                 />
             </div>
 
-            {/* XP requirement footer */}
-            <div className="px-3 py-1 bg-black/40 border-t border-white/5 text-center">
-                <span className="text-[10px] font-mono text-zinc-500">
-                    {xpRequired.toLocaleString()} {t("season.xp_short")}
-                </span>
-            </div>
+            <div className="v-bpfoot">{xpRequired.toLocaleString()} {t("season.xp_short")}</div>
         </motion.div>
     );
 }
