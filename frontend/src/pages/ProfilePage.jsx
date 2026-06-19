@@ -43,6 +43,7 @@ export default function ProfilePage({ user, balance, onLogout }) {
         ? `${tonAddress.slice(0, 5)}…${tonAddress.slice(-5)}`
         : null;
     const isAdmin = !!user?.is_admin;
+    const canAccessAdmin = isAdmin || !!user?.is_support;
 
     return (
         <main
@@ -122,7 +123,7 @@ export default function ProfilePage({ user, balance, onLogout }) {
                     sub={t("profile.row_friends_sub")}
                     testid="profile-row-friends"
                 />
-                {isAdmin && (
+                {canAccessAdmin && (
                     <Row
                         to="/admin"
                         icon={Shield}

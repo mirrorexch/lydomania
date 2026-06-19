@@ -21,9 +21,9 @@ const Tab = ({ to, icon: Icon, label, testid, end }) => (
     </NavLink>
 );
 
-export const AdminLayout = ({ isAdmin = true }) => {
+export const AdminLayout = ({ isAdmin = true, isSupport = false }) => {
     const { t } = useTranslation();
-    if (!isAdmin) {
+    if (!isAdmin && !isSupport) {
         return (
             <main className="mx-auto px-4 pt-10 pb-24 max-w-md text-center" data-testid="admin-layout-forbidden">
                 <Shield className="w-10 h-10 text-white/25 mx-auto mb-3" />

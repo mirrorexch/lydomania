@@ -21,6 +21,7 @@ class UserOut(BaseModel):
     photo_url: Optional[str] = None
     balance_ton: float = 0.0
     is_admin: bool = False
+    is_support: bool = False
 
 
 class AuthOut(BaseModel):
