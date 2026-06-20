@@ -40,7 +40,9 @@ const RewardThumb = ({ reward, premium }) => {
         );
     }
     if (reward.type === "item") {
-        const img = resolveImage(reward.image_url || `items/${reward.item_slug}.png`);
+        // Item art is served at /api/static/items/<slug>.png (the bare
+        // "items/<slug>.png" path the old code used resolves relative → 404).
+        const img = resolveImage(`/api/static/items/${reward.item_slug}.png`);
         const tint = RARITY_TINT[reward.rarity] || RARITY_TINT.rare;
         return (
             <div className={`v-bpthumb${premium ? " prem" : ""}`} style={{ "--tint": tint }}>
