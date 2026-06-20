@@ -32,9 +32,9 @@ const SIZE = {
     //   sm  → 65% (roulette tiles, top wins chips)
     //   md  → 70% (default — inventory, market, BattlePass tier rewards)
     //   lg  → 80% (case-open reveal, jackpot moment)
-    sm: { card: "w-24",  h: "h-24",  pad: "p-1.5",  name: "text-[10px]", price: "text-[11px]", img: "max-w-[65%] max-h-[65%]" },
-    md: { card: "w-40",  h: "h-40",  pad: "p-2.5",  name: "text-xs",     price: "text-sm",     img: "max-w-[70%] max-h-[70%]" },
-    lg: { card: "w-56",  h: "h-56",  pad: "p-3.5",  name: "text-sm",     price: "text-base",   img: "max-w-[80%] max-h-[80%]" },
+    sm: { card: "w-24",  h: "h-24",  pad: "p-1.5",  name: "text-[10px]", price: "text-[11px]", img: "max-w-[58%] max-h-[58%]" },
+    md: { card: "w-40",  h: "h-40",  pad: "p-2.5",  name: "text-xs",     price: "text-sm",     img: "max-w-[62%] max-h-[62%]" },
+    lg: { card: "w-56",  h: "h-56",  pad: "p-3.5",  name: "text-sm",     price: "text-base",   img: "max-w-[72%] max-h-[72%]" },
 };
 
 const RARITY = {
@@ -150,20 +150,19 @@ export const GiftCard = ({
                 Phase 11.2 Final Polish: grid place-items-center for math-perfect centering;
                 size-token-driven max-w/max-h; subtle transform-origin for hover/zoom hooks. */}
             <div
-                className={`relative ${s.h} overflow-hidden`}
-                style={{ transformOrigin: "center", background: "radial-gradient(62% 56% at 50% 44%, rgba(232,184,75,.14), #0d0c11 80%)" }}
+                className={`relative ${s.h} grid place-items-center overflow-hidden`}
+                style={{ transformOrigin: "center", background: "radial-gradient(58% 52% at 50% 42%, rgba(232,184,75,.10), #0d0c11 80%)" }}
             >
-                {/* Full-bleed item art — same treatment as the case tiles: the
-                    asset carries its own atmosphere, so showing it edge-to-edge
-                    reads as a polished product shot (was a small contained icon). */}
+                {/* Gift renders are transparent 512² PNGs (the object on no
+                    background), so they're CONTAINED + centred at a uniform size
+                    on a shared backdrop — every gift looks consistent and framed,
+                    not zoomed/cropped (object-cover blew them up unevenly). */}
                 <ImageWithFallback
                     src={img}
                     alt={item?.item_name || "Gift"}
-                    objectFit="cover"
-                    className="absolute inset-0 w-full h-full transition-transform duration-200"
+                    objectFit="contain"
+                    className={`${s.img} drop-shadow-[0_6px_14px_rgba(0,0,0,0.55)] transition-transform duration-200`}
                 />
-                <span aria-hidden className="absolute inset-0 pointer-events-none"
-                    style={{ background: "linear-gradient(180deg, rgba(11,11,15,.3) 0%, transparent 24%, transparent 76%, rgba(11,11,15,.45) 100%)" }} />
             </div>
 
             {/* Bottom strip */}

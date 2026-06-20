@@ -172,21 +172,21 @@
 .v-logout:hover{background:rgba(224,74,107,.16)}
 
 /* ── Battle Pass reward track ───────────────────────────────────── */
-.v-bpcard{position:relative;flex:none;width:248px;border-radius:16px;overflow:hidden;scroll-snap-align:start;
+.v-bpcard{position:relative;flex:none;width:150px;border-radius:14px;overflow:hidden;scroll-snap-align:start;
   background:var(--v-surface);border:1px solid var(--v-line-soft)}
 .v-bpcard.unlocked{border-color:var(--v-line)}
 .v-bpcard.locked{opacity:.6}
 .v-bpcard.current{border-color:var(--v-gold);animation:vBpPulse 2.4s ease-in-out infinite}
 @keyframes vBpPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,184,75,0)}50%{box-shadow:0 0 26px -6px rgba(232,184,75,.6)}}
-.v-bphead{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--v-line-soft)}
-.v-bphead .lbl{font:600 10px 'JetBrains Mono';letter-spacing:.16em;text-transform:uppercase;color:var(--v-muted-2)}
-.v-bphead .n{font:700 14px 'Space Grotesk'} .v-bpcard.current .v-bphead .n{color:var(--v-gold-hi)}
-.v-bptrack{padding:8px}
-.v-bptrack .cap{display:flex;align-items:center;gap:5px;font:700 9px 'Inter';letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px}
+.v-bphead{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--v-line-soft)}
+.v-bphead .lbl{font:600 8px 'JetBrains Mono';letter-spacing:.14em;text-transform:uppercase;color:var(--v-muted-2)}
+.v-bphead .n{font:700 12px 'Space Grotesk'} .v-bpcard.current .v-bphead .n{color:var(--v-gold-hi)}
+.v-bptrack{padding:6px}
+.v-bptrack .cap{display:flex;align-items:center;gap:4px;font:700 8px 'Inter';letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
 .v-bptrack.free .cap{color:var(--v-muted)} .v-bptrack.prem{border-top:1px solid var(--v-line-soft)} .v-bptrack.prem .cap{color:var(--v-gold)}
 /* reward thumb with a periodic gold shine sweep */
-.v-bpthumb{position:relative;aspect-ratio:1;border-radius:11px;overflow:hidden;border:1px solid var(--v-line-soft);
-  background:radial-gradient(70% 70% at 50% 40%,var(--tint,rgba(232,184,75,.16)),#0d0c11);margin-bottom:7px}
+.v-bpthumb{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;border:1px solid var(--v-line-soft);
+  background:radial-gradient(70% 70% at 50% 40%,var(--tint,rgba(232,184,75,.16)),#0d0c11);margin-bottom:5px}
 .v-bpthumb.prem{border-color:var(--v-line)}
 .v-bpthumb::after{content:"";position:absolute;top:0;left:-60%;width:50%;height:100%;pointer-events:none;
   background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);animation:vShine 3.6s ease-in-out infinite}
@@ -194,18 +194,19 @@
 .v-bpthumb .ton{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   background:radial-gradient(70% 70% at 50% 40%,rgba(232,184,75,.22),transparent 72%)}
 .v-bpthumb .ton .coin{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 36% 30%,var(--v-gold-hi),var(--v-gold-deep));box-shadow:0 0 14px rgba(232,184,75,.45)}
-.v-bpthumb .ton b{font:700 12px 'JetBrains Mono';color:var(--v-gold-hi)}
+.v-bpthumb .ton b{font:700 10px 'JetBrains Mono';color:var(--v-gold-hi)}
+.v-bpthumb .ton .coin{width:24px;height:24px}
 .v-bpthumb .spin{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   background:radial-gradient(70% 70% at 50% 40%,rgba(47,191,143,.2),transparent 72%);color:var(--v-emerald)}
 .v-bpthumb .lockveil{position:absolute;inset:0;display:grid;place-items:center;background:rgba(11,11,15,.66);backdrop-filter:blur(2px);color:var(--v-gold)}
-.v-bpclaim{width:100%;padding:6px 0;border-radius:9px;font:700 11px 'Inter';cursor:pointer;border:0;
+.v-bpclaim{width:100%;padding:5px 0;border-radius:8px;font:700 9.5px 'Inter';cursor:pointer;border:0;
   background:linear-gradient(180deg,#5fe3b6,var(--v-emerald) 60%,#1e8f69);color:#08120d}
 .v-bpclaim:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.3)}
-.v-bppill{width:100%;padding:6px 0;border-radius:9px;font:700 10px 'Inter';display:flex;align-items:center;justify-content:center;gap:5px}
+.v-bppill{width:100%;padding:5px 0;border-radius:8px;font:700 8.5px 'Inter';display:flex;align-items:center;justify-content:center;gap:4px}
 .v-bppill.done{background:rgba(47,191,143,.14);border:1px solid rgba(47,191,143,.4);color:var(--v-emerald)}
 .v-bppill.lock{background:var(--v-surface-2);border:1px solid var(--v-line-soft);color:var(--v-muted-2)}
-.v-bpfoot{padding:5px 12px;background:rgba(0,0,0,.35);border-top:1px solid var(--v-line-soft);text-align:center;
-  font:600 9px 'JetBrains Mono';color:var(--v-muted-2)}
+.v-bpfoot{padding:4px 9px;background:rgba(0,0,0,.35);border-top:1px solid var(--v-line-soft);text-align:center;
+  font:600 8px 'JetBrains Mono';color:var(--v-muted-2)}
 
 /* ── Admin: comprehensive user overview ─────────────────────────── */
 .v-adsearch{display:flex;gap:8px;margin-bottom:12px}
