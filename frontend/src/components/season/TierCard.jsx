@@ -47,8 +47,8 @@ const RewardThumb = ({ reward, premium }) => {
         return (
             <div className={`v-bpthumb${premium ? " prem" : ""}`} style={{ "--tint": tint }}>
                 {img
-                    ? <img src={img} alt={reward.item_name || reward.item_slug} className="absolute inset-0 w-full h-full object-cover" draggable={false} loading="lazy" />
-                    : <Gift className="w-7 h-7" style={{ position: "absolute", inset: 0, margin: "auto", color: "var(--v-muted)" }} aria-hidden="true" />}
+                    ? <img src={img} alt={reward.item_name || reward.item_slug} style={{ position: "absolute", inset: 0, margin: "auto", maxWidth: "72%", maxHeight: "72%", objectFit: "contain", filter: "drop-shadow(0 5px 12px rgba(0,0,0,.55))" }} draggable={false} loading="lazy" />
+                    : <Gift className="w-6 h-6" style={{ position: "absolute", inset: 0, margin: "auto", color: "var(--v-muted)" }} aria-hidden="true" />}
             </div>
         );
     }
